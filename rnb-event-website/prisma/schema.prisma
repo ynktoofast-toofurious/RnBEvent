@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  role          String    @default("user")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  accounts      Account[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+// Content Management Models
+model Page {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  description String?
+  content     Json
+  published   Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  sections    Section[]
+  
+  @@map("pages")
+}
+
+model Section {
+  id        String   @id @default(cuid())
+  pageId    String   @map("page_id")
+  type      String   // hero, services, testimonials, gallery, etc.
+  title     String?
+  subtitle  String?
+  content   Json
+  order     Int      @default(0)
+  visible   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  
+  @@map("sections")
+}
+
+model Media {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String  @map("original_name")
+  mimeType    String   @map("mime_type")
+  size        Int
+  url         String
+  alt         String?
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@map("media")
+}
+
+model Navigation {
+  id        String   @id @default(cuid())
+  label     String
+  href      String
+  order     Int      @default(0)
+  visible   Boolean  @default(true)
+  parentId  String?  @map("parent_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  parent   Navigation?  @relation("NavigationHierarchy", fields: [parentId], references: [id])
+  children Navigation[] @relation("NavigationHierarchy")
+  
+  @@map("navigation")
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  status    String   @default("unread") // unread, read, replied
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@map("contacts")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  content     Json?
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  location    String?
+  price       Float?
+  capacity    Int?
+  image       String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("events")
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  content     Json?
+  image       String?
+  price       Float?
+  duration    String?
+  category    String?
+  featured    Boolean  @default(false)
+  published   Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("services")
+}
