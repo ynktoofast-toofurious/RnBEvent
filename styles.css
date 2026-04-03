@@ -447,6 +447,7 @@ img, video {
     grid-template-columns: repeat(3, 1fr);
     gap: 40px;
     margin-top: 60px;
+    padding: 0 20px;
 }
 
 .category-card {
@@ -518,6 +519,7 @@ img, video {
     grid-template-columns: repeat(4, 1fr);
     gap: 60px;
     text-align: center;
+    padding: 0 20px;
 }
 
 .contact-info-item h3 {
@@ -1275,6 +1277,7 @@ img, video {
     gap: 40px;
     margin-bottom: 40px;
     flex-wrap: wrap;
+    padding: 0 20px;
 }
 
 .footer-nav a {
@@ -1315,6 +1318,7 @@ img, video {
     color: var(--text-light);
     opacity: 0.8;
     font-weight: 500;
+    padding: 0 20px;
 }
 
 /* ===========================
@@ -1542,6 +1546,11 @@ section.visible,
         gap: 40px;
     }
 
+    .portfolio-categories {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+
     .services-grid {
         grid-template-columns: 1fr;
         gap: 40px;
@@ -1609,16 +1618,7 @@ section.visible,
         padding: 0 20px;
     }
 
-    .portfolio-preview {
-        padding: 80px 0;
-    }
-
-    .portfolio-categories {
-        grid-template-columns: 1fr;
-        gap: 40px;
-    }
-
-    .contact-info-section {
+    .portfolio-preview {\n        padding: 80px 0;\n    }\n\n    .contact-info-section {", "oldString": "    .portfolio-preview {\n        padding: 80px 0;\n    }\n\n    .portfolio-categories {\n        grid-template-columns: 1fr;\n        gap: 40px;\n    }\n\n    .contact-info-section {
         padding: 70px 0;
     }
 
@@ -1769,6 +1769,16 @@ section.visible,
         padding: 60px 0;
     }
 
+    .portfolio-categories {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .contact-info-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
     .category-title {
         letter-spacing: 2.5px;
     }
@@ -1809,8 +1819,13 @@ section.visible,
     }
 
     .footer-nav {
-        gap: 25px;
+        gap: 15px 25px;
         margin-bottom: 35px;
+    }
+
+    .footer-nav a {
+        font-size: 9px;
+        letter-spacing: 1.5px;
     }
 }
 
