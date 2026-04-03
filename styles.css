@@ -90,24 +90,18 @@ img, video {
 .nav-container {
     max-width: 1600px;
     margin: 0 auto;
-    padding: 35px 100px;
+    padding: 20px 40px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    gap: 120px;
-    position: relative;
 }
 
 .logo {
-    order: 2;
     flex-shrink: 0;
     transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
 }
 
 .logo a {
@@ -126,62 +120,6 @@ img, video {
 
 .logo a:hover .logo-img {
     transform: scale(1.03);
-}
-
-.nav-left {
-    order: 1;
-    justify-content: flex-end;
-    flex: 1;
-    padding-right: 80px;
-}
-
-.nav-right {
-    order: 3;
-    justify-content: flex-start;
-    flex: 1;
-    padding-left: 80px;
-}
-
-.nav-menu {
-    display: flex;
-    list-style: none;
-    gap: 50px;
-    align-items: center;
-}
-
-.nav-left,
-.nav-right {
-    margin: 0;
-    padding: 0;
-}
-
-.nav-menu a {
-    font-size: 12px;
-    font-weight: 400;
-    letter-spacing: 2px;
-    color: var(--text-color);
-    position: relative;
-    padding: 5px 0;
-    text-transform: uppercase;
-}
-
-.nav-menu a::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 1px;
-    background: var(--accent-color);
-    transition: width 0.3s ease;
-}
-
-.nav-menu a:hover {
-    color: var(--accent-color);
-}
-
-.nav-menu a:hover::after {
-    width: 100%;
 }
 
 .hamburger {
@@ -301,16 +239,11 @@ img, video {
     }
     
     .navbar.scrolled .nav-container {
-        padding: 25px 60px;
+        padding: 15px 40px;
     }
     
     .navbar.scrolled .logo-img {
         height: 80px;
-    }
-    
-    .navbar.scrolled .logo {
-        left: 50%;
-        transform: translateX(-50%);
     }
 }
 
@@ -1491,20 +1424,7 @@ section.visible,
     }
     
     .nav-container {
-        padding: 20px 70px;
-        gap: 80px;
-    }
-
-    .nav-menu {
-        gap: 35px;
-    }
-
-    .nav-left {
-        padding-right: 60px;
-    }
-
-    .nav-right {
-        padding-left: 60px;
+        padding: 20px 40px;
     }
 
     .logo-img {
@@ -1587,26 +1507,11 @@ section.visible,
     }
 
     .nav-container {
-        justify-content: center;
         padding: 15px 30px;
-        gap: 0;
-    }
-
-    .logo {
-        position: relative;
-        left: auto;
-        transform: none;
-        order: unset;
-        flex: 0;
     }
 
     .logo-img {
         height: 65px;
-    }
-
-    .nav-left,
-    .nav-right {
-        display: none;
     }
 
     .page-hero {
@@ -2082,7 +1987,6 @@ section.visible,
 
 /* Improve touch targets on mobile */
 @media (max-width: 600px) {
-    .nav-menu a,
     .footer-nav a,
     .social-icon {
         padding: 10px;
