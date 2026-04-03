@@ -293,25 +293,25 @@ img, video {
 }
 
 .hero-title {
-    font-size: 72px;
+    font-size: clamp(28px, 8vw, 72px);
     font-weight: 300;
-    letter-spacing: 4px;
+    letter-spacing: clamp(1px, 0.4vw, 4px);
     margin-bottom: 20px;
     text-transform: uppercase;
 }
 
 .hero-company {
-    font-size: 42px;
+    font-size: clamp(20px, 5vw, 42px);
     font-weight: 400;
-    letter-spacing: 3px;
+    letter-spacing: clamp(1px, 0.3vw, 3px);
     margin-bottom: 15px;
     font-family: 'Cormorant Garamond', serif;
 }
 
 .hero-subtitle {
-    font-size: 18px;
+    font-size: clamp(11px, 2.5vw, 18px);
     font-weight: 300;
-    letter-spacing: 3px;
+    letter-spacing: clamp(1.5px, 0.3vw, 3px);
     margin-bottom: 40px;
     text-transform: uppercase;
 }
@@ -371,9 +371,9 @@ img, video {
 }
 
 .page-hero-title {
-    font-size: 56px;
+    font-size: clamp(24px, 6vw, 56px);
     font-weight: 300;
-    letter-spacing: 3px;
+    letter-spacing: clamp(1px, 0.3vw, 3px);
     margin-bottom: 20px;
     color: var(--primary-color);
     text-transform: uppercase;
@@ -382,9 +382,9 @@ img, video {
 }
 
 .page-hero-subtitle {
-    font-size: 16px;
+    font-size: clamp(11px, 2vw, 16px);
     font-weight: 300;
-    letter-spacing: 2px;
+    letter-spacing: clamp(1px, 0.2vw, 2px);
     color: var(--text-color);
     text-transform: uppercase;
     position: relative;
@@ -416,9 +416,9 @@ img, video {
 }
 
 .welcome-title {
-    font-size: 48px;
+    font-size: clamp(24px, 5vw, 48px);
     font-weight: 300;
-    letter-spacing: 3px;
+    letter-spacing: clamp(1px, 0.3vw, 3px);
     margin-bottom: 35px;
     color: var(--primary-color);
     line-height: 1.3;
@@ -490,9 +490,9 @@ img, video {
 }
 
 .category-title {
-    font-size: 18px;
+    font-size: clamp(13px, 2.5vw, 18px);
     font-weight: 400;
-    letter-spacing: 3px;
+    letter-spacing: clamp(1.5px, 0.3vw, 3px);
     text-align: center;
     margin-top: 25px;
     color: var(--primary-color);
@@ -604,9 +604,9 @@ img, video {
 }
 
 .section-header h2 {
-    font-size: 48px;
+    font-size: clamp(22px, 5vw, 48px);
     font-weight: 300;
-    letter-spacing: 3px;
+    letter-spacing: clamp(1px, 0.3vw, 3px);
     margin-bottom: 20px;
     text-transform: capitalize;
 }
@@ -634,7 +634,7 @@ img, video {
 }
 
 .lead-text {
-    font-size: 18px;
+    font-size: clamp(14px, 2.5vw, 18px);
     line-height: 1.8;
     color: var(--text-color);
     margin-bottom: 30px;
@@ -691,8 +691,8 @@ img, video {
 }
 
 .service-card h3 {
-    font-size: 22px;
-    letter-spacing: 2px;
+    font-size: clamp(16px, 2.5vw, 22px);
+    letter-spacing: clamp(1px, 0.2vw, 2px);
     margin-bottom: 20px;
     font-weight: 500;
 }
@@ -1022,7 +1022,7 @@ img, video {
 }
 
 .testimonial-text {
-    font-size: 20px;
+    font-size: clamp(15px, 2.5vw, 20px);
     line-height: 1.8;
     color: var(--text-color);
     font-style: italic;
@@ -1440,10 +1440,6 @@ section.visible,
         margin-top: 120px;
     }
 
-    .page-hero-title {
-        font-size: 48px;
-    }
-
     .hamburger {
         top: 28px;
         right: 35px;
@@ -1451,10 +1447,6 @@ section.visible,
 
     .welcome {
         padding: 100px 0;
-    }
-
-    .welcome-title {
-        font-size: 40px;
     }
 
     .welcome-text {
@@ -1519,36 +1511,13 @@ section.visible,
         margin-top: 100px;
     }
 
-    .page-hero-title {
-        font-size: 40px;
-    }
-
-    .page-hero-subtitle {
-        font-size: 14px;
-    }
-
     .hero {
         height: 80vh;
         margin-top: 100px;
     }
 
     .hero-title {
-        font-size: 48px;
-        letter-spacing: 2px;
-    }
-
-    .hero-company {
-        font-size: 32px;
-        letter-spacing: 2px;
-    }
-
-    .hero-subtitle {
-        font-size: 14px;
         padding: 0 20px;
-    }
-
-    .section-header h2 {
-        font-size: 36px;
     }
 
     .about,
@@ -1705,38 +1674,13 @@ section.visible,
         margin-top: 85px;
     }
 
-    .page-hero-title {
-        font-size: 32px;
-    }
-
-    .page-hero-subtitle {
-        font-size: 13px;
-    }
-
     .hero {
         height: 70vh;
         margin-top: 85px;
     }
 
     .hero-title {
-        font-size: 32px;
-        letter-spacing: 1px;
         padding: 0 20px;
-    }
-
-    .hero-company {
-        font-size: 24px;
-        letter-spacing: 1.5px;
-    }
-
-    .hero-subtitle {
-        font-size: 12px;
-        letter-spacing: 2px;
-    }
-
-    .section-header h2 {
-        font-size: 28px;
-        letter-spacing: 2px;
     }
 
     .carousel-prev,
@@ -1771,20 +1715,12 @@ section.visible,
         margin-bottom: 40px;
     }
 
-    .lead-text {
-        font-size: 15px;
-    }
-
     .about-content p {
         font-size: 14px;
     }
 
     .service-card {
         padding: 30px 20px;
-    }
-
-    .service-card h3 {
-        font-size: 18px;
     }
 
     .service-card p {
@@ -1806,7 +1742,6 @@ section.visible,
     }
 
     .testimonial-text {
-        font-size: 16px;
         padding: 0 10px;
     }
 
@@ -1826,11 +1761,6 @@ section.visible,
         padding: 60px 0;
     }
 
-    .welcome-title {
-        font-size: 28px;
-        letter-spacing: 2px;
-    }
-
     .welcome-text {
         font-size: 13px;
     }
@@ -1840,7 +1770,6 @@ section.visible,
     }
 
     .category-title {
-        font-size: 16px;
         letter-spacing: 2.5px;
     }
 
@@ -1912,28 +1841,6 @@ section.visible,
     .page-hero {
         padding: 100px 0 50px;
         margin-top: 85px;
-    }
-
-    .page-hero-title {
-        font-size: 28px;
-        letter-spacing: 2px;
-    }
-
-    .page-hero-subtitle {
-        font-size: 12px;
-        letter-spacing: 1.5px;
-    }
-
-    .hero-title {
-        font-size: 28px;
-    }
-
-    .hero-company {
-        font-size: 20px;
-    }
-
-    .section-header h2 {
-        font-size: 24px;
     }
 
     .services-grid {
