@@ -768,6 +768,111 @@
         }
         .hud-sel-badge.visible { display: inline-block; }
 
+        /* ── Align panel helper ────────────────────────────────── */
+        .align-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .align-btn {
+            padding: 10px 4px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: rgba(255,255,255,0.85);
+            font-size: 11px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.18s;
+            font-family: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .align-btn:hover { background: rgba(119,163,97,0.3); border-color: #77a361; color: #fff; }
+        .align-btn:disabled { opacity: 0.3; cursor: default; }
+        .align-dist-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        /* ── Text label input modal ─────────────────────────────── */
+        .text-label-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10001;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .text-label-modal-overlay.open { display: flex; }
+        .text-label-modal-box {
+            background: rgba(18,28,18,0.98);
+            border: 1px solid rgba(119,163,97,0.5);
+            border-radius: 16px;
+            padding: 28px 24px;
+            min-width: 300px;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 16px 64px rgba(0,0,0,0.7);
+        }
+        .text-label-modal-title {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .text-label-modal-sub {
+            color: rgba(255,255,255,0.4);
+            font-size: 11px;
+            margin-bottom: 16px;
+        }
+        .text-label-modal-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(119,163,97,0.4);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+        .text-label-modal-input:focus { border-color: #77a361; }
+        .text-label-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .text-label-modal-cancel {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 9px 18px;
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .text-label-modal-cancel:hover { background: rgba(255,255,255,0.15); color: #fff; }
+        .text-label-modal-confirm {
+            background: #77a361;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 18px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+        .text-label-modal-confirm:hover { background: #5d8a49; }
+
         @media (max-width: 900px) {
             .builder-layout { display: block; }
             .builder-hud { flex-wrap: nowrap; border-radius: 28px; top: 8px; }
@@ -1247,6 +1352,11 @@
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
                                     Display
                                 </button>
+                                <!-- Align -->
+                                <button class="hud-btn" id="hud-align" onclick="hudTogglePanel('align')">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 22H2V2h2v20zm4-7H6v5h2v-5zm4 3h-2v2h2v-2zm4-5h-2v7h2v-7zm4-3h-2v10h2V10zM6 9H4v3h2V9zm4-3H8v3h2V6zm4-2h-2v3h2V4zm4 1h-2v2h2V5z"/></svg>
+                                    Align
+                                </button>
                                 <div class="hud-sep"></div>
                                 <!-- Inspector (selection) -->
                                 <button class="hud-btn" id="hud-inspector" onclick="hudTogglePanel('inspector')">
@@ -1282,6 +1392,14 @@
                                         <div class="panel-obj-sub" id="obj-section-count">0 placed &middot; 83"L</div>
                                     </div>
                                     <button class="panel-obj-add" onclick="builderAddObject('serpentine-section')">+ ADD</button>
+                                </div>
+                                <div class="panel-obj-card">
+                                    <div class="panel-obj-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#77a361"><path d="M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"/></svg></div>
+                                    <div class="panel-obj-meta">
+                                        <div class="panel-obj-name">Text Label</div>
+                                        <div class="panel-obj-sub" id="obj-text-count">0 placed &middot; floor label</div>
+                                    </div>
+                                    <button class="panel-obj-add" onclick="builderPromptTextLabel()">+ ADD</button>
                                 </div>
                             </div>
 
@@ -1344,6 +1462,45 @@
                                 </div>
                             </div>
 
+                            <!-- ── PANEL: Align ── -->
+                            <div class="builder-panel" id="panel-align">
+                                <div class="builder-panel-header">
+                                    <span class="builder-panel-title">Align Objects</span>
+                                    <button class="builder-panel-close" onclick="hudClosePanel('align')">&#x2715;</button>
+                                </div>
+                                <div class="panel-section-title">Align (select 2+ objects)</div>
+                                <div class="align-grid">
+                                    <button class="align-btn" onclick="builderAlign('left')" title="Align left edges">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 22H2V2h2v20zM6 7v10h4V7H6zm6 3v4h4v-4h-4zm6-5v14h4V5h-4z"/></svg>Left
+                                    </button>
+                                    <button class="align-btn" onclick="builderAlign('centerX')" title="Center on vertical axis">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11 2h2v2.07C16.44 4.56 19 7.58 19 11c0 3.42-2.56 6.44-6 6.93V20h2v2H9v-2h2v-2.07C7.56 17.44 5 14.42 5 11c0-3.42 2.56-6.44 6-6.93V2zm1 4a5 5 0 1 0 0 10A5 5 0 0 0 12 6z"/></svg>Ctr X
+                                    </button>
+                                    <button class="align-btn" onclick="builderAlign('right')" title="Align right edges">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2h2v20h-2V2zM2 7v10h4V7H2zm6 3v4h4v-4H8zm6-5v14h4V5h-4z"/></svg>Right
+                                    </button>
+                                    <button class="align-btn" onclick="builderAlign('front')" title="Align to front (min depth)">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 4h20v2H2V4zm5 6h10v2H7v-2zm-3 6h16v2H4v-2z"/></svg>Front
+                                    </button>
+                                    <button class="align-btn" onclick="builderAlign('centerZ')" title="Center on horizontal axis">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 11h20v2H2v-2z"/></svg>Ctr Z
+                                    </button>
+                                    <button class="align-btn" onclick="builderAlign('back')" title="Align to back (max depth)">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4V4zm3 6h10v2H7v-2zm-5 6h20v2H2v-2z"/></svg>Back
+                                    </button>
+                                </div>
+                                <div class="panel-section-title">Distribute evenly (3+ objects)</div>
+                                <div class="align-dist-grid">
+                                    <button class="align-btn" onclick="builderAlign('distX')" title="Space evenly left-right">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 22H2V2h2v20zm18 0h-2V2h2v20zM8 10v4h8v-4H8z"/></svg>Spread X
+                                    </button>
+                                    <button class="align-btn" onclick="builderAlign('distZ')" title="Space evenly front-back">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 4v2h20V4H2zm0 14v2h20v-2H2zM8 10v4h8v-4H8z"/></svg>Spread Z
+                                    </button>
+                                </div>
+                                <div style="color:rgba(255,255,255,0.3);font-size:10px;margin-top:12px;text-align:center;">Shift+click to multi-select objects first</div>
+                            </div>
+
                         </div><!-- /.builder-canvas-wrap -->
 
                     <!-- Canvas right-click context menu (fixed, outside canvas wrap so it escapes overflow:hidden) -->
@@ -1370,6 +1527,21 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                             Remove selected
                         </button>
+                    </div>
+
+                    <!-- Text Label Input Modal -->
+                    <div class="text-label-modal-overlay" id="text-label-modal">
+                        <div class="text-label-modal-box">
+                            <div class="text-label-modal-title">Add Text Label</div>
+                            <div class="text-label-modal-sub">Appears as a floating label on the floor plan</div>
+                            <input class="text-label-modal-input" id="text-label-input" type="text"
+                                placeholder="e.g. Dance Floor, Bar Area, Stage…" maxlength="40"
+                                onkeydown="if(event.key==='Enter')builderConfirmTextLabel();if(event.key==='Escape')builderCancelTextLabel();">
+                            <div class="text-label-modal-actions">
+                                <button class="text-label-modal-cancel" onclick="builderCancelTextLabel()">Cancel</button>
+                                <button class="text-label-modal-confirm" onclick="builderConfirmTextLabel()">Add Label</button>
+                            </div>
+                        </div>
                     </div>
                     </div><!-- /.builder-layout -->
                 </div>
@@ -1923,6 +2095,12 @@
 
         // ── Emissive helpers ──────────────────────────────────────
         function applyEmissive(obj, hex, intensity) {
+            // Sprites: tint the material color instead of emissive
+            if (obj.isSprite) {
+                if (intensity > 0) obj.material.color.setHex(0x88ff88);
+                else obj.material.color.setHex(0xffffff);
+                return;
+            }
             obj.traverse(c => {
                 if (c.isMesh && c.material) {
                     (Array.isArray(c.material) ? c.material : [c.material]).forEach(m => {
@@ -2009,6 +2187,9 @@
             const n2 = counts['serpentine-section'] || 0;
             if (el1) el1.textContent = `${n1} placed \u00B7 118" dia`;
             if (el2) el2.textContent = `${n2} placed \u00B7 83"L`;
+            const n3 = counts['text-label'] || 0;
+            const el3 = document.getElementById('obj-text-count');
+            if (el3) el3.textContent = `${n3} placed \u00B7 floor label`;
         }
 
         // Real-world dimensions in inches (from spec)
@@ -2347,7 +2528,7 @@
         };
 
         // ── HUD panel management ──────────────────────────────────
-        const PANEL_IDS = ['objects','camera','light','display','inspector'];
+        const PANEL_IDS = ['objects','camera','light','display','align','inspector'];
         window.hudTogglePanel = function(id) {
             const el = document.getElementById('panel-' + id);
             const btn = document.getElementById('hud-' + id);
@@ -2525,6 +2706,114 @@
         window.ctxSelectAll     = function() { hideCtxMenu(); selectAll(); };
         window.ctxDeselectAll   = function() { hideCtxMenu(); deselectAll(); };
         window.ctxGroupSelected = function() { hideCtxMenu(); builderCreateGroup(); selectedObjects.forEach((_, i, arr) => { if (i === 0) {} }); /* group is created, then user assigns */ };
+
+        // ── Alignment helper ──────────────────────────────────────
+        window.builderAlign = function(mode) {
+            if (selectedObjects.length < 2) return;
+            const xs = selectedObjects.map(o => o.position.x);
+            const zs = selectedObjects.map(o => o.position.z);
+            const minX = Math.min(...xs), maxX = Math.max(...xs);
+            const minZ = Math.min(...zs), maxZ = Math.max(...zs);
+            switch (mode) {
+                case 'left':    selectedObjects.forEach(o => { o.position.x = minX; }); break;
+                case 'right':   selectedObjects.forEach(o => { o.position.x = maxX; }); break;
+                case 'centerX': { const cx = (minX + maxX) / 2; selectedObjects.forEach(o => { o.position.x = cx; }); break; }
+                case 'front':   selectedObjects.forEach(o => { o.position.z = minZ; }); break;
+                case 'back':    selectedObjects.forEach(o => { o.position.z = maxZ; }); break;
+                case 'centerZ': { const cz = (minZ + maxZ) / 2; selectedObjects.forEach(o => { o.position.z = cz; }); break; }
+                case 'distX': {
+                    if (selectedObjects.length < 3) break;
+                    const sorted = [...selectedObjects].sort((a, b) => a.position.x - b.position.x);
+                    const step = (maxX - minX) / (sorted.length - 1);
+                    sorted.forEach((o, i) => { o.position.x = minX + step * i; });
+                    break;
+                }
+                case 'distZ': {
+                    if (selectedObjects.length < 3) break;
+                    const sorted = [...selectedObjects].sort((a, b) => a.position.z - b.position.z);
+                    const step = (maxZ - minZ) / (sorted.length - 1);
+                    sorted.forEach((o, i) => { o.position.z = minZ + step * i; });
+                    break;
+                }
+            }
+        };
+
+        // ── Text label sprites ────────────────────────────────────
+        function makeTextSprite(text) {
+            const W = 512, H = 128;
+            const canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, W, H);
+            // Background pill
+            ctx.fillStyle = 'rgba(18,28,18,0.88)';
+            ctx.beginPath();
+            const r = 20;
+            ctx.moveTo(r + 8, 8); ctx.lineTo(W - r - 8, 8);
+            ctx.arcTo(W - 8, 8, W - 8, 8 + r, r);
+            ctx.lineTo(W - 8, H - r - 8);
+            ctx.arcTo(W - 8, H - 8, W - r - 8, H - 8, r);
+            ctx.lineTo(r + 8, H - 8);
+            ctx.arcTo(8, H - 8, 8, H - r - 8, r);
+            ctx.lineTo(8, 8 + r);
+            ctx.arcTo(8, 8, r + 8, 8, r);
+            ctx.closePath();
+            ctx.fill();
+            // Border
+            ctx.strokeStyle = 'rgba(119,163,97,0.85)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            // Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 46px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, W / 2, H / 2);
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, sizeAttenuation: true });
+            const sprite = new THREE.Sprite(mat);
+            const uPerFt = window._sceneUnitsPerFoot || 0.08;
+            sprite.scale.set(8 * uPerFt, 2 * uPerFt, 1);
+            sprite.userData.isPlacedObject = true;
+            sprite.userData.objectType = 'text-label';
+            sprite.userData.labelText = text;
+            sprite.position.set((Math.random() - 0.5) * 2, (window._floorY || 0) + uPerFt * 0.6, (Math.random() - 0.5) * 2);
+            return sprite;
+        }
+
+        window.builderAddTextLabel = function(text) {
+            if (!text || !text.trim() || !scene) return;
+            const sprite = makeTextSprite(text.trim());
+            scene.add(sprite);
+            placedObjects.push(sprite);
+            setSelected(sprite);
+            updateObjectCount();
+        };
+
+        // Modal controls
+        window.builderPromptTextLabel = function() {
+            const modal = document.getElementById('text-label-modal');
+            if (modal) {
+                modal.classList.add('open');
+                setTimeout(() => { const inp = document.getElementById('text-label-input'); if (inp) inp.focus(); }, 60);
+            }
+        };
+        window.builderConfirmTextLabel = function() {
+            const inp = document.getElementById('text-label-input');
+            const modal = document.getElementById('text-label-modal');
+            if (inp) {
+                const text = inp.value.trim();
+                if (text) window.builderAddTextLabel(text);
+                inp.value = '';
+            }
+            if (modal) modal.classList.remove('open');
+        };
+        window.builderCancelTextLabel = function() {
+            const inp = document.getElementById('text-label-input');
+            const modal = document.getElementById('text-label-modal');
+            if (inp) inp.value = '';
+            if (modal) modal.classList.remove('open');
+        };
 
         window.builderToggle = function(tog) {
             const btn = document.getElementById('tog-' + tog);
