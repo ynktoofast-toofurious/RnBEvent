@@ -713,6 +713,61 @@
         .builder-btn:hover { background: rgba(119,163,97,0.3); color: #fff; border-color: #77a361; }
         .builder-btn.active { background: #2c3e2c; color: #fff; border-color: #77a361; }
 
+        /* ── Canvas context menu ────────────────────────────────── */
+        .ctx-menu {
+            position: fixed;
+            z-index: 9999;
+            background: rgba(20,30,20,0.96);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(119,163,97,0.3);
+            border-radius: 10px;
+            padding: 6px 0;
+            min-width: 170px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            display: none;
+            animation: ctxFadeIn 0.12s ease;
+        }
+        .ctx-menu.visible { display: block; }
+        @keyframes ctxFadeIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+        .ctx-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 16px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.85);
+            cursor: pointer;
+            transition: background 0.12s;
+            font-family: inherit;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+        }
+        .ctx-item:hover { background: rgba(119,163,97,0.25); color: #fff; }
+        .ctx-item.danger:hover { background: rgba(220,70,70,0.25); color: #ff8888; }
+        .ctx-sep { height: 1px; background: rgba(255,255,255,0.1); margin: 4px 0; }
+        .ctx-label {
+            padding: 5px 16px 3px;
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.35);
+            text-transform: uppercase;
+        }
+
+        /* Multi-select count badge on HUD inspector btn */
+        .hud-sel-badge {
+            background: #77a361;
+            color: #fff;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            margin-left: 2px;
+            display: none;
+        }
+        .hud-sel-badge.visible { display: inline-block; }
+
         @media (max-width: 900px) {
             .builder-layout { display: block; }
             .builder-hud { flex-wrap: nowrap; border-radius: 28px; top: 8px; }
@@ -1196,7 +1251,7 @@
                                 <!-- Inspector (selection) -->
                                 <button class="hud-btn" id="hud-inspector" onclick="hudTogglePanel('inspector')">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 17h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/></svg>
-                                    Inspector
+                                    Inspector<span class="hud-sel-badge" id="sel-badge"></span>
                                 </button>
                                 <div class="hud-sep"></div>
                                 <!-- Freeze layout -->
@@ -1290,6 +1345,32 @@
                             </div>
 
                         </div><!-- /.builder-canvas-wrap -->
+
+                    <!-- Canvas right-click context menu (fixed, outside canvas wrap so it escapes overflow:hidden) -->
+                    <div class="ctx-menu" id="ctx-menu">
+                        <div class="ctx-label" id="ctx-title">Selection</div>
+                        <button class="ctx-item" onclick="ctxDuplicate()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                            Duplicate
+                        </button>
+                        <button class="ctx-item" onclick="ctxGroupSelected()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg>
+                            Group selection
+                        </button>
+                        <div class="ctx-sep"></div>
+                        <button class="ctx-item" onclick="ctxSelectAll()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h2V3c-1.1 0-2 .9-2 2zm0 8h2v-2H3v2zm4 8h2v-2H7v2zM3 9h2V7H3v2zm10-6h-2v2h2V3zm6 0v2h2c0-1.1-.9-2-2-2zM5 21v-2H3c0 1.1.9 2 2 2zm-2-4h2v-2H3v2zM9 3H7v2h2V3zm2 18h2v-2h-2v2zm8-8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2zm0-12h2V7h-2v2zm0 8h2v-2h-2v2zm-4 4h2v-2h-2v2zm0-16h2V3h-2v2z"/></svg>
+                            Select all
+                        </button>
+                        <button class="ctx-item" onclick="ctxDeselectAll()">
+                            Deselect all
+                        </button>
+                        <div class="ctx-sep"></div>
+                        <button class="ctx-item danger" onclick="ctxRemoveSelected()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            Remove selected
+                        </button>
+                    </div>
                     </div><!-- /.builder-layout -->
                 </div>
             </div>
@@ -1830,35 +1911,94 @@
 
         // Object placement system
         let placedObjects = [], selectedObject = null;
+        let selectedObjects = [];   // multi-select array
         const templates = {};
         let isDragging = false;
         const dragPlane  = new THREE.Plane();
         const dragOffset = new THREE.Vector3();
+        // Per-object drag offsets for multi-drag
+        const dragOffsets = new Map();
         const raycaster  = new THREE.Raycaster();
         const mouse      = new THREE.Vector2();
 
-        function setSelected(obj) {
-            if (selectedObject) {
-                selectedObject.traverse(c => {
-                    if (c.isMesh && c.material) {
-                        (Array.isArray(c.material) ? c.material : [c.material])
-                            .forEach(m => { if (m.emissive) m.emissive.setHex(0x000000); });
-                    }
-                });
+        // ── Emissive helpers ──────────────────────────────────────
+        function applyEmissive(obj, hex, intensity) {
+            obj.traverse(c => {
+                if (c.isMesh && c.material) {
+                    (Array.isArray(c.material) ? c.material : [c.material]).forEach(m => {
+                        if (!m._origEmissive) m._origEmissive = m.emissive ? m.emissive.getHex() : 0x000000;
+                        if (m.emissive) {
+                            m.emissive.setHex(hex);
+                            m.emissiveIntensity = intensity;
+                        }
+                    });
+                }
+            });
+        }
+        function clearEmissive(obj) { applyEmissive(obj, 0x000000, 0); }
+
+        // ── Selection system (multi-select) ───────────────────────
+        // selectedObjects = active set; selectedObject = primary (last clicked)
+        function addToSelection(obj) {
+            if (!selectedObjects.includes(obj)) {
+                selectedObjects.push(obj);
+                applyEmissive(obj, 0x33aa22, 0.7);
             }
             selectedObject = obj;
+            syncSelectionUI();
+        }
+        function removeFromSelection(obj) {
+            clearEmissive(obj);
+            selectedObjects = selectedObjects.filter(o => o !== obj);
+            selectedObject = selectedObjects.length ? selectedObjects[selectedObjects.length - 1] : null;
+            syncSelectionUI();
+        }
+        function setSingleSelected(obj) {
+            // clear all current
+            selectedObjects.forEach(o => clearEmissive(o));
+            selectedObjects = [];
+            selectedObject = null;
             if (obj) {
-                obj.traverse(c => {
-                    if (c.isMesh && c.material) {
-                        (Array.isArray(c.material) ? c.material : [c.material])
-                            .forEach(m => { if (m.emissive) m.emissive.setHex(0x224411); });
-                    }
-                });
+                selectedObjects = [obj];
+                selectedObject = obj;
+                applyEmissive(obj, 0x33aa22, 0.7);
             }
-            // refresh inspector if it's open
+            syncSelectionUI();
+        }
+        function selectAll() {
+            placedObjects.forEach(o => {
+                if (!selectedObjects.includes(o)) {
+                    selectedObjects.push(o);
+                    applyEmissive(o, 0x33aa22, 0.7);
+                }
+            });
+            selectedObject = placedObjects.length ? placedObjects[placedObjects.length - 1] : null;
+            syncSelectionUI();
+        }
+        function deselectAll() {
+            selectedObjects.forEach(o => clearEmissive(o));
+            selectedObjects = [];
+            selectedObject = null;
+            syncSelectionUI();
+        }
+        function syncSelectionUI() {
+            // badge on inspector HUD button
+            const badge = document.getElementById('sel-badge');
+            if (badge) {
+                if (selectedObjects.length > 0) {
+                    badge.textContent = selectedObjects.length;
+                    badge.classList.add('visible');
+                } else {
+                    badge.classList.remove('visible');
+                }
+            }
+            // refresh inspector if open
             const inspPanel = document.getElementById('panel-inspector');
             if (inspPanel && inspPanel.classList.contains('open')) refreshInspector();
         }
+
+        // keep setSelected as alias for single-select (used by other code)
+        function setSelected(obj) { setSingleSelected(obj); }
 
         function updateObjectCount() {
             const counts = {};
@@ -2024,49 +2164,100 @@
             ro.observe(wrap);
             resize();
 
-            // Pointer events for object selection & drag
+            // ── Pointer events for selection, drag, context menu ──
             const cvs = renderer.domElement;
 
-            cvs.addEventListener('pointerdown', (e) => {
-                if (e.button !== 0) return;
+            // Helper: resolve top-level placed object from ray hit
+            function resolveTarget(hits) {
+                if (!hits.length) return null;
+                let t = hits[0].object;
+                while (t.parent && !t.userData.isPlacedObject) t = t.parent;
+                return placedObjects.includes(t) ? t : null;
+            }
+            function getPointerNDC(e) {
                 const rect = cvs.getBoundingClientRect();
-                mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-                mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
-                raycaster.setFromCamera(mouse, camera);
+                return {
+                    x:  ((e.clientX - rect.left) / rect.width)  * 2 - 1,
+                    y: -((e.clientY - rect.top)  / rect.height) * 2 + 1
+                };
+            }
 
-                const hits = raycaster.intersectObjects(placedObjects, true);
-                if (hits.length > 0) {
-                    let target = hits[0].object;
-                    while (target.parent && !target.userData.isPlacedObject) target = target.parent;
-                    setSelected(target);
+            cvs.addEventListener('pointerdown', (e) => {
+                hideCtxMenu();
+                if (e.button !== 0) return;   // left-click only for drag/select
+                const ndc = getPointerNDC(e);
+                mouse.x = ndc.x; mouse.y = ndc.y;
+                raycaster.setFromCamera(mouse, camera);
+                const target = resolveTarget(raycaster.intersectObjects(placedObjects, true));
+
+                if (target) {
+                    if (e.shiftKey) {
+                        // Shift+click: toggle in selection
+                        if (selectedObjects.includes(target)) removeFromSelection(target);
+                        else addToSelection(target);
+                    } else {
+                        // Plain click: if not already selected, single-select it
+                        if (!selectedObjects.includes(target)) setSingleSelected(target);
+                        else selectedObject = target; // already selected — just update primary
+                    }
+
+                    // Setup drag for ALL currently selected objects
                     isDragging = true;
                     controls.enabled = false;
                     dragPlane.set(new THREE.Vector3(0, 1, 0), -target.position.y);
                     const pt = new THREE.Vector3();
                     raycaster.ray.intersectPlane(dragPlane, pt);
-                    dragOffset.copy(target.position).sub(pt);
+                    dragOffsets.clear();
+                    selectedObjects.forEach(o => {
+                        dragOffsets.set(o, new THREE.Vector3().copy(o.position).sub(pt));
+                    });
                     e.stopPropagation();
                 } else {
-                    setSelected(null);
+                    if (!e.shiftKey) deselectAll();
                 }
             });
 
             cvs.addEventListener('pointermove', (e) => {
-                if (!isDragging || !selectedObject) return;
-                const rect = cvs.getBoundingClientRect();
-                mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-                mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+                if (!isDragging || selectedObjects.length === 0) return;
+                const ndc = getPointerNDC(e);
+                mouse.x = ndc.x; mouse.y = ndc.y;
                 raycaster.setFromCamera(mouse, camera);
                 const pt = new THREE.Vector3();
                 if (raycaster.ray.intersectPlane(dragPlane, pt)) {
-                    const newPos = pt.add(dragOffset);
-                    selectedObject.position.x = newPos.x;
-                    selectedObject.position.z = newPos.z;
+                    selectedObjects.forEach(o => {
+                        const off = dragOffsets.get(o);
+                        if (off) {
+                            o.position.x = pt.x + off.x;
+                            o.position.z = pt.z + off.z;
+                        }
+                    });
                 }
             });
 
-            cvs.addEventListener('pointerup',    () => { isDragging = false; controls.enabled = true; });
-            cvs.addEventListener('pointercancel',() => { isDragging = false; controls.enabled = true; });
+            cvs.addEventListener('pointerup',    () => { isDragging = false; controls.enabled = true; dragOffsets.clear(); });
+            cvs.addEventListener('pointercancel',() => { isDragging = false; controls.enabled = true; dragOffsets.clear(); });
+
+            // ── Right-click context menu ──
+            cvs.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const ndc = getPointerNDC(e);
+                mouse.x = ndc.x; mouse.y = ndc.y;
+                raycaster.setFromCamera(mouse, camera);
+                const target = resolveTarget(raycaster.intersectObjects(placedObjects, true));
+
+                // If right-clicked on an unselected object, add it to selection
+                if (target && !selectedObjects.includes(target)) addToSelection(target);
+
+                const count = selectedObjects.length;
+                const title = document.getElementById('ctx-title');
+                if (title) title.textContent = count === 0 ? 'Scene' : count === 1 ? '1 object selected' : `${count} objects selected`;
+                showCtxMenu(e.clientX, e.clientY);
+            });
+
+            // Close ctx menu on any left click outside
+            document.addEventListener('pointerdown', (e) => {
+                if (!e.target.closest('#ctx-menu')) hideCtxMenu();
+            }, true);
 
             // Keyboard rotation for selected object
             document.addEventListener('keydown', (e) => {
@@ -2203,9 +2394,10 @@
             refreshInspector();
         };
         window.builderAddToGroup = function(idx) {
-            if (!selectedObject) return;
-            window._groups.forEach(g => { g.members = g.members.filter(m => m !== selectedObject); });
-            window._groups[idx].members.push(selectedObject);
+            if (selectedObjects.length === 0) return;
+            // remove all selected from any existing group first
+            window._groups.forEach(g => { g.members = g.members.filter(m => !selectedObjects.includes(m)); });
+            selectedObjects.forEach(o => { window._groups[idx].members.push(o); });
             refreshInspector();
         };
         window.builderSelectGroup = function(idx) {
@@ -2223,23 +2415,29 @@
             setSelected(grp.members[grp.members.length - 1]);
         };
 
-        // ── Duplicate selected ────────────────────────────────────
+        // ── Duplicate — clones all selected objects ───────────────
         window.builderDuplicateSelected = function() {
-            if (!selectedObject || !window._sceneUnitsPerFoot) return;
-            const dup = selectedObject.clone();
+            if (selectedObjects.length === 0 || !window._sceneUnitsPerFoot) return;
             const offset = window._sceneUnitsPerFoot * 1.5;
-            dup.position.set(selectedObject.position.x + offset, selectedObject.position.y, selectedObject.position.z + offset);
-            dup.rotation.copy(selectedObject.rotation);
-            dup.scale.copy(selectedObject.scale);
-            dup.userData = Object.assign({}, selectedObject.userData);
-            window._scene.add(dup);
-            placedObjects.push(dup);
+            const newObjs = [];
+            selectedObjects.forEach(src => {
+                const dup = src.clone();
+                dup.position.set(src.position.x + offset, src.position.y, src.position.z + offset);
+                dup.rotation.copy(src.rotation);
+                dup.scale.copy(src.scale);
+                dup.userData = Object.assign({}, src.userData);
+                window._scene.add(dup);
+                placedObjects.push(dup);
+                newObjs.push(dup);
+            });
             updateObjectCount();
-            setSelected(dup);
+            // select the new clones
+            deselectAll();
+            newObjs.forEach(o => addToSelection(o));
             refreshInspector();
         };
 
-        // ── Set rotation from slider ───────────────────────────────
+        // ── Set rotation from slider (primary selected object) ────
         window.builderSetRotation = function(deg) {
             if (!selectedObject) return;
             selectedObject.rotation.y = parseFloat(deg) * (Math.PI / 180);
@@ -2249,28 +2447,42 @@
         function refreshInspector() {
             const body = document.getElementById('inspector-body');
             if (!body) return;
-            if (!selectedObject) {
+
+            const count = selectedObjects.length;
+            if (count === 0) {
                 body.innerHTML = '<div class="inspector-empty">No object selected — click an object in the scene</div>';
                 return;
             }
-            const rotDeg = Math.round(((selectedObject.rotation.y * 180 / Math.PI) % 360 + 360) % 360);
-            const posX = selectedObject.position.x.toFixed(1);
-            const posZ = selectedObject.position.z.toFixed(1);
-            const name = selectedObject.userData.objectType || 'Object';
-            let groupChips = window._groups.map((g, i) => {
-                const inGroup = g.members.includes(selectedObject);
-                return `<span class="group-chip${inGroup ? ' active-group' : ''}" onclick="builderAddToGroup(${i})">${g.name}${inGroup ? ' ✓' : ''}</span>`;
-            }).join('');
 
-            body.innerHTML = `
-                <div style="color:#fff;font-size:13px;font-weight:700;margin-bottom:6px">${name}</div>
-                <div style="color:rgba(255,255,255,0.4);font-size:10px;margin-bottom:12px">x: ${posX} &nbsp;|&nbsp; z: ${posZ}</div>
-                <div class="panel-slider-row">
+            // Multi-select summary vs single
+            let headerHTML = '';
+            let sliderHTML = '';
+            if (count > 1) {
+                headerHTML = `<div style="color:#fff;font-size:13px;font-weight:700;margin-bottom:6px">${count} objects selected</div>
+                    <div style="color:rgba(255,255,255,0.4);font-size:10px;margin-bottom:12px">Shift+click to add/remove · drag to move all</div>`;
+            } else {
+                const rotDeg = Math.round(((selectedObject.rotation.y * 180 / Math.PI) % 360 + 360) % 360);
+                const posX = selectedObject.position.x.toFixed(1);
+                const posZ = selectedObject.position.z.toFixed(1);
+                const name = selectedObject.userData.objectType || 'Object';
+                headerHTML = `<div style="color:#fff;font-size:13px;font-weight:700;margin-bottom:6px">${name}</div>
+                    <div style="color:rgba(255,255,255,0.4);font-size:10px;margin-bottom:12px">x: ${posX} &nbsp;|&nbsp; z: ${posZ}</div>`;
+                sliderHTML = `<div class="panel-slider-row">
                     <span class="panel-slider-label">Rotation</span>
                     <input type="range" class="panel-slider" id="insp-rot-slider" min="0" max="359" value="${rotDeg}"
                         oninput="builderSetRotation(this.value);document.getElementById('insp-rot-val').textContent=Math.round(this.value)+'°'">
                     <span class="panel-slider-val" id="insp-rot-val">${rotDeg}°</span>
-                </div>
+                </div>`;
+            }
+
+            let groupChips = window._groups.map((g, i) => {
+                const inGroup = selectedObjects.every(o => g.members.includes(o));
+                return `<span class="group-chip${inGroup ? ' active-group' : ''}" onclick="builderAddToGroup(${i})">${g.name}${inGroup ? ' ✓' : ''}</span>`;
+            }).join('');
+
+            body.innerHTML = `
+                ${headerHTML}
+                ${sliderHTML}
                 <div class="inspector-action-grid">
                     <button class="panel-btn" onclick="builderRotateSelected(-15)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/></svg>-15°
@@ -2291,6 +2503,28 @@
                 <button class="builder-btn" onclick="builderClearObjects()">Clear All Objects</button>
             `;
         }
+
+        // ── Context menu helpers ──────────────────────────────────
+        function showCtxMenu(x, y) {
+            const m = document.getElementById('ctx-menu');
+            if (!m) return;
+            m.style.left = x + 'px';
+            m.style.top  = y + 'px';
+            m.classList.add('visible');
+            // keep inside viewport
+            const r = m.getBoundingClientRect();
+            if (r.right  > window.innerWidth)  m.style.left = (x - r.width)  + 'px';
+            if (r.bottom > window.innerHeight)  m.style.top  = (y - r.height) + 'px';
+        }
+        function hideCtxMenu() {
+            const m = document.getElementById('ctx-menu');
+            if (m) m.classList.remove('visible');
+        }
+        window.ctxDuplicate     = function() { hideCtxMenu(); builderDuplicateSelected(); };
+        window.ctxRemoveSelected = function() { hideCtxMenu(); builderRemoveSelected(); };
+        window.ctxSelectAll     = function() { hideCtxMenu(); selectAll(); };
+        window.ctxDeselectAll   = function() { hideCtxMenu(); deselectAll(); };
+        window.ctxGroupSelected = function() { hideCtxMenu(); builderCreateGroup(); selectedObjects.forEach((_, i, arr) => { if (i === 0) {} }); /* group is created, then user assigns */ };
 
         window.builderToggle = function(tog) {
             const btn = document.getElementById('tog-' + tog);
@@ -2337,27 +2571,34 @@
             }
         };
 
+        // Remove all currently selected objects
         window.builderRemoveSelected = function() {
-            if (!selectedObject) return;
-            scene.remove(selectedObject);
-            placedObjects = placedObjects.filter(o => o !== selectedObject);
+            if (selectedObjects.length === 0) return;
+            selectedObjects.forEach(o => {
+                scene.remove(o);
+                placedObjects = placedObjects.filter(p => p !== o);
+                window._groups.forEach(g => { g.members = g.members.filter(m => m !== o); });
+            });
+            selectedObjects = [];
             selectedObject = null;
-            document.getElementById('obj-selection-bar').classList.remove('visible');
             updateObjectCount();
+            syncSelectionUI();
         };
 
         window.builderClearObjects = function() {
             placedObjects.forEach(o => scene.remove(o));
             placedObjects = [];
+            selectedObjects = [];
             selectedObject = null;
-            document.getElementById('obj-selection-bar').classList.remove('visible');
+            window._groups.forEach(g => { g.members = []; });
             updateObjectCount();
+            syncSelectionUI();
         };
 
         window.builderRotateSelected = function(deg) {
+            // rotate all selected; update slider from primary
+            selectedObjects.forEach(o => { o.rotation.y += deg * (Math.PI / 180); });
             if (!selectedObject) return;
-            selectedObject.rotation.y += deg * (Math.PI / 180);
-            // sync slider if inspector open
             const slider = document.getElementById('insp-rot-slider');
             const val = document.getElementById('insp-rot-val');
             if (slider) {
