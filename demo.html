@@ -422,191 +422,305 @@
             pointer-events: none;
             opacity: 0.8;
         }
-        /* Controls panel */
-        .builder-controls {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 24px rgba(44,62,44,0.1);
-            overflow: hidden;
+        /* ── Builder layout ── full width canvas only ─────────── */
+        .builder-layout { display: block; }
+
+        /* ── Floating HUD toolbar on canvas ────────────────────── */
+        .builder-hud {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 20;
+            background: rgba(20,30,20,0.72);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            padding: 6px 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-        .builder-ctrl-head {
-            background: linear-gradient(135deg, #2c3e2c, #3d5c2c);
-            padding: 14px 18px;
-            color: #fff;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        .builder-ctrl-section {
-            padding: 16px 18px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .builder-ctrl-section:last-child { border-bottom: none; }
-        .builder-ctrl-title {
+        .hud-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            background: transparent;
+            color: rgba(255,255,255,0.85);
             font-size: 11px;
             font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.18s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .hud-btn:hover { background: rgba(119,163,97,0.35); color: #fff; border-color: #77a361; }
+        .hud-btn.active { background: #77a361; color: #fff; border-color: #77a361; }
+        .hud-btn.danger:hover { background: rgba(220,70,70,0.4); border-color: #e05555; }
+        .hud-sep { width: 1px; background: rgba(255,255,255,0.14); margin: 4px 2px; }
+
+        /* ── Freeze mode badge ─────────────────────────────────── */
+        .builder-freeze-badge {
+            position: absolute;
+            top: 56px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(119,163,97,0.92);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 4px 16px;
+            border-radius: 20px;
+            z-index: 20;
+            display: none;
+            pointer-events: none;
+        }
+        .builder-freeze-badge.visible { display: block; }
+
+        /* ── Slide-up panels ────────────────────────────────────── */
+        .builder-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(22,32,22,0.94);
+            backdrop-filter: blur(14px);
+            border-top: 1px solid rgba(119,163,97,0.25);
+            border-radius: 16px 16px 0 0;
+            padding: 18px 20px 20px;
+            z-index: 30;
+            transform: translateY(100%);
+            transition: transform 0.28s cubic-bezier(0.34,1.2,0.64,1);
+            max-height: 70%;
+            overflow-y: auto;
+        }
+        .builder-panel.open { transform: translateY(0); }
+        .builder-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .builder-panel-title {
+            color: #a4c195;
+            font-size: 11px;
+            font-weight: 700;
             letter-spacing: 1.5px;
-            color: #77a361;
-            margin-bottom: 10px;
             text-transform: uppercase;
         }
+        .builder-panel-close {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            line-height: 1;
+            transition: background 0.15s;
+        }
+        .builder-panel-close:hover { background: rgba(255,255,255,0.2); }
+
+        /* Panel grid layouts */
+        .panel-btn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+        .panel-btn {
+            padding: 10px 8px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: rgba(255,255,255,0.85);
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.18s;
+            font-family: inherit;
+        }
+        .panel-btn:hover { background: rgba(119,163,97,0.3); border-color: #77a361; color: #fff; }
+        .panel-btn.active { background: #77a361; border-color: #77a361; color: #fff; }
+        .panel-btn svg { display: block; margin: 0 auto 5px; }
+
+        /* Slider row */
+        .panel-slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .panel-slider-label {
+            color: rgba(255,255,255,0.7);
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            width: 62px;
+            flex-shrink: 0;
+        }
+        .panel-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.15);
+            outline: none;
+            cursor: pointer;
+        }
+        .panel-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: #77a361;
+            box-shadow: 0 0 0 3px rgba(119,163,97,0.3);
+            cursor: pointer;
+        }
+        .panel-slider-val {
+            color: #a4c195;
+            font-size: 11px;
+            width: 38px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .panel-section-title {
+            color: rgba(255,255,255,0.4);
+            font-size: 10px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            margin: 14px 0 8px;
+        }
+        .panel-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .panel-toggle-row:last-child { border-bottom: none; }
+        .panel-toggle-label { color: rgba(255,255,255,0.8); font-size: 13px; }
+        .panel-toggle {
+            width: 38px; height: 20px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .panel-toggle.on { background: #77a361; }
+        .panel-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .panel-toggle.on::after { transform: translateX(18px); }
+
+        /* Object catalog panel */
+        .panel-obj-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+        .panel-obj-icon {
+            width: 36px; height: 36px;
+            background: rgba(119,163,97,0.2);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .panel-obj-meta { flex: 1; min-width: 0; }
+        .panel-obj-name { color: #fff; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+        .panel-obj-sub { color: rgba(255,255,255,0.45); font-size: 10px; margin-top: 2px; }
+        .panel-obj-add {
+            background: #77a361;
+            border: none;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 7px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.18s;
+            letter-spacing: 0.5px;
+        }
+        .panel-obj-add:hover { background: #5d8a49; }
+
+        /* Inspector panel (selected object) */
+        .inspector-empty {
+            color: rgba(255,255,255,0.35);
+            font-size: 12px;
+            text-align: center;
+            padding: 16px 0;
+        }
+        .inspector-action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        /* Group chip list */
+        .group-chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .group-chip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(119,163,97,0.22);
+            border: 1px solid rgba(119,163,97,0.4);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 11px;
+            color: #a4c195;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .group-chip:hover { background: rgba(119,163,97,0.4); color: #fff; }
+        .group-chip.active-group { background: #77a361; color: #fff; border-color: #77a361; }
+
+        /* Shared builder-btn (kept for backward compat, only in panels now) */
         .builder-btn {
             display: block;
             width: 100%;
             padding: 9px 14px;
             margin-bottom: 6px;
-            background: #f5f7f3;
-            border: 1px solid #e0e8da;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
             border-radius: 7px;
             font-size: 13px;
-            color: #2c3e2c;
+            color: rgba(255,255,255,0.85);
             cursor: pointer;
             transition: all 0.2s;
             font-family: inherit;
             text-align: left;
         }
         .builder-btn:last-child { margin-bottom: 0; }
-        .builder-btn:hover {
-            background: #77a361;
-            color: #fff;
-            border-color: #77a361;
-        }
-        .builder-btn.active {
-            background: #2c3e2c;
-            color: #fff;
-            border-color: #2c3e2c;
-        }
-        .builder-toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .builder-toggle-label {
-            font-size: 13px;
-            color: #444;
-        }
-        .builder-toggle {
-            width: 38px;
-            height: 20px;
-            border-radius: 10px;
-            background: #ddd;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.2s;
-            border: none;
-            flex-shrink: 0;
-        }
-        .builder-toggle.on { background: #77a361; }
-        .builder-toggle::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #fff;
-            transition: transform 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .builder-toggle.on::after { transform: translateX(18px); }
-        .builder-info-box {
-            background: #f5f7f3;
-            border-radius: 8px;
-            padding: 12px 14px;
-            font-size: 12px;
-            color: #555;
-            line-height: 1.7;
-        }
-        .builder-info-box strong { color: #2c3e2c; }
-
-        /* Object catalog */
-        .builder-object-card {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f5f7f3;
-            border: 1px solid #e0e8da;
-            border-radius: 8px;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-        }
-        .builder-object-icon {
-            width: 38px;
-            height: 38px;
-            background: #e8f0e4;
-            border-radius: 7px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .builder-object-meta { flex: 1; min-width: 0; }
-        .builder-object-name {
-            font-size: 11px;
-            font-weight: 700;
-            color: #2c3e2c;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-        .builder-object-sub {
-            font-size: 10px;
-            color: #888;
-            margin-top: 2px;
-        }
-        .builder-object-add-btn {
-            background: #77a361;
-            border: none;
-            color: #fff;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            letter-spacing: 0.5px;
-            transition: background 0.2s;
-            font-family: inherit;
-            flex-shrink: 0;
-        }
-        .builder-object-add-btn:hover { background: #5d8a49; }
-        .builder-selection-bar {
-            background: #f0f5ee;
-            border: 1px solid #c5d9bf;
-            border-radius: 8px;
-            padding: 10px 12px;
-            margin-top: 4px;
-            display: none;
-        }
-        .builder-selection-bar.visible { display: block; }
-        .builder-selection-label {
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            color: #77a361;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .builder-selection-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .builder-selection-btns .builder-btn {
-            margin-bottom: 0;
-            text-align: center;
-            font-size: 12px;
-            padding: 7px 10px;
-        }
+        .builder-btn:hover { background: rgba(119,163,97,0.3); color: #fff; border-color: #77a361; }
+        .builder-btn.active { background: #2c3e2c; color: #fff; border-color: #77a361; }
 
         @media (max-width: 900px) {
-            .builder-layout {
-                grid-template-columns: 1fr;
-            }
-            .builder-controls {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-            }
-            .builder-ctrl-head { grid-column: 1/-1; }
+            .builder-layout { display: block; }
+            .builder-hud { flex-wrap: wrap; border-radius: 12px; top: 8px; }
         }
         @media (max-width: 600px) {
-            .builder-controls { display: block; }
+            .builder-hud { gap: 4px; padding: 5px 8px; }
+            .hud-btn { padding: 5px 8px; font-size: 10px; }
+            .hud-sep { display: none; }
             .concierge-panel { height: 520px; }
         }
 
@@ -1006,12 +1120,13 @@
                 <div class="builder-wrap">
                     <div class="builder-label">
                         <h2>3D Venue Builder</h2>
-                        <p>Explore the Hampton venue model in 3D — drag to orbit, scroll to zoom, right-click to pan</p>
+                        <p>Explore the Hampton venue — use the toolbar to add objects, adjust lighting and freeze the layout</p>
                     </div>
                     <div class="builder-layout">
-                        <!-- Canvas -->
+                        <!-- Canvas + HUD + panels -->
                         <div class="builder-canvas-wrap">
                             <canvas id="builder-canvas"></canvas>
+
                             <!-- Loading overlay -->
                             <div class="builder-loading" id="builder-loading">
                                 <div class="builder-spinner"></div>
@@ -1020,97 +1135,141 @@
                                     <div class="builder-progress-bar" id="builder-prog"></div>
                                 </div>
                             </div>
-                            <div class="builder-hint" id="builder-hint"><svg width="10" height="10" viewBox="0 0 24 24" fill="white" style="vertical-align:-1px;margin-right:4px"><path d="M13 1.07V9h7c0-4.08-3.05-7.44-7-7.93zM4 15c0 4.42 3.58 8 8 8s8-3.58 8-8v-4H4v4zm7-13.93C7.05 1.56 4 4.92 4 9h7V1.07z"/></svg>Drag · Scroll · Right-click to pan</div>
-                        </div>
-                        <!-- Controls -->
-                        <div class="builder-controls">
-                            <div class="builder-ctrl-head"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="vertical-align:-2px;margin-right:6px"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>Scene Controls</div>
 
-                            <div class="builder-ctrl-section">
-                                <div class="builder-ctrl-title">Camera</div>
-                                <button class="builder-btn" onclick="builderCam('front')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>Front View</button>
-                                <button class="builder-btn" onclick="builderCam('top')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>Top View</button>
-                                <button class="builder-btn" onclick="builderCam('side')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>Side View</button>
-                                <button class="builder-btn" onclick="builderCam('iso')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L14.6 10h-5.2L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5S15.01 22 17.5 22s4.5-2.01 4.5-4.5S19.99 13 17.5 13zm0 7c-1.38 0-2.5-1.12-2.5-2.5S16.12 15 17.5 15s2.5 1.12 2.5 2.5S18.88 20 17.5 20zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg>Isometric</button>
-                                <button class="builder-btn" onclick="builderCam('reset')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>Reset Camera</button>
+                            <!-- Hint -->
+                            <div class="builder-hint" id="builder-hint">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="white" style="vertical-align:-1px;margin-right:4px"><path d="M13 1.07V9h7c0-4.08-3.05-7.44-7-7.93zM4 15c0 4.42 3.58 8 8 8s8-3.58 8-8v-4H4v4zm7-13.93C7.05 1.56 4 4.92 4 9h7V1.07z"/></svg>
+                                Drag orbit · Scroll zoom · Right-click pan
                             </div>
 
-                            <div class="builder-ctrl-section">
-                                <div class="builder-ctrl-title">Lighting</div>
-                                <button class="builder-btn" id="btn-light-day" onclick="builderLight('day')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>Day</button>
-                                <button class="builder-btn" id="btn-light-evening" onclick="builderLight('evening')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M20 15.31L23.31 12 20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>Evening</button>
-                                <button class="builder-btn" id="btn-light-night" onclick="builderLight('night')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>Night</button>
+                            <!-- Freeze badge -->
+                            <div class="builder-freeze-badge" id="freeze-badge">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="white" style="vertical-align:-1px;margin-right:5px"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                                LAYOUT LOCKED — drag objects only
                             </div>
 
-                            <div class="builder-ctrl-section">
-                                <div class="builder-ctrl-title">Display</div>
-                                <div class="builder-toggle-row">
-                                    <span class="builder-toggle-label">Wireframe</span>
-                                    <button class="builder-toggle" id="tog-wire" onclick="builderToggle('wire')"></button>
-                                </div>
-                                <div class="builder-toggle-row">
-                                    <span class="builder-toggle-label">Auto-rotate</span>
-                                    <button class="builder-toggle on" id="tog-rotate" onclick="builderToggle('rotate')"></button>
-                                </div>
-                                <div class="builder-toggle-row">
-                                    <span class="builder-toggle-label">Grid floor</span>
-                                    <button class="builder-toggle" id="tog-grid" onclick="builderToggle('grid')"></button>
-                                </div>
+                            <!-- ── FLOATING HUD TOOLBAR ── -->
+                            <div class="builder-hud">
+                                <!-- Objects -->
+                                <button class="hud-btn" id="hud-objects" onclick="hudTogglePanel('objects')">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+                                    Objects
+                                </button>
+                                <div class="hud-sep"></div>
+                                <!-- Camera -->
+                                <button class="hud-btn" id="hud-camera" onclick="hudTogglePanel('camera')">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                    View
+                                </button>
+                                <!-- Light -->
+                                <button class="hud-btn" id="hud-light" onclick="hudTogglePanel('light')">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+                                    Light
+                                </button>
+                                <!-- Display -->
+                                <button class="hud-btn" id="hud-display" onclick="hudTogglePanel('display')">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+                                    Display
+                                </button>
+                                <div class="hud-sep"></div>
+                                <!-- Inspector (selection) -->
+                                <button class="hud-btn" id="hud-inspector" onclick="hudTogglePanel('inspector')">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 17h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/></svg>
+                                    Inspector
+                                </button>
+                                <div class="hud-sep"></div>
+                                <!-- Freeze layout -->
+                                <button class="hud-btn" id="hud-freeze" onclick="builderToggleFreeze()">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                                    Freeze
+                                </button>
                             </div>
 
-                            <div class="builder-ctrl-section">
-                                <div class="builder-ctrl-title">Objects</div>
-                                <div class="builder-object-card">
-                                    <div class="builder-object-icon">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#77a361"><path d="M20 9V7c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h3v2H5v2h14v-2h-2v-2h3c1.1 0 2-.9 2-2v-2h-2zm-2 4H4V7h14v6zm-5 4h-2v-2h2v2z"/></svg>
-                                    </div>
-                                    <div class="builder-object-meta">
-                                        <div class="builder-object-name">Serpentine Table</div>
-                                        <div class="builder-object-sub" id="obj-serpentine-count">0 placed</div>
-                                    </div>
-                                    <button class="builder-object-add-btn" onclick="builderAddObject('serpentine-table')">+ ADD</button>
+                            <!-- ── PANEL: Objects ── -->
+                            <div class="builder-panel" id="panel-objects">
+                                <div class="builder-panel-header">
+                                    <span class="builder-panel-title">Add Objects</span>
+                                    <button class="builder-panel-close" onclick="hudClosePanel('objects')">&#x2715;</button>
                                 </div>
-                                <div class="builder-object-card">
-                                    <div class="builder-object-icon">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#77a361"><path d="M4 18h16v-2H4v2zm0-5h16v-2H4v2zm0-7v2h16V6H4z"/></svg>
+                                <div class="panel-obj-card">
+                                    <div class="panel-obj-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#77a361"><path d="M20 9V7c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h3v2H5v2h14v-2h-2v-2h3c1.1 0 2-.9 2-2v-2h-2zm-2 4H4V7h14v6zm-5 4h-2v-2h2v2z"/></svg></div>
+                                    <div class="panel-obj-meta">
+                                        <div class="panel-obj-name">Serpentine Table</div>
+                                        <div class="panel-obj-sub" id="obj-serpentine-count">0 placed &middot; 118" dia</div>
                                     </div>
-                                    <div class="builder-object-meta">
-                                        <div class="builder-object-name">Serpentine Section</div>
-                                        <div class="builder-object-sub" id="obj-section-count">0 placed</div>
-                                    </div>
-                                    <button class="builder-object-add-btn" onclick="builderAddObject('serpentine-section')">+ ADD</button>
+                                    <button class="panel-obj-add" onclick="builderAddObject('serpentine-table')">+ ADD</button>
                                 </div>
-                                <div class="builder-selection-bar" id="obj-selection-bar">
-                                    <div class="builder-selection-label">
-                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="#77a361" style="vertical-align:-1px;margin-right:4px"><path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 17h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/></svg>Selected &mdash; <span style="font-weight:400;opacity:.8">arrow keys to rotate</span>
+                                <div class="panel-obj-card">
+                                    <div class="panel-obj-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#77a361"><path d="M4 18h16v-2H4v2zm0-5h16v-2H4v2zm0-7v2h16V6H4z"/></svg></div>
+                                    <div class="panel-obj-meta">
+                                        <div class="panel-obj-name">Serpentine Section</div>
+                                        <div class="panel-obj-sub" id="obj-section-count">0 placed &middot; 83"L</div>
                                     </div>
-                                    <div class="builder-selection-btns">
-                                        <button class="builder-btn" onclick="builderRotateSelected(-15)">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/></svg>-15&deg;
-                                        </button>
-                                        <button class="builder-btn" onclick="builderRotateSelected(15)">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>+15&deg;
-                                        </button>
-                                        <button class="builder-btn" onclick="builderRemoveSelected()">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:4px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Remove
-                                        </button>
-                                        <button class="builder-btn" onclick="builderClearObjects()">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:4px"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>Clear All
-                                        </button>
-                                    </div>
+                                    <button class="panel-obj-add" onclick="builderAddObject('serpentine-section')">+ ADD</button>
                                 </div>
                             </div>
 
-                            <div class="builder-ctrl-section">
-                                <div class="builder-ctrl-title">About</div>
-                                <div class="builder-info-box">
-                                    <strong>Hampton Venue</strong> — the main scene.<br>
-                                    Add <strong>Serpentine Tables</strong> from the Objects panel above. Click a placed object to select it, then drag to reposition.<br><br>
-                                    Use camera + lighting controls to preview your layout.
+                            <!-- ── PANEL: Camera / View ── -->
+                            <div class="builder-panel" id="panel-camera">
+                                <div class="builder-panel-header">
+                                    <span class="builder-panel-title">Camera Views</span>
+                                    <button class="builder-panel-close" onclick="hudClosePanel('camera')">&#x2715;</button>
+                                </div>
+                                <div class="panel-btn-grid">
+                                    <button class="panel-btn" onclick="builderCam('front')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>Front</button>
+                                    <button class="panel-btn" onclick="builderCam('top')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>Top</button>
+                                    <button class="panel-btn" onclick="builderCam('side')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>Side</button>
+                                    <button class="panel-btn" onclick="builderCam('iso')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L14.6 10h-5.2L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5S15.01 22 17.5 22s4.5-2.01 4.5-4.5S19.99 13 17.5 13zm0 7c-1.38 0-2.5-1.12-2.5-2.5S16.12 15 17.5 15s2.5 1.12 2.5 2.5S18.88 20 17.5 20zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg>Iso</button>
+                                    <button class="panel-btn" onclick="builderCam('reset')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>Reset</button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+
+                            <!-- ── PANEL: Lighting ── -->
+                            <div class="builder-panel" id="panel-light">
+                                <div class="builder-panel-header">
+                                    <span class="builder-panel-title">Lighting</span>
+                                    <button class="builder-panel-close" onclick="hudClosePanel('light')">&#x2715;</button>
+                                </div>
+                                <div class="panel-btn-grid">
+                                    <button class="panel-btn active" id="btn-light-day" onclick="builderLight('day')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>Day</button>
+                                    <button class="panel-btn" id="btn-light-evening" onclick="builderLight('evening')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 15.31L23.31 12 20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>Evening</button>
+                                    <button class="panel-btn" id="btn-light-night" onclick="builderLight('night')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>Night</button>
+                                </div>
+                            </div>
+
+                            <!-- ── PANEL: Display ── -->
+                            <div class="builder-panel" id="panel-display">
+                                <div class="builder-panel-header">
+                                    <span class="builder-panel-title">Display</span>
+                                    <button class="builder-panel-close" onclick="hudClosePanel('display')">&#x2715;</button>
+                                </div>
+                                <div class="panel-toggle-row">
+                                    <span class="panel-toggle-label">Wireframe</span>
+                                    <button class="panel-toggle" id="tog-wire" onclick="builderToggle('wire')"></button>
+                                </div>
+                                <div class="panel-toggle-row">
+                                    <span class="panel-toggle-label">Auto-rotate</span>
+                                    <button class="panel-toggle on" id="tog-rotate" onclick="builderToggle('rotate')"></button>
+                                </div>
+                                <div class="panel-toggle-row">
+                                    <span class="panel-toggle-label">Grid floor</span>
+                                    <button class="panel-toggle" id="tog-grid" onclick="builderToggle('grid')"></button>
+                                </div>
+                            </div>
+
+                            <!-- ── PANEL: Inspector ── -->
+                            <div class="builder-panel" id="panel-inspector">
+                                <div class="builder-panel-header">
+                                    <span class="builder-panel-title">Inspector</span>
+                                    <button class="builder-panel-close" onclick="hudClosePanel('inspector')">&#x2715;</button>
+                                </div>
+                                <div id="inspector-body">
+                                    <div class="inspector-empty">No object selected — click an object in the scene</div>
+                                </div>
+                            </div>
+
+                        </div><!-- /.builder-canvas-wrap -->
+                    </div><!-- /.builder-layout -->
                 </div>
             </div>
         </div>
@@ -1667,7 +1826,6 @@
                 });
             }
             selectedObject = obj;
-            const bar = document.getElementById('obj-selection-bar');
             if (obj) {
                 obj.traverse(c => {
                     if (c.isMesh && c.material) {
@@ -1675,21 +1833,21 @@
                             .forEach(m => { if (m.emissive) m.emissive.setHex(0x224411); });
                     }
                 });
-                if (bar) bar.classList.add('visible');
-            } else {
-                if (bar) bar.classList.remove('visible');
             }
+            // refresh inspector if it's open
+            const inspPanel = document.getElementById('panel-inspector');
+            if (inspPanel && inspPanel.classList.contains('open')) refreshInspector();
         }
 
         function updateObjectCount() {
             const counts = {};
             placedObjects.forEach(o => { counts[o.userData.objectType] = (counts[o.userData.objectType] || 0) + 1; });
-            const ids = { 'serpentine-table': 'obj-serpentine-count', 'serpentine-section': 'obj-section-count' };
-            Object.entries(ids).forEach(([type, id]) => {
-                const el = document.getElementById(id);
-                const n = counts[type] || 0;
-                if (el) el.textContent = n === 1 ? '1 placed' : `${n} placed`;
-            });
+            const el1 = document.getElementById('obj-serpentine-count');
+            const el2 = document.getElementById('obj-section-count');
+            const n1 = counts['serpentine-table'] || 0;
+            const n2 = counts['serpentine-section'] || 0;
+            if (el1) el1.textContent = `${n1} placed \u00B7 118" dia`;
+            if (el2) el2.textContent = `${n2} placed \u00B7 83"L`;
         }
 
         // Real-world dimensions in inches (from spec)
@@ -1754,6 +1912,7 @@
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xf0ede8);
             scene.fog = new THREE.Fog(0xf0ede8, 30, 80);
+            window._scene = scene;
 
             // Camera
             camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 200);
@@ -1768,6 +1927,7 @@
             controls.minDistance = 1;
             controls.maxDistance = 60;
             controls.maxPolarAngle = Math.PI / 2 + 0.1;
+            window._controls = controls;
 
             // Lights – day preset
             applyLightPreset('day');
@@ -1974,6 +2134,143 @@
             controls.update();
         };
 
+        // ── HUD panel management ──────────────────────────────────
+        const PANEL_IDS = ['objects','camera','light','display','inspector'];
+        window.hudTogglePanel = function(id) {
+            const el = document.getElementById('panel-' + id);
+            const btn = document.getElementById('hud-' + id);
+            const isOpen = el && el.classList.contains('open');
+            PANEL_IDS.forEach(p => {
+                const pe = document.getElementById('panel-' + p);
+                const pb = document.getElementById('hud-' + p);
+                if (pe) pe.classList.remove('open');
+                if (pb) pb.classList.remove('active');
+            });
+            if (!isOpen && el) {
+                el.classList.add('open');
+                if (btn) btn.classList.add('active');
+                if (id === 'inspector') refreshInspector();
+            }
+        };
+        window.hudClosePanel = function(id) {
+            const el = document.getElementById('panel-' + id);
+            const btn = document.getElementById('hud-' + id);
+            if (el) el.classList.remove('open');
+            if (btn) btn.classList.remove('active');
+        };
+
+        // ── Freeze mode ───────────────────────────────────────────
+        window._freezeMode = false;
+        window.builderToggleFreeze = function() {
+            window._freezeMode = !window._freezeMode;
+            const badge = document.getElementById('freeze-badge');
+            const btn = document.getElementById('hud-freeze');
+            if (window._controls) {
+                window._controls.enableRotate = !window._freezeMode;
+                window._controls.enablePan = !window._freezeMode;
+                window._controls.enableZoom = true;
+            }
+            if (badge) badge.classList.toggle('visible', window._freezeMode);
+            if (btn) btn.classList.toggle('active', window._freezeMode);
+        };
+
+        // ── Groups ────────────────────────────────────────────────
+        window._groups = [];
+        window.builderCreateGroup = function() {
+            const name = 'Group ' + (window._groups.length + 1);
+            window._groups.push({ name, members: [] });
+            refreshInspector();
+        };
+        window.builderAddToGroup = function(idx) {
+            if (!selectedObject) return;
+            window._groups.forEach(g => { g.members = g.members.filter(m => m !== selectedObject); });
+            window._groups[idx].members.push(selectedObject);
+            refreshInspector();
+        };
+        window.builderSelectGroup = function(idx) {
+            const grp = window._groups[idx];
+            if (!grp || grp.members.length === 0) return;
+            grp.members.forEach(obj => {
+                obj.traverse(n => {
+                    if (n.isMesh && n.material) {
+                        n.material = n.material.clone();
+                        if (n.material.emissive) n.material.emissive.setHex(0x224422);
+                        n.material.emissiveIntensity = 0.5;
+                    }
+                });
+            });
+            setSelected(grp.members[grp.members.length - 1]);
+        };
+
+        // ── Duplicate selected ────────────────────────────────────
+        window.builderDuplicateSelected = function() {
+            if (!selectedObject || !window._sceneUnitsPerFoot) return;
+            const dup = selectedObject.clone();
+            const offset = window._sceneUnitsPerFoot * 1.5;
+            dup.position.set(selectedObject.position.x + offset, selectedObject.position.y, selectedObject.position.z + offset);
+            dup.rotation.copy(selectedObject.rotation);
+            dup.scale.copy(selectedObject.scale);
+            dup.userData = Object.assign({}, selectedObject.userData);
+            window._scene.add(dup);
+            placedObjects.push(dup);
+            updateObjectCount();
+            setSelected(dup);
+            refreshInspector();
+        };
+
+        // ── Set rotation from slider ───────────────────────────────
+        window.builderSetRotation = function(deg) {
+            if (!selectedObject) return;
+            selectedObject.rotation.y = parseFloat(deg) * (Math.PI / 180);
+        };
+
+        // ── Inspector panel refresh ────────────────────────────────
+        function refreshInspector() {
+            const body = document.getElementById('inspector-body');
+            if (!body) return;
+            if (!selectedObject) {
+                body.innerHTML = '<div class="inspector-empty">No object selected — click an object in the scene</div>';
+                return;
+            }
+            const rotDeg = Math.round(((selectedObject.rotation.y * 180 / Math.PI) % 360 + 360) % 360);
+            const posX = selectedObject.position.x.toFixed(1);
+            const posZ = selectedObject.position.z.toFixed(1);
+            const name = selectedObject.userData.objectType || 'Object';
+            let groupChips = window._groups.map((g, i) => {
+                const inGroup = g.members.includes(selectedObject);
+                return `<span class="group-chip${inGroup ? ' active-group' : ''}" onclick="builderAddToGroup(${i})">${g.name}${inGroup ? ' ✓' : ''}</span>`;
+            }).join('');
+
+            body.innerHTML = `
+                <div style="color:#fff;font-size:13px;font-weight:700;margin-bottom:6px">${name}</div>
+                <div style="color:rgba(255,255,255,0.4);font-size:10px;margin-bottom:12px">x: ${posX} &nbsp;|&nbsp; z: ${posZ}</div>
+                <div class="panel-slider-row">
+                    <span class="panel-slider-label">Rotation</span>
+                    <input type="range" class="panel-slider" id="insp-rot-slider" min="0" max="359" value="${rotDeg}"
+                        oninput="builderSetRotation(this.value);document.getElementById('insp-rot-val').textContent=Math.round(this.value)+'°'">
+                    <span class="panel-slider-val" id="insp-rot-val">${rotDeg}°</span>
+                </div>
+                <div class="inspector-action-grid">
+                    <button class="panel-btn" onclick="builderRotateSelected(-15)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/></svg>-15°
+                    </button>
+                    <button class="panel-btn" onclick="builderRotateSelected(15)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>+15°
+                    </button>
+                    <button class="panel-btn" onclick="builderDuplicateSelected()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>Dupe
+                    </button>
+                    <button class="panel-btn" onclick="builderRemoveSelected()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Remove
+                    </button>
+                </div>
+                ${window._groups.length > 0 ? `<div class="panel-section-title">Groups</div><div class="group-chip-wrap">${groupChips}</div>` : ''}
+                <div class="panel-section-title">Scene</div>
+                <button class="builder-btn" onclick="builderCreateGroup()">+ New Group</button>
+                <button class="builder-btn" onclick="builderClearObjects()">Clear All Objects</button>
+            `;
+        }
+
         window.builderToggle = function(tog) {
             const btn = document.getElementById('tog-' + tog);
             if (!btn) return;
@@ -2039,6 +2336,14 @@
         window.builderRotateSelected = function(deg) {
             if (!selectedObject) return;
             selectedObject.rotation.y += deg * (Math.PI / 180);
+            // sync slider if inspector open
+            const slider = document.getElementById('insp-rot-slider');
+            const val = document.getElementById('insp-rot-val');
+            if (slider) {
+                const d = Math.round(((selectedObject.rotation.y * 180 / Math.PI) % 360 + 360) % 360);
+                slider.value = d;
+                if (val) val.textContent = d + '°';
+            }
         };
     </script>
 
