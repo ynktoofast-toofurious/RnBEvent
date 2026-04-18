@@ -17,11 +17,526 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+      }
+    }
+    </script>
+
     <style>
-        /* Override chatbot hidden state for demo */
-        .chatbot-section {
-            display: block !important;
+        /* ── Concierge Chat ───────────────────────────────── */
+        .concierge-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
+        .concierge-label {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .concierge-label h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            color: #2c3e2c;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .concierge-label p {
+            color: #888;
+            font-size: 14px;
+        }
+        .concierge-panel {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 48px rgba(44,62,44,0.13);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+        /* Header */
+        .concierge-head {
+            background: linear-gradient(135deg, #2c3e2c 0%, #3d5c2c 100%);
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+        .concierge-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #77a361, #a4c195);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .concierge-head-info h3 {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            margin: 0 0 2px;
+            letter-spacing: 0.3px;
+        }
+        .concierge-head-info p {
+            color: #a4c195;
+            font-size: 12px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .concierge-online-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #7ecf5e;
+            display: inline-block;
+        }
+        /* Messages */
+        .concierge-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #f9faf8;
+            scroll-behavior: smooth;
+        }
+        .concierge-messages::-webkit-scrollbar { width: 5px; }
+        .concierge-messages::-webkit-scrollbar-track { background: transparent; }
+        .concierge-messages::-webkit-scrollbar-thumb { background: #d0dfc8; border-radius: 3px; }
+        /* Message rows */
+        .cmsg {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            max-width: 80%;
+        }
+        .cmsg.bot { align-self: flex-start; }
+        .cmsg.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        .cmsg-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #77a361, #a4c195);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .cmsg-body {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .cmsg-bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+        .cmsg.bot .cmsg-bubble {
+            background: #fff;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .cmsg.user .cmsg-bubble {
+            background: linear-gradient(135deg, #2c3e2c, #527141);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .cmsg-time {
+            font-size: 11px;
+            color: #bbb;
+            padding: 0 4px;
+        }
+        .cmsg.user .cmsg-time { text-align: right; }
+        /* Typing indicator */
+        .concierge-typing {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            padding: 0 20px 4px;
+            flex-shrink: 0;
+            min-height: 32px;
+        }
+        .typing-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #77a361, #a4c195);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 14px;
+            color: #fff;
+        }
+        .typing-dots {
+            background: #fff;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            padding: 12px 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .typing-dots span {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #a4c195;
+            animation: typeBounce 1.2s infinite;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typeBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+        .concierge-typing.hidden { visibility: hidden; }
+        /* Quick replies */
+        .concierge-chips {
+            padding: 10px 20px 6px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            background: #fff;
+            border-top: 1px solid #f0f0f0;
+        }
+        .concierge-chip {
+            background: #f0f5ee;
+            color: #2c3e2c;
+            border: 1px solid #d0dfc8;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .concierge-chip:hover {
+            background: #77a361;
+            color: #fff;
+            border-color: #77a361;
+            transform: translateY(-1px);
+        }
+        /* Input row */
+        .concierge-input-row {
+            padding: 12px 16px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #fff;
+            border-top: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+        .concierge-input {
+            flex: 1;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            padding: 11px 18px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+            background: #f9faf8;
+        }
+        .concierge-input:focus {
+            border-color: #77a361;
+            background: #fff;
+        }
+        .concierge-send {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #77a361, #527141);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .concierge-send:hover {
+            transform: scale(1.08);
+            box-shadow: 0 4px 14px rgba(119,163,97,0.4);
+        }
+        .concierge-send svg {
+            width: 18px;
+            height: 18px;
+            fill: #fff;
+        }
+        /* Quote CTA bubble */
+        .concierge-quote-cta {
+            margin-top: 10px;
+            background: linear-gradient(135deg, #f0f5ee, #e8f0e3);
+            border: 1px solid #d0dfc8;
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #2c3e2c;
+        }
+        .concierge-quote-btn {
+            margin-top: 10px;
+            display: block;
+            background: linear-gradient(135deg, #77a361, #527141);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            font-family: inherit;
+            width: 100%;
+            text-align: center;
+        }
+        .concierge-quote-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(119,163,97,0.35);
+        }
+        /* Message fade-in */
+        @keyframes msgSlideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .cmsg { animation: msgSlideIn 0.25s ease; }
+
+        /* ── 3D Builder ───────────────────────────────────── */
+        .builder-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .builder-label {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .builder-label h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            color: #2c3e2c;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .builder-label p { color: #888; font-size: 14px; }
+        .builder-layout {
+            display: grid;
+            grid-template-columns: 1fr 260px;
+            gap: 20px;
+            align-items: start;
+        }
+        .builder-canvas-wrap {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 40px rgba(44,62,44,0.18);
+            background: #1a1a1a;
+            aspect-ratio: 16/10;
+        }
+        #builder-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .builder-loading {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #2c3e2c, #1a251a);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+        .builder-loading.hidden { opacity: 0; pointer-events: none; }
+        .builder-loading p {
+            color: #a4c195;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+        .builder-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(119,163,97,0.3);
+            border-top-color: #77a361;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        .builder-progress {
+            width: 160px;
+            height: 3px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .builder-progress-bar {
+            height: 100%;
+            background: #77a361;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .builder-hint {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            font-size: 11px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        /* Controls panel */
+        .builder-controls {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44,62,44,0.1);
+            overflow: hidden;
+        }
+        .builder-ctrl-head {
+            background: linear-gradient(135deg, #2c3e2c, #3d5c2c);
+            padding: 14px 18px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .builder-ctrl-section {
+            padding: 16px 18px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .builder-ctrl-section:last-child { border-bottom: none; }
+        .builder-ctrl-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            color: #77a361;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .builder-btn {
+            display: block;
+            width: 100%;
+            padding: 9px 14px;
+            margin-bottom: 6px;
+            background: #f5f7f3;
+            border: 1px solid #e0e8da;
+            border-radius: 7px;
+            font-size: 13px;
+            color: #2c3e2c;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            text-align: left;
+        }
+        .builder-btn:last-child { margin-bottom: 0; }
+        .builder-btn:hover {
+            background: #77a361;
+            color: #fff;
+            border-color: #77a361;
+        }
+        .builder-btn.active {
+            background: #2c3e2c;
+            color: #fff;
+            border-color: #2c3e2c;
+        }
+        .builder-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .builder-toggle-label {
+            font-size: 13px;
+            color: #444;
+        }
+        .builder-toggle {
+            width: 38px;
+            height: 20px;
+            border-radius: 10px;
+            background: #ddd;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: none;
+            flex-shrink: 0;
+        }
+        .builder-toggle.on { background: #77a361; }
+        .builder-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .builder-toggle.on::after { transform: translateX(18px); }
+        .builder-info-box {
+            background: #f5f7f3;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.7;
+        }
+        .builder-info-box strong { color: #2c3e2c; }
+
+        @media (max-width: 900px) {
+            .builder-layout {
+                grid-template-columns: 1fr;
+            }
+            .builder-controls {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+            .builder-ctrl-head { grid-column: 1/-1; }
+        }
+        @media (max-width: 600px) {
+            .builder-controls { display: block; }
+            .concierge-panel { height: 520px; }
+        }
+
+        /* ── Demo page shared ─────────────────────────────── */
 
         /* Demo page specific styles */
         .demo-gate-overlay {
@@ -283,171 +798,8 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 3D Scene Container */
-        .scene-3d-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .scene-3d-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .scene-3d-header h2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 36px;
-            color: #2c3e2c;
-            margin-bottom: 12px;
-        }
-
-        .scene-3d-header p {
-            color: #666;
-            font-size: 15px;
-        }
-
-        #scene-3d {
-            width: 100%;
-            height: 600px;
-            background: linear-gradient(135deg, #2c3e2c 0%, #1a251a 100%);
-            border-radius: 12px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        }
-
-        .scene-controls {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 24px;
-            flex-wrap: wrap;
-        }
-
-        .scene-control-btn {
-            background: #77a361;
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            letter-spacing: 0.5px;
-        }
-
-        .scene-control-btn:hover {
-            background: #527141;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(119, 163, 97, 0.3);
-        }
-
-        .scene-control-btn:active {
-            transform: translateY(0);
-        }
-
-        .scene-info {
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 24px;
-            color: #666;
-            font-size: 13px;
-            line-height: 1.8;
-        }
-
-        .scene-info h4 {
-            color: #2c3e2c;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        /* 3D Gallery Styles */
-        .gallery-3d {
-            perspective: 1000px;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .carousel-3d {
-            width: 300px;
-            height: 400px;
-            position: relative;
-            transform-style: preserve-3d;
-            animation: rotate3d 20s linear infinite;
-        }
-
-        .carousel-3d.paused {
-            animation-play-state: paused;
-        }
-
-        @keyframes rotate3d {
-            from { transform: rotateY(0deg); }
-            to { transform: rotateY(360deg); }
-        }
-
-        .carousel-item {
-            position: absolute;
-            width: 280px;
-            height: 380px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 24px;
-            color: #2c3e2c;
-            overflow: hidden;
-            backface-visibility: hidden;
-        }
-
-        .carousel-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .carousel-item:nth-child(1) { transform: rotateY(0deg) translateZ(400px); }
-        .carousel-item:nth-child(2) { transform: rotateY(60deg) translateZ(400px); }
-        .carousel-item:nth-child(3) { transform: rotateY(120deg) translateZ(400px); }
-        .carousel-item:nth-child(4) { transform: rotateY(180deg) translateZ(400px); }
-        .carousel-item:nth-child(5) { transform: rotateY(240deg) translateZ(400px); }
-        .carousel-item:nth-child(6) { transform: rotateY(300deg) translateZ(400px); }
-
         @media (max-width: 768px) {
-            .demo-tab-btn {
-                padding: 12px 20px;
-                font-size: 14px;
-            }
-
-            #scene-3d {
-                height: 450px;
-            }
-
-            .carousel-3d {
-                width: 200px;
-                height: 300px;
-            }
-
-            .carousel-item {
-                width: 180px;
-                height: 280px;
-            }
-
-            .carousel-item:nth-child(1) { transform: rotateY(0deg) translateZ(250px); }
-            .carousel-item:nth-child(2) { transform: rotateY(60deg) translateZ(250px); }
-            .carousel-item:nth-child(3) { transform: rotateY(120deg) translateZ(250px); }
-            .carousel-item:nth-child(4) { transform: rotateY(180deg) translateZ(250px); }
-            .carousel-item:nth-child(5) { transform: rotateY(240deg) translateZ(250px); }
-            .carousel-item:nth-child(6) { transform: rotateY(300deg) translateZ(250px); }
+            .demo-tab-btn { padding: 12px 16px; font-size: 13px; }
         }
     </style>
 </head>
@@ -524,84 +876,123 @@
                 </button>
             </div>
 
-            <!-- Tab 1: Chatbot -->
+            <!-- Tab 1: Chat Concierge -->
             <div id="tab-chatbot" class="demo-tab-content active">
-                <section class="chatbot-section">
-                    <div class="chatbot-container">
-                        <div class="chatbot-header">
-                            <h2>Have Questions? Ask Me Anything!</h2>
-                            <p>Get instant answers about our services, pricing, and event planning process</p>
-                        </div>
-                        <div id="rnb-chatbot">
-                            <div class="chatbot-window">
-                                <div id="chatbot-messages"></div>
-                                <div class="chatbot-input-area">
-                                    <input 
-                                        type="text" 
-                                        id="chatbot-input" 
-                                        placeholder="Ask me anything..." 
-                                        autocomplete="off"
-                                    >
-                                    <button id="chatbot-send">Send</button>
-                                </div>
+                <div class="concierge-wrap">
+                    <div class="concierge-label">
+                        <h2>Chat Concierge</h2>
+                        <p>Premium conversational assistant — testing new UI before production rollout</p>
+                    </div>
+                    <div class="concierge-panel">
+                        <!-- Header -->
+                        <div class="concierge-head">
+                            <div class="concierge-avatar">R</div>
+                            <div class="concierge-head-info">
+                                <h3>RNB Concierge</h3>
+                                <p><span class="concierge-online-dot"></span> Online · Responds instantly</p>
                             </div>
                         </div>
+                        <!-- Messages -->
+                        <div class="concierge-messages" id="cc-messages"></div>
+                        <!-- Typing indicator -->
+                        <div class="concierge-typing hidden" id="cc-typing">
+                            <div class="typing-avatar">R</div>
+                            <div class="typing-dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                        <!-- Quick-reply chips -->
+                        <div class="concierge-chips" id="cc-chips">
+                            <button class="concierge-chip" onclick="conciergeChip(this)">Our Services</button>
+                            <button class="concierge-chip" onclick="conciergeChip(this)">Pricing & Packages</button>
+                            <button class="concierge-chip" onclick="conciergeChip(this)">Where are you located?</button>
+                            <button class="concierge-chip" onclick="conciergeChip(this)">How do I book?</button>
+                            <button class="concierge-chip" onclick="conciergeChip(this)">Do you travel?</button>
+                        </div>
+                        <!-- Input -->
+                        <div class="concierge-input-row">
+                            <input
+                                type="text"
+                                id="cc-input"
+                                class="concierge-input"
+                                placeholder="Ask me anything about RNB Events..."
+                                autocomplete="off"
+                                maxlength="200"
+                            >
+                            <button class="concierge-send" id="cc-send" aria-label="Send">
+                                <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+                            </button>
+                        </div>
                     </div>
-                </section>
+                </div>
             </div>
 
-            <!-- Tab 2: 3D Feature Test -->
+            <!-- Tab 2: 3D Builder -->
             <div id="tab-3d" class="demo-tab-content">
-                <div class="scene-3d-container">
-                    <div class="scene-3d-header">
-                        <h2>3D Portfolio Gallery</h2>
-                        <p>Interactive 3D carousel showcasing event photography</p>
+                <div class="builder-wrap">
+                    <div class="builder-label">
+                        <h2>3D Venue Builder</h2>
+                        <p>Explore the Hampton venue model in 3D — drag to orbit, scroll to zoom, right-click to pan</p>
                     </div>
+                    <div class="builder-layout">
+                        <!-- Canvas -->
+                        <div class="builder-canvas-wrap">
+                            <canvas id="builder-canvas"></canvas>
+                            <!-- Loading overlay -->
+                            <div class="builder-loading" id="builder-loading">
+                                <div class="builder-spinner"></div>
+                                <p>LOADING HAMPTON VENUE</p>
+                                <div class="builder-progress">
+                                    <div class="builder-progress-bar" id="builder-prog"></div>
+                                </div>
+                            </div>
+                            <div class="builder-hint" id="builder-hint">🖱 Drag · Scroll · Right-click to pan</div>
+                        </div>
+                        <!-- Controls -->
+                        <div class="builder-controls">
+                            <div class="builder-ctrl-head">🎛 Scene Controls</div>
 
-                    <div id="scene-3d">
-                        <div class="gallery-3d">
-                            <div class="carousel-3d" id="carousel">
-                                <div class="carousel-item">
-                                    <img src="Weddings.jpeg" alt="Wedding Event">
+                            <div class="builder-ctrl-section">
+                                <div class="builder-ctrl-title">Camera</div>
+                                <button class="builder-btn" onclick="builderCam('front')">📷 Front View</button>
+                                <button class="builder-btn" onclick="builderCam('top')">🔭 Top View</button>
+                                <button class="builder-btn" onclick="builderCam('side')">↔ Side View</button>
+                                <button class="builder-btn" onclick="builderCam('iso')">✦ Isometric</button>
+                                <button class="builder-btn" onclick="builderCam('reset')">🔄 Reset Camera</button>
+                            </div>
+
+                            <div class="builder-ctrl-section">
+                                <div class="builder-ctrl-title">Lighting</div>
+                                <button class="builder-btn" id="btn-light-day" onclick="builderLight('day')" class="active">☀️ Day</button>
+                                <button class="builder-btn" id="btn-light-evening" onclick="builderLight('evening')">🌆 Evening</button>
+                                <button class="builder-btn" id="btn-light-night" onclick="builderLight('night')">🌙 Night</button>
+                            </div>
+
+                            <div class="builder-ctrl-section">
+                                <div class="builder-ctrl-title">Display</div>
+                                <div class="builder-toggle-row">
+                                    <span class="builder-toggle-label">Wireframe</span>
+                                    <button class="builder-toggle" id="tog-wire" onclick="builderToggle('wire')"></button>
                                 </div>
-                                <div class="carousel-item">
-                                    <img src="Corporate Event.jpg" alt="Corporate Event">
+                                <div class="builder-toggle-row">
+                                    <span class="builder-toggle-label">Auto-rotate</span>
+                                    <button class="builder-toggle on" id="tog-rotate" onclick="builderToggle('rotate')"></button>
                                 </div>
-                                <div class="carousel-item">
-                                    <img src="Social Event.jpeg" alt="Social Event">
+                                <div class="builder-toggle-row">
+                                    <span class="builder-toggle-label">Grid floor</span>
+                                    <button class="builder-toggle" id="tog-grid" onclick="builderToggle('grid')"></button>
                                 </div>
-                                <div class="carousel-item">
-                                    <img src="1.jpeg" alt="Event Photo 1">
-                                </div>
-                                <div class="carousel-item">
-                                    <img src="2.jpeg" alt="Event Photo 2">
-                                </div>
-                                <div class="carousel-item">
-                                    <img src="3.jpeg" alt="Event Photo 3">
+                            </div>
+
+                            <div class="builder-ctrl-section">
+                                <div class="builder-ctrl-title">About</div>
+                                <div class="builder-info-box">
+                                    <strong>Hampton.glb</strong><br>
+                                    Venue model loaded via Three.js GLTFLoader.<br><br>
+                                    Use this view to explore layout, plan décor placement, and share with clients.
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="scene-controls">
-                        <button class="scene-control-btn" onclick="toggleRotation()">
-                            <span id="rotation-btn-text">⏸ Pause Rotation</span>
-                        </button>
-                        <button class="scene-control-btn" onclick="rotateLeft()">← Rotate Left</button>
-                        <button class="scene-control-btn" onclick="rotateRight()">Rotate Right →</button>
-                        <button class="scene-control-btn" onclick="resetRotation()">🔄 Reset</button>
-                    </div>
-
-                    <div class="scene-info">
-                        <h4>💡 3D Gallery Features:</h4>
-                        <ul style="margin: 8px 0; padding-left: 20px;">
-                            <li>Smooth 360° rotation showcasing event photos</li>
-                            <li>Interactive controls for manual navigation</li>
-                            <li>Responsive design adapts to mobile devices</li>
-                            <li>Auto-rotation with pause/play controls</li>
-                            <li>Perfect for homepage hero or portfolio section</li>
-                        </ul>
-                        <p style="margin-top: 12px;"><strong>Status:</strong> Testing phase - verify performance and user experience before production deployment.</p>
                     </div>
                 </div>
             </div>
@@ -618,7 +1009,7 @@
     <!-- Load Admin Config (same as admin page) -->
     <script src="Admin/admin-data.js"></script>
 
-    <!-- Chatbot Script -->
+    <!-- Chatbot FAQ data (used by concierge) -->
     <script src="chatbot.js"></script>
 
     <!-- Demo Authentication Script -->
@@ -862,92 +1253,493 @@
         })();
     </script>
 
-    <!-- Tab Switching & 3D Controls Script -->
+    <!-- Tab Switching -->
     <script>
-        // Tab switching functionality
         function switchTab(tabName) {
-            // Hide all tab contents
-            const tabContents = document.querySelectorAll('.demo-tab-content');
-            tabContents.forEach(tab => tab.classList.remove('active'));
-
-            // Remove active class from all buttons
-            const tabBtns = document.querySelectorAll('.demo-tab-btn');
-            tabBtns.forEach(btn => btn.classList.remove('active'));
-
-            // Show selected tab content
-            const selectedTab = document.getElementById('tab-' + tabName);
-            if (selectedTab) selectedTab.classList.add('active');
-
-            // Highlight selected button
+            document.querySelectorAll('.demo-tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.demo-tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
             event.target.classList.add('active');
+            // Init Three.js on first visit to 3D tab
+            if (tabName === '3d' && !window._builderInited) initBuilder();
+        }
+    </script>
+
+    <!-- Chat Concierge Logic -->
+    <script>
+    (function() {
+        // ── FAQ brain (mirrors chatbot.js logic) ────────────────
+        function getResponse(input) {
+            if (typeof chatbotFAQ === 'undefined' || typeof allFAQs === 'undefined') {
+                return { answer: "I'm having trouble loading my knowledge base. Please try refreshing.", triggerQuote: false };
+            }
+            const raw = input.toLowerCase().trim();
+
+            const quoteKw = ['price', 'pricing', 'cost', 'how much', 'budget', 'quote', 'estimate', 'decor', 'decoration', 'package', 'venue'];
+            const shouldTriggerQuote = quoteKw.some(k => raw.includes(k));
+
+            const keywordMaps = {
+                'location': ['location','located','where','area','based','serve','dfw','dallas','fort worth','texas'],
+                'contact':  ['contact','email','phone','call','reach','number','touch'],
+                'corporate':['corporate','business','company','gala','conference','professional','work event'],
+                'birthday': ['birthday','bday','birthdays','birthday party','milestone'],
+                'engagement':['engagement','engagements','engaged','proposal'],
+                'package':  ['package','packages','tier','tiers','level','option'],
+                'pricing':  ['price','pricing','cost','costs','how much','expensive','afford','budget'],
+                'wedding':  ['wedding','weddings','marry','marriage','bride','groom'],
+                'event':    ['event','events','party','parties','celebration','occasion'],
+                'design':   ['design','designs','decor','decoration','decorations','style','theme'],
+                'book':     ['book','booking','reserve','reservation','schedule','secure'],
+                'portal':   ['portal','client area','dashboard','account'],
+                'venue':    ['venue','location','place','site'],
+                'floral':   ['floral','flower','flowers','bouquet','arrangement'],
+                'rental':   ['rental','rent','renting','hire','lease'],
+                'setup':    ['setup','set up','installation','install','breakdown','tear down'],
+                'deposit':  ['deposit','down payment','initial payment'],
+                'cancel':   ['cancel','cancellation','refund'],
+                'change':   ['change','modify','edit','update','alter'],
+                'payment':  ['payment','pay','plan','financing','installment']
+            };
+
+            const patterns = [
+                { re: /where (are you|is rnb|is your).*locat/i, key: 'location' },
+                { re: /where (are you|is rnb).*based/i,         key: 'location' },
+                { re: /what.*your location/i,                   key: 'location' },
+                { re: /where.*you (from|located)/i,             key: 'location' },
+                { re: /(what|where).*(email|contact|reach)/i,   key: 'contact'  },
+                { re: /(phone|call|number)/i,                   key: 'phone'    },
+                { re: /serve my area/i,                         key: 'serve_area' },
+                { re: /do you (do|handle|plan).*corporate/i,    key: 'do_corporate' },
+                { re: /corporate.*event/i,                      key: 'do_corporate' },
+                { re: /do you (do|handle|plan).*(birthday|bday)/i, key: 'do_birthdays' },
+                { re: /do you (do|handle|plan).*engagement/i,   key: 'do_engagements' },
+                { re: /what (type|kind).*event/i,               key: 'event_types' },
+                { re: /what (are|is) (the |your )?package/i,    key: 'packages' },
+                { re: /(how much|what.*cost|pricing|price)/i,   key: 'pricing' },
+                { re: /work.*budget/i,                          key: 'budget' },
+                { re: /do you (only )?do wedding/i,             key: 'only_weddings' },
+                { re: /(what do|what does) .*rnb.*do/i,         key: 'what_we_do' },
+                { re: /(our )?services?/i,                      key: 'what_we_do' },
+                { re: /(full planning|just decor|decoration only)/i, key: 'planning_or_decor' },
+                { re: /(match|recreate|customize).*theme/i,     key: 'custom_theme' },
+                { re: /match.*color/i,                          key: 'custom_theme' },
+                { re: /how (do i|to) (get )?start/i,            key: 'get_started' },
+                { re: /how (do i|to) book/i,                    key: 'secure_date' },
+                { re: /how (do i|to) (secure|book).*date/i,     key: 'secure_date' },
+                { re: /(how far|when.*book|advance.*book)/i,     key: 'when_to_book' },
+                { re: /client portal/i,                         key: 'portal_what' },
+                { re: /why choose/i,                            key: 'why_choose'  },
+                { re: /do you travel/i,                         key: 'travel' },
+                { re: /work.*venue/i,                           key: 'work_with_venue' },
+                { re: /what.*(included|include)/i,              key: 'whats_included' }
+            ];
+
+            const keyMap = {
+                'location':       'Where are you located?',
+                'contact':        'How do I contact you?',
+                'phone':          "What's your phone number?",
+                'serve_area':     'Do you serve my area?',
+                'do_corporate':   'Do you do corporate events?',
+                'do_birthdays':   'Do you do birthdays?',
+                'do_engagements': 'Do you do engagements?',
+                'event_types':    'What types of events do you do?',
+                'packages':       'Do you offer packages?',
+                'pricing':        'How much does it cost?',
+                'budget':         'Can you work within my budget?',
+                'only_weddings':  'Do you only do weddings?',
+                'what_we_do':     'What does RNB Events do exactly?',
+                'beginner_help':  "Can you help if I've never planned an event before?",
+                'planning_or_decor': 'Do you offer full planning or just decoration?',
+                'custom_theme':   'Can you match my theme or colors?',
+                'get_started':    'How do I get started?',
+                'secure_date':    'How do I secure my date?',
+                'when_to_book':   'How far in advance should I book?',
+                'portal_what':    'What is the client portal?',
+                'why_choose':     'Why choose RNB Events?',
+                'travel':         'Do you travel for events?',
+                'work_with_venue':'Do you work with my venue?',
+                'whats_included': "What's included in your pricing?"
+            };
+
+            for (const p of patterns) {
+                if (p.re.test(raw)) {
+                    const qText = keyMap[p.key];
+                    if (qText) {
+                        const faq = allFAQs.find(f => f.q === qText);
+                        if (faq) return { answer: faq.a, triggerQuote: shouldTriggerQuote || !!faq.triggerQuote };
+                    }
+                }
+            }
+
+            // Scoring fallback
+            let best = null, top = 0;
+            allFAQs.forEach(faq => {
+                const ql = faq.q.toLowerCase(), al = faq.a.toLowerCase();
+                let score = 0;
+                const words = raw.split(/\s+/).filter(w => w.length > 2);
+                words.forEach(w => {
+                    if (ql.includes(w)) score += 5;
+                    for (const syns of Object.values(keywordMaps)) {
+                        if (syns.includes(w)) syns.forEach(s => { if (ql.includes(s)) score += 3; });
+                    }
+                    if (al.includes(w)) score += 1;
+                });
+                const ut = raw.match(/^(what|how|can|do|does|is|are|will)/);
+                const ft = ql.match(/^(what|how|can|do|does|is|are|will)/);
+                if (ut && ft && ut[0] === ft[0]) score += 2;
+                if (ql.includes(raw) || raw.includes(ql.substring(0, 20))) score += 15;
+                if (Math.abs(raw.length - ql.length) < 20) score += 2;
+                if (score > top) { top = score; best = faq; }
+            });
+
+            if (best && top >= 8) return { answer: best.a, triggerQuote: shouldTriggerQuote || !!best.triggerQuote };
+
+            return {
+                answer: "Great question! For the most accurate answer about your specific event, our team would love to connect. You can also ask: 'What services do you offer?' or 'How do I get started?'",
+                triggerQuote: shouldTriggerQuote
+            };
         }
 
-        // 3D Carousel Controls
-        let isRotating = true;
-        let currentRotation = 0;
-        const carousel = document.getElementById('carousel');
+        // ── UI helpers ───────────────────────────────────────────
+        const msgsEl  = () => document.getElementById('cc-messages');
+        const inputEl = () => document.getElementById('cc-input');
+        const typing  = () => document.getElementById('cc-typing');
 
-        function toggleRotation() {
-            isRotating = !isRotating;
-            const btnText = document.getElementById('rotation-btn-text');
-            
-            if (isRotating) {
-                carousel.classList.remove('paused');
-                btnText.textContent = '⏸ Pause Rotation';
+        function fmtTime() {
+            const d = new Date();
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function appendMsg(type, text, quoteData) {
+            const msgs = msgsEl();
+            if (!msgs) return;
+
+            const row = document.createElement('div');
+            row.className = 'cmsg ' + type;
+
+            if (type === 'bot') {
+                row.innerHTML = `
+                    <div class="cmsg-avatar">R</div>
+                    <div class="cmsg-body">
+                        <div class="cmsg-bubble">${escHtml(text)}</div>
+                        <div class="cmsg-time">${fmtTime()}</div>
+                        ${quoteData ? `<div class="concierge-quote-cta">Would you like a personalized quote for your event?<button class="concierge-quote-btn" onclick="window.location.href='/service'">✨ Request a Quote</button></div>` : ''}
+                    </div>`;
             } else {
-                carousel.classList.add('paused');
-                btnText.textContent = '▶️ Play Rotation';
+                row.innerHTML = `
+                    <div class="cmsg-body">
+                        <div class="cmsg-bubble">${escHtml(text)}</div>
+                        <div class="cmsg-time">${fmtTime()}</div>
+                    </div>`;
+            }
+
+            msgs.appendChild(row);
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function showTyping() {
+            const t = typing();
+            if (t) t.classList.remove('hidden');
+            const m = msgsEl();
+            if (m) m.scrollTop = m.scrollHeight;
+        }
+
+        function hideTyping() {
+            const t = typing();
+            if (t) t.classList.add('hidden');
+        }
+
+        function send(text) {
+            const t = (text || '').trim();
+            if (!t) return;
+            const inp = inputEl();
+            if (inp) inp.value = '';
+            appendMsg('user', t);
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                const res = getResponse(t);
+                appendMsg('bot', res.answer, res.triggerQuote);
+            }, 700 + Math.random() * 400);
+        }
+
+        window.conciergeChip = function(btn) {
+            send(btn.textContent);
+        };
+
+        // ── Typing placeholder animation ─────────────────────────
+        const samples = [
+            'What events do you specialize in?',
+            'Where are you located?',
+            'How much does it cost?',
+            'Do you do corporate events?',
+            'Can you match my theme?',
+            'How do I get started?',
+            'Do you travel for events?',
+            'What packages do you offer?'
+        ];
+        let sIdx = 0, charIdx = 0, erasing = false, animPaused = false;
+
+        function runAnim() {
+            const inp = document.getElementById('cc-input');
+            if (!inp || animPaused) { setTimeout(runAnim, 200); return; }
+            const q = samples[sIdx % samples.length];
+            if (!erasing) {
+                inp.placeholder = q.substring(0, charIdx) + '|';
+                charIdx++;
+                if (charIdx > q.length) { erasing = true; setTimeout(runAnim, 1800); return; }
+                setTimeout(runAnim, 90);
+            } else {
+                inp.placeholder = q.substring(0, charIdx) + '|';
+                charIdx--;
+                if (charIdx < 0) { erasing = false; charIdx = 0; sIdx++; setTimeout(runAnim, 400); return; }
+                setTimeout(runAnim, 45);
             }
         }
 
-        function rotateLeft() {
-            carousel.classList.add('paused');
-            isRotating = false;
-            document.getElementById('rotation-btn-text').textContent = '▶️ Play Rotation';
-            
-            currentRotation -= 60;
-            carousel.style.transform = `rotateY(${currentRotation}deg)`;
-        }
+        // ── Init ─────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            const inp = document.getElementById('cc-input');
+            const btn = document.getElementById('cc-send');
+            if (!inp || !btn) return;
 
-        function rotateRight() {
-            carousel.classList.add('paused');
-            isRotating = false;
-            document.getElementById('rotation-btn-text').textContent = '▶️ Play Rotation';
-            
-            currentRotation += 60;
-            carousel.style.transform = `rotateY(${currentRotation}deg)`;
-        }
+            // Welcome message
+            setTimeout(() => {
+                appendMsg('bot', "👋 Hi! I'm your RNB Concierge. I can answer questions about our services, pricing, event types, and more. What would you like to know?");
+            }, 400);
 
-        function resetRotation() {
-            carousel.classList.remove('paused');
-            carousel.style.transform = '';
-            currentRotation = 0;
-            isRotating = true;
-            document.getElementById('rotation-btn-text').textContent = '⏸ Pause Rotation';
-        }
+            btn.addEventListener('click', () => send(inp.value));
+            inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(inp.value); });
+            inp.addEventListener('focus', () => { animPaused = true; inp.placeholder = 'Ask me anything about RNB Events...'; });
+            inp.addEventListener('blur',  () => { if (!inp.value.trim()) { animPaused = false; runAnim(); } });
 
-        // Keyboard controls for 3D carousel
-        document.addEventListener('keydown', function(e) {
-            const tab3d = document.getElementById('tab-3d');
-            if (!tab3d || !tab3d.classList.contains('active')) return;
-
-            switch(e.key) {
-                case 'ArrowLeft':
-                    rotateLeft();
-                    break;
-                case 'ArrowRight':
-                    rotateRight();
-                    break;
-                case ' ':
-                    e.preventDefault();
-                    toggleRotation();
-                    break;
-                case 'r':
-                case 'R':
-                    resetRotation();
-                    break;
-            }
+            runAnim();
         });
+    })();
+    </script>
+
+    <!-- 3D Builder (Three.js) -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let renderer, scene, camera, controls, model, gridHelper;
+        let wireframeOn = false, autoRotate = true;
+
+        window.initBuilder = function() {
+            window._builderInited = true;
+            const canvas = document.getElementById('builder-canvas');
+            const wrap   = canvas.parentElement;
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.1;
+
+            function resize() {
+                const w = wrap.clientWidth, h = wrap.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            }
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0ede8);
+            scene.fog = new THREE.Fog(0xf0ede8, 30, 80);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 200);
+            camera.position.set(8, 5, 10);
+
+            // Controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.07;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.8;
+            controls.minDistance = 1;
+            controls.maxDistance = 60;
+            controls.maxPolarAngle = Math.PI / 2 + 0.1;
+
+            // Lights – day preset
+            applyLightPreset('day');
+
+            // Grid (hidden by default)
+            gridHelper = new THREE.GridHelper(20, 20, 0xbbbbbb, 0xdddddd);
+            gridHelper.visible = false;
+            scene.add(gridHelper);
+
+            // Load GLB
+            const loader = new GLTFLoader();
+            const prog = document.getElementById('builder-prog');
+
+            loader.load(
+                '3D%20Assets/Hampton.glb',
+                (gltf) => {
+                    model = gltf.scene;
+
+                    // Center & scale model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const size = box.getSize(new THREE.Vector3());
+                    const center = box.getCenter(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 10 / maxDim;
+                    model.scale.setScalar(scale);
+                    model.position.sub(center.multiplyScalar(scale));
+
+                    // Enable shadows
+                    model.traverse(child => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+
+                    scene.add(model);
+
+                    // Position camera to fit
+                    camera.position.set(maxDim * scale * 0.9, maxDim * scale * 0.5, maxDim * scale * 1.0);
+                    controls.target.set(0, 0, 0);
+                    controls.update();
+
+                    // Hide loader
+                    const overlay = document.getElementById('builder-loading');
+                    if (overlay) overlay.classList.add('hidden');
+
+                    // Fade out hint after 3s
+                    setTimeout(() => {
+                        const hint = document.getElementById('builder-hint');
+                        if (hint) hint.style.opacity = '0';
+                    }, 3000);
+                },
+                (xhr) => {
+                    if (xhr.total > 0 && prog) {
+                        prog.style.width = (xhr.loaded / xhr.total * 100) + '%';
+                    }
+                },
+                (err) => {
+                    console.error('GLB load error:', err);
+                    const overlay = document.getElementById('builder-loading');
+                    if (overlay) overlay.innerHTML = '<p style="color:#ff6b6b;padding:20px;text-align:center">⚠️ Could not load Hampton.glb<br><small>Check file path and try again</small></p>';
+                }
+            );
+
+            // Resize handler
+            const ro = new ResizeObserver(resize);
+            ro.observe(wrap);
+            resize();
+
+            // Render loop
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+        };
+
+        // ── Light presets ───────────────────────────────────────
+        function clearLights() {
+            scene.children.filter(c => c.isLight).forEach(l => scene.remove(l));
+        }
+
+        function applyLightPreset(preset) {
+            clearLights();
+            if (preset === 'day') {
+                const amb = new THREE.AmbientLight(0xfff4e0, 0.8);
+                const sun = new THREE.DirectionalLight(0xfff4e0, 2.5);
+                sun.position.set(10, 20, 10);
+                sun.castShadow = true;
+                sun.shadow.mapSize.set(2048, 2048);
+                sun.shadow.camera.near = 0.5;
+                sun.shadow.camera.far = 100;
+                sun.shadow.camera.left = -20;
+                sun.shadow.camera.right = 20;
+                sun.shadow.camera.top = 20;
+                sun.shadow.camera.bottom = -20;
+                const fill = new THREE.DirectionalLight(0xc8d8f0, 0.6);
+                fill.position.set(-10, 5, -10);
+                scene.add(amb, sun, fill);
+            } else if (preset === 'evening') {
+                const amb  = new THREE.AmbientLight(0xff8c42, 0.5);
+                const warm = new THREE.DirectionalLight(0xffb347, 1.8);
+                warm.position.set(-8, 12, 5);
+                warm.castShadow = true;
+                warm.shadow.mapSize.set(2048, 2048);
+                const accent = new THREE.PointLight(0xff6a00, 1.0, 30);
+                accent.position.set(3, 3, 3);
+                scene.add(amb, warm, accent);
+            } else if (preset === 'night') {
+                const amb   = new THREE.AmbientLight(0x1a1a4e, 0.4);
+                const moon  = new THREE.DirectionalLight(0x8090d0, 1.0);
+                moon.position.set(-5, 15, -5);
+                moon.castShadow = true;
+                moon.shadow.mapSize.set(2048, 2048);
+                const candle1 = new THREE.PointLight(0xffcc66, 1.5, 12);
+                candle1.position.set(2, 2, 2);
+                const candle2 = new THREE.PointLight(0xffcc66, 1.0, 10);
+                candle2.position.set(-3, 2, -2);
+                scene.add(amb, moon, candle1, candle2);
+            }
+        }
+
+        // ── Exposed controls ────────────────────────────────────
+        window.builderLight = function(preset) {
+            if (!scene) return;
+            applyLightPreset(preset);
+            ['day','evening','night'].forEach(p => {
+                const b = document.getElementById('btn-light-' + p);
+                if (b) b.classList.toggle('active', p === preset);
+            });
+        };
+
+        window.builderCam = function(view) {
+            if (!camera || !controls) return;
+            const d = 12;
+            const positions = {
+                front: [0, 2, d],
+                top:   [0, d, 0.01],
+                side:  [d, 2, 0],
+                iso:   [d * 0.7, d * 0.5, d * 0.7],
+                reset: [8, 5, 10]
+            };
+            const pos = positions[view] || positions.reset;
+            camera.position.set(...pos);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        };
+
+        window.builderToggle = function(tog) {
+            const btn = document.getElementById('tog-' + tog);
+            if (!btn) return;
+            btn.classList.toggle('on');
+            const on = btn.classList.contains('on');
+            if (tog === 'wire' && model) {
+                wireframeOn = on;
+                model.traverse(c => {
+                    if (c.isMesh && c.material) {
+                        const mats = Array.isArray(c.material) ? c.material : [c.material];
+                        mats.forEach(m => { m.wireframe = on; });
+                    }
+                });
+            }
+            if (tog === 'rotate' && controls) {
+                controls.autoRotate = on;
+            }
+            if (tog === 'grid' && gridHelper) {
+                gridHelper.visible = on;
+            }
+        };
     </script>
 
 </body>
