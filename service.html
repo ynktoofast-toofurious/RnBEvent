@@ -156,6 +156,30 @@
     </section>
     -->
 
+    <!-- Chatbot Section -->
+    <section class="chatbot-section">
+        <div class="chatbot-container">
+            <div class="chatbot-header">
+                <h2>Have Questions? Ask Me Anything!</h2>
+                <p>Get instant answers about our services, pricing, and event planning process</p>
+            </div>
+            <div id="rnb-chatbot">
+                <div class="chatbot-window">
+                    <div id="chatbot-messages"></div>
+                    <div class="chatbot-input-area">
+                        <input 
+                            type="text" 
+                            id="chatbot-input" 
+                            placeholder="Ask me anything..." 
+                            autocomplete="off"
+                        >
+                        <button id="chatbot-send">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Quote CTA -->
     <section class="quote-cta-section">
         <div class="container">
@@ -409,6 +433,7 @@
         }
     });
     </script>
+    <script src="chatbot.js"></script>
     <script src="/cookie-consent.js"></script>
 </body>
 </html>
