@@ -1069,7 +1069,17 @@
                                         <div class="builder-object-name">Serpentine Table</div>
                                         <div class="builder-object-sub" id="obj-serpentine-count">0 placed</div>
                                     </div>
-                                    <button class="builder-object-add-btn" onclick="builderAddObject('serpentine')">+ ADD</button>
+                                    <button class="builder-object-add-btn" onclick="builderAddObject('serpentine-table')">+ ADD</button>
+                                </div>
+                                <div class="builder-object-card">
+                                    <div class="builder-object-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#77a361"><path d="M4 18h16v-2H4v2zm0-5h16v-2H4v2zm0-7v2h16V6H4z"/></svg>
+                                    </div>
+                                    <div class="builder-object-meta">
+                                        <div class="builder-object-name">Serpentine Section</div>
+                                        <div class="builder-object-sub" id="obj-section-count">0 placed</div>
+                                    </div>
+                                    <button class="builder-object-add-btn" onclick="builderAddObject('serpentine-section')">+ ADD</button>
                                 </div>
                                 <div class="builder-selection-bar" id="obj-selection-bar">
                                     <div class="builder-selection-label">
@@ -1635,7 +1645,7 @@
 
         // Object placement system
         let placedObjects = [], selectedObject = null;
-        let serpentineTemplate = null;
+        const templates = {};
         let isDragging = false;
         const dragPlane  = new THREE.Plane();
         const dragOffset = new THREE.Vector3();
@@ -1667,8 +1677,14 @@
         }
 
         function updateObjectCount() {
-            const el = document.getElementById('obj-serpentine-count');
-            if (el) el.textContent = placedObjects.length === 1 ? '1 placed' : `${placedObjects.length} placed`;
+            const counts = {};
+            placedObjects.forEach(o => { counts[o.userData.objectType] = (counts[o.userData.objectType] || 0) + 1; });
+            const ids = { 'serpentine-table': 'obj-serpentine-count', 'serpentine-section': 'obj-section-count' };
+            Object.entries(ids).forEach(([type, id]) => {
+                const el = document.getElementById(id);
+                const n = counts[type] || 0;
+                if (el) el.textContent = n === 1 ? '1 placed' : `${n} placed`;
+            });
         }
 
         function placeClone(template, name) {
@@ -1945,20 +1961,25 @@
         };
 
         // ── Object placement ────────────────────────────────────
-        window.builderAddObject = function(name) {
+        const objectAssets = {
+            'serpentine-table':   '3d-assets/serpentine-table.glb',
+            'serpentine-section': '3d-assets/serpentine-section.glb',
+        };
+
+        window.builderAddObject = function(type) {
             if (!scene) return;
-            if (name === 'serpentine') {
-                if (serpentineTemplate) {
-                    placeClone(serpentineTemplate, name);
-                } else {
-                    const loader = new GLTFLoader();
-                    loader.load(
-                        '3d-assets/Serpentine.glb',
-                        (gltf) => { serpentineTemplate = gltf.scene; placeClone(serpentineTemplate, name); },
-                        undefined,
-                        (err) => console.error('Could not load Serpentine.glb:', err)
-                    );
-                }
+            if (templates[type]) {
+                placeClone(templates[type], type);
+            } else {
+                const path = objectAssets[type];
+                if (!path) return;
+                const loader = new GLTFLoader();
+                loader.load(
+                    path,
+                    (gltf) => { templates[type] = gltf.scene; placeClone(templates[type], type); },
+                    undefined,
+                    (err) => console.error(`Could not load ${path}:`, err)
+                );
             }
         };
 
