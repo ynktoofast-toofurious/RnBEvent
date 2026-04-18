@@ -219,6 +219,32 @@ const chatbotFAQ = {
             q: "What's the next step?",
             a: "Request a quote → Access your portal → Confirm your booking → Start designing your event."
         }
+    ],
+    "contact": [
+        {
+            q: "Where are you located?",
+            a: "We're based in the DFW Metroplex (Dallas-Fort Worth area) and travel nationwide for events."
+        },
+        {
+            q: "What's your location?",
+            a: "We're based in the DFW Metroplex (Dallas-Fort Worth area) and travel nationwide for events."
+        },
+        {
+            q: "How do I contact you?",
+            a: "You can reach us at rnbevents716@gmail.com or call (716) 330-9013. You can also submit a quote request through our website."
+        },
+        {
+            q: "What's your email?",
+            a: "Our email is rnbevents716@gmail.com. Feel free to reach out anytime!"
+        },
+        {
+            q: "What's your phone number?",
+            a: "You can call us at (716) 330-9013."
+        },
+        {
+            q: "Do you serve my area?",
+            a: "We're based in the DFW Metroplex and travel nationwide. Contact us to confirm we can serve your location!"
+        }
     ]
 };
 
@@ -228,12 +254,12 @@ const allFAQs = Object.values(chatbotFAQ).flat();
 // Sample questions for typing animation
 const sampleQuestions = [
     "What does RNB Events do?",
+    "Where are you located?",
     "What are the packages?",
     "How much does it cost?",
     "Can you match my theme?",
     "Do you travel for events?",
     "How do I get started?",
-    "Can you work within my budget?",
     "Do you only do weddings?"
 ];
 
@@ -379,6 +405,8 @@ class RNBChatbot {
 
         // Keyword mappings for better semantic understanding
         const keywordMaps = {
+            'location': ['location', 'located', 'where', 'area', 'based', 'serve', 'dfw', 'dallas', 'fort worth', 'texas'],
+            'contact': ['contact', 'email', 'phone', 'call', 'reach', 'number', 'touch'],
             'package': ['package', 'packages', 'tier', 'tiers', 'level', 'levels', 'option', 'options'],
             'pricing': ['price', 'pricing', 'cost', 'costs', 'how much', 'expensive', 'afford', 'budget'],
             'wedding': ['wedding', 'weddings', 'marry', 'marriage', 'bride', 'groom'],
@@ -400,21 +428,41 @@ class RNBChatbot {
         const quoteKeywords = ['price', 'pricing', 'cost', 'how much', 'budget', 'quote', 'estimate', 'venue', 'specific venue', 'decor', 'decoration', 'package'];
         const shouldTriggerQuote = quoteKeywords.some(keyword => input.includes(keyword));
 
-        // Enhanced question patterns
+        // Enhanced question patterns with priority matching
         const questionPatterns = [
+            // Contact & Location (High Priority)
+            { pattern: /where (are you|is rnb|is your).*locat/i, answerKey: 'location' },
+            { pattern: /where (are you|is rnb).*based/i, answerKey: 'location' },
+            { pattern: /what.*your location/i, answerKey: 'location' },
+            { pattern: /where.*you (from|located)/i, answerKey: 'location' },
+            { pattern: /(what|where).*(email|contact|reach)/i, answerKey: 'contact' },
+            { pattern: /(phone|call|number)/i, answerKey: 'phone' },
+            { pattern: /serve my area/i, answerKey: 'serve_area' },
+            
+            // Packages & Pricing
             { pattern: /what (are|is) (the |your )?package/i, answerKey: 'packages' },
             { pattern: /(how much|what.*cost|pricing|price)/i, answerKey: 'pricing' },
+            { pattern: /work.*budget/i, answerKey: 'budget' },
+            
+            // Services & General
             { pattern: /do you (only )?do wedding/i, answerKey: 'only_weddings' },
             { pattern: /(what do|what does) .*rnb.*do/i, answerKey: 'what_we_do' },
             { pattern: /can you (help|guide).*never.*plan/i, answerKey: 'beginner_help' },
             { pattern: /(full planning|just decor|decoration only)/i, answerKey: 'planning_or_decor' },
+            
+            // Design & Customization
             { pattern: /(match|recreate|customize).*theme/i, answerKey: 'custom_theme' },
+            { pattern: /match.*color/i, answerKey: 'custom_theme' },
+            
+            // Booking Process
             { pattern: /how (do i|to) (get )?start/i, answerKey: 'get_started' },
             { pattern: /how (do i|to) (secure|book).*date/i, answerKey: 'secure_date' },
-            { pattern: /(how far|when.*book)/i, answerKey: 'when_to_book' },
+            { pattern: /(how far|when.*book|advance.*book)/i, answerKey: 'when_to_book' },
+            
+            // Portal & Misc
             { pattern: /client portal/i, answerKey: 'portal_what' },
             { pattern: /why choose/i, answerKey: 'why_choose' },
-            { pattern: /(travel|destination)/i, answerKey: 'travel' },
+            { pattern: /do you travel/i, answerKey: 'travel' },
             { pattern: /work.*venue/i, answerKey: 'work_with_venue' },
             { pattern: /what.*(included|include)/i, answerKey: 'whats_included' }
         ];
@@ -493,8 +541,8 @@ class RNBChatbot {
             }
         });
 
-        // Require minimum score for confidence
-        if (bestMatch && highestScore >= 5) {
+        // Require minimum score for confidence (increased threshold to reduce wrong answers)
+        if (bestMatch && highestScore >= 8) {
             return {
                 answer: bestMatch.a,
                 triggerQuote: shouldTriggerQuote || bestMatch.triggerQuote
@@ -503,23 +551,39 @@ class RNBChatbot {
 
         // Default response with suggestions
         return {
-            answer: "I'd love to help with that! For specific questions about your event, I recommend requesting a quote so our team can provide personalized assistance. You can also try asking: 'What are the packages?' or 'How do I get started?'",
+            answer: "I'd love to help with that! For specific questions about your event, I recommend requesting a quote so our team can provide personalized assistance. You can also try asking: 'What are the packages?' or 'Where are you located?'",
             triggerQuote: shouldTriggerQuote
         };
     }
 
     findFAQByKey(key) {
         const keyMap = {
+            // Contact & Location
+            'location': 'Where are you located?',
+            'contact': 'How do I contact you?',
+            'phone': "What's your phone number?",
+            'serve_area': 'Do you serve my area?',
+            
+            // Packages & Pricing
             'packages': 'Do you offer packages?',
             'pricing': 'How much does it cost?',
+            'budget': 'Can you work within my budget?',
+            
+            // Services & General
             'only_weddings': 'Do you only do weddings?',
             'what_we_do': 'What does RNB Events do exactly?',
             'beginner_help': "Can you help if I've never planned an event before?",
             'planning_or_decor': 'Do you offer full planning or just decoration?',
+            
+            // Design & Customization
             'custom_theme': 'Can you match my theme or colors?',
+            
+            // Booking Process
             'get_started': 'How do I get started?',
             'secure_date': 'How do I secure my date?',
             'when_to_book': 'How far in advance should I book?',
+            
+            // Portal & Misc
             'portal_what': 'What is the client portal?',
             'why_choose': 'Why choose RNB Events?',
             'travel': 'Do you travel for events?',
