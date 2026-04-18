@@ -361,8 +361,8 @@
                 </div>
 
                 <div class="crm-filters">
-                    <button class="filter-btn" data-filter="all" onclick="filterProspects('all', this)">All</button>
-                    <button class="filter-btn active" data-filter="New Lead"          onclick="filterProspects('New Lead', this)">New Lead</button>
+                    <button class="filter-btn active" data-filter="all" onclick="filterProspects('all', this)">All</button>
+                    <button class="filter-btn" data-filter="New Lead"          onclick="filterProspects('New Lead', this)">New Lead</button>
                     <button class="filter-btn" data-filter="In Conversation"   onclick="filterProspects('In Conversation', this)">In Conversation</button>
                     <button class="filter-btn" data-filter="Proposal Sent"     onclick="filterProspects('Proposal Sent', this)">Proposal Sent</button>
                     <button class="filter-btn" data-filter="Booked"            onclick="filterProspects('Booked', this)">Booked</button>
@@ -381,13 +381,6 @@
                         <button class="panel-btn" onclick="switchTool('clients');openAddClient()">+ NEW</button>
                     </div>
                 </div>
-
-                <div class="crm-filters">
-                    <button class="filter-btn" data-filter="all" onclick="filterDashboardClients('all', this)">All</button>
-                    <button class="filter-btn active" data-filter="active" onclick="filterDashboardClients('active', this)">Active</button>
-                    <button class="filter-btn" data-filter="disabled" onclick="filterDashboardClients('disabled', this)">Disabled</button>
-                </div>
-
                 <div id="dashboard-clients"><!-- Populated by JS --></div>
             </section>
 

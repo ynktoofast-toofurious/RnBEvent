@@ -79,8 +79,7 @@
         prospects:    [],
         tasks:        [],
         clients:      [],
-        activeFilter: 'New Lead',
-        dashboardClientFilter: 'active'
+        activeFilter: 'all'
     };
     var contentDrafts        = {};
     var activeContentPage    = 'home';
