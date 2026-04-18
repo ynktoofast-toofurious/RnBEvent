@@ -521,6 +521,81 @@
         }
         .builder-info-box strong { color: #2c3e2c; }
 
+        /* Object catalog */
+        .builder-object-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f5f7f3;
+            border: 1px solid #e0e8da;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+        .builder-object-icon {
+            width: 38px;
+            height: 38px;
+            background: #e8f0e4;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .builder-object-meta { flex: 1; min-width: 0; }
+        .builder-object-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: #2c3e2c;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .builder-object-sub {
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+        }
+        .builder-object-add-btn {
+            background: #77a361;
+            border: none;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+            font-family: inherit;
+            flex-shrink: 0;
+        }
+        .builder-object-add-btn:hover { background: #5d8a49; }
+        .builder-selection-bar {
+            background: #f0f5ee;
+            border: 1px solid #c5d9bf;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-top: 4px;
+            display: none;
+        }
+        .builder-selection-bar.visible { display: block; }
+        .builder-selection-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: #77a361;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .builder-selection-btns { display: flex; gap: 6px; }
+        .builder-selection-btns .builder-btn {
+            flex: 1;
+            margin-bottom: 0;
+            text-align: center;
+            font-size: 12px;
+            padding: 7px 10px;
+        }
+
         @media (max-width: 900px) {
             .builder-layout {
                 grid-template-columns: 1fr;
@@ -985,11 +1060,38 @@
                             </div>
 
                             <div class="builder-ctrl-section">
+                                <div class="builder-ctrl-title">Objects</div>
+                                <div class="builder-object-card">
+                                    <div class="builder-object-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#77a361"><path d="M20 9V7c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h3v2H5v2h14v-2h-2v-2h3c1.1 0 2-.9 2-2v-2h-2zm-2 4H4V7h14v6zm-5 4h-2v-2h2v2z"/></svg>
+                                    </div>
+                                    <div class="builder-object-meta">
+                                        <div class="builder-object-name">Serpentine Table</div>
+                                        <div class="builder-object-sub" id="obj-serpentine-count">0 placed</div>
+                                    </div>
+                                    <button class="builder-object-add-btn" onclick="builderAddObject('serpentine')">+ ADD</button>
+                                </div>
+                                <div class="builder-selection-bar" id="obj-selection-bar">
+                                    <div class="builder-selection-label">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="#77a361" style="vertical-align:-1px;margin-right:4px"><path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 17h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/></svg>Selected Object
+                                    </div>
+                                    <div class="builder-selection-btns">
+                                        <button class="builder-btn" onclick="builderRemoveSelected()">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:4px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Remove
+                                        </button>
+                                        <button class="builder-btn" onclick="builderClearObjects()">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:4px"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>Clear All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="builder-ctrl-section">
                                 <div class="builder-ctrl-title">About</div>
                                 <div class="builder-info-box">
-                                    <strong>Hampton.glb</strong><br>
-                                    Venue model loaded via Three.js GLTFLoader.<br><br>
-                                    Use this view to explore layout, plan décor placement, and share with clients.
+                                    <strong>Hampton Venue</strong> — the main scene.<br>
+                                    Add <strong>Serpentine Tables</strong> from the Objects panel above. Click a placed object to select it, then drag to reposition.<br><br>
+                                    Use camera + lighting controls to preview your layout.
                                 </div>
                             </div>
                         </div>
@@ -1531,6 +1633,63 @@
         let renderer, scene, camera, controls, model, gridHelper;
         let wireframeOn = false, autoRotate = true;
 
+        // Object placement system
+        let placedObjects = [], selectedObject = null;
+        let serpentineTemplate = null;
+        let isDragging = false;
+        const dragPlane  = new THREE.Plane();
+        const dragOffset = new THREE.Vector3();
+        const raycaster  = new THREE.Raycaster();
+        const mouse      = new THREE.Vector2();
+
+        function setSelected(obj) {
+            if (selectedObject) {
+                selectedObject.traverse(c => {
+                    if (c.isMesh && c.material) {
+                        (Array.isArray(c.material) ? c.material : [c.material])
+                            .forEach(m => { if (m.emissive) m.emissive.setHex(0x000000); });
+                    }
+                });
+            }
+            selectedObject = obj;
+            const bar = document.getElementById('obj-selection-bar');
+            if (obj) {
+                obj.traverse(c => {
+                    if (c.isMesh && c.material) {
+                        (Array.isArray(c.material) ? c.material : [c.material])
+                            .forEach(m => { if (m.emissive) m.emissive.setHex(0x224411); });
+                    }
+                });
+                if (bar) bar.classList.add('visible');
+            } else {
+                if (bar) bar.classList.remove('visible');
+            }
+        }
+
+        function updateObjectCount() {
+            const el = document.getElementById('obj-serpentine-count');
+            if (el) el.textContent = placedObjects.length === 1 ? '1 placed' : `${placedObjects.length} placed`;
+        }
+
+        function placeClone(template, name) {
+            const clone = template.clone(true);
+            const box   = new THREE.Box3().setFromObject(clone);
+            const size  = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            clone.scale.setScalar(1.8 / maxDim);      // ~1.8 scene-units wide
+            const offset = (Math.random() - 0.5) * 4;
+            clone.position.set(offset, 0, offset);
+            clone.traverse(c => {
+                if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+            });
+            clone.userData.isPlacedObject = true;
+            clone.userData.objectType = name;
+            scene.add(clone);
+            placedObjects.push(clone);
+            setSelected(clone);
+            updateObjectCount();
+        }
+
         window.initBuilder = function() {
             window._builderInited = true;
             const canvas = document.getElementById('builder-canvas');
@@ -1639,6 +1798,50 @@
             ro.observe(wrap);
             resize();
 
+            // Pointer events for object selection & drag
+            const cvs = renderer.domElement;
+
+            cvs.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0) return;
+                const rect = cvs.getBoundingClientRect();
+                mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+                mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+
+                const hits = raycaster.intersectObjects(placedObjects, true);
+                if (hits.length > 0) {
+                    let target = hits[0].object;
+                    while (target.parent && !target.userData.isPlacedObject) target = target.parent;
+                    setSelected(target);
+                    isDragging = true;
+                    controls.enabled = false;
+                    dragPlane.set(new THREE.Vector3(0, 1, 0), -target.position.y);
+                    const pt = new THREE.Vector3();
+                    raycaster.ray.intersectPlane(dragPlane, pt);
+                    dragOffset.copy(target.position).sub(pt);
+                    e.stopPropagation();
+                } else {
+                    setSelected(null);
+                }
+            });
+
+            cvs.addEventListener('pointermove', (e) => {
+                if (!isDragging || !selectedObject) return;
+                const rect = cvs.getBoundingClientRect();
+                mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+                mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const pt = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, pt)) {
+                    const newPos = pt.add(dragOffset);
+                    selectedObject.position.x = newPos.x;
+                    selectedObject.position.z = newPos.z;
+                }
+            });
+
+            cvs.addEventListener('pointerup',    () => { isDragging = false; controls.enabled = true; });
+            cvs.addEventListener('pointercancel',() => { isDragging = false; controls.enabled = true; });
+
             // Render loop
             function animate() {
                 requestAnimationFrame(animate);
@@ -1739,6 +1942,41 @@
             if (tog === 'grid' && gridHelper) {
                 gridHelper.visible = on;
             }
+        };
+
+        // ── Object placement ────────────────────────────────────
+        window.builderAddObject = function(name) {
+            if (!scene) return;
+            if (name === 'serpentine') {
+                if (serpentineTemplate) {
+                    placeClone(serpentineTemplate, name);
+                } else {
+                    const loader = new GLTFLoader();
+                    loader.load(
+                        '3d-assets/Serpentine.glb',
+                        (gltf) => { serpentineTemplate = gltf.scene; placeClone(serpentineTemplate, name); },
+                        undefined,
+                        (err) => console.error('Could not load Serpentine.glb:', err)
+                    );
+                }
+            }
+        };
+
+        window.builderRemoveSelected = function() {
+            if (!selectedObject) return;
+            scene.remove(selectedObject);
+            placedObjects = placedObjects.filter(o => o !== selectedObject);
+            selectedObject = null;
+            document.getElementById('obj-selection-bar').classList.remove('visible');
+            updateObjectCount();
+        };
+
+        window.builderClearObjects = function() {
+            placedObjects.forEach(o => scene.remove(o));
+            placedObjects = [];
+            selectedObject = null;
+            document.getElementById('obj-selection-bar').classList.remove('visible');
+            updateObjectCount();
         };
     </script>
 
