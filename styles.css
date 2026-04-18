@@ -2204,7 +2204,7 @@ section.visible,
 
 .chatbot-section {
     background: linear-gradient(135deg, #f9faf8 0%, #e8f0e3 100%);
-    padding: 80px 0;
+    padding: 50px 0;
     position: relative;
     overflow: hidden;
 }
@@ -2254,7 +2254,7 @@ section.visible,
 .chatbot-window {
     display: flex;
     flex-direction: column;
-    height: 500px;
+    height: 380px;
 }
 
 #chatbot-messages {
@@ -2417,7 +2417,7 @@ section.visible,
 /* Responsive Design for Chatbot */
 @media (max-width: 768px) {
     .chatbot-section {
-        padding: 60px 0;
+        padding: 40px 0;
     }
 
     .chatbot-container {
@@ -2433,7 +2433,7 @@ section.visible,
     }
 
     .chatbot-window {
-        height: 450px;
+        height: 350px;
     }
 
     #chatbot-messages {
@@ -2464,7 +2464,7 @@ section.visible,
 
 @media (max-width: 480px) {
     .chatbot-section {
-        padding: 50px 0;
+        padding: 35px 0;
     }
 
     .chatbot-header h2 {
@@ -2476,7 +2476,7 @@ section.visible,
     }
 
     .chatbot-window {
-        height: 400px;
+        height: 320px;
     }
 
     #chatbot-messages {

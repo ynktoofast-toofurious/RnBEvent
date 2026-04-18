@@ -228,13 +228,13 @@ const allFAQs = Object.values(chatbotFAQ).flat();
 // Sample questions for typing animation
 const sampleQuestions = [
     "What does RNB Events do?",
+    "What are the packages?",
     "How much does it cost?",
     "Can you match my theme?",
     "Do you travel for events?",
     "How do I get started?",
     "Can you work within my budget?",
-    "Do you only do weddings?",
-    "What's included in pricing?"
+    "Do you only do weddings?"
 ];
 
 class RNBChatbot {
@@ -375,31 +375,116 @@ class RNBChatbot {
     }
 
     findBestResponse(userInput) {
-        const input = userInput.toLowerCase();
+        const input = userInput.toLowerCase().trim();
+
+        // Keyword mappings for better semantic understanding
+        const keywordMaps = {
+            'package': ['package', 'packages', 'tier', 'tiers', 'level', 'levels', 'option', 'options'],
+            'pricing': ['price', 'pricing', 'cost', 'costs', 'how much', 'expensive', 'afford', 'budget'],
+            'wedding': ['wedding', 'weddings', 'marry', 'marriage', 'bride', 'groom'],
+            'event': ['event', 'events', 'party', 'parties', 'celebration', 'occasion'],
+            'design': ['design', 'designs', 'decor', 'decoration', 'decorations', 'style', 'theme'],
+            'book': ['book', 'booking', 'reserve', 'reservation', 'schedule', 'secure'],
+            'portal': ['portal', 'client area', 'dashboard', 'account'],
+            'venue': ['venue', 'location', 'place', 'site'],
+            'floral': ['floral', 'flower', 'flowers', 'bouquet', 'arrangement'],
+            'rental': ['rental', 'rent', 'renting', 'hire', 'lease'],
+            'setup': ['setup', 'set up', 'installation', 'install', 'breakdown', 'tear down'],
+            'deposit': ['deposit', 'down payment', 'initial payment'],
+            'cancel': ['cancel', 'cancellation', 'refund'],
+            'change': ['change', 'modify', 'edit', 'update', 'alter'],
+            'payment': ['payment', 'pay', 'plan', 'financing', 'installment']
+        };
 
         // Check for pricing/venue/decor keywords that should trigger quote
-        const quoteKeywords = ['price', 'pricing', 'cost', 'how much', 'budget', 'quote', 'estimate', 'venue', 'specific venue', 'decor', 'decoration'];
+        const quoteKeywords = ['price', 'pricing', 'cost', 'how much', 'budget', 'quote', 'estimate', 'venue', 'specific venue', 'decor', 'decoration', 'package'];
         const shouldTriggerQuote = quoteKeywords.some(keyword => input.includes(keyword));
 
-        // Search for best matching FAQ
+        // Enhanced question patterns
+        const questionPatterns = [
+            { pattern: /what (are|is) (the |your )?package/i, answerKey: 'packages' },
+            { pattern: /(how much|what.*cost|pricing|price)/i, answerKey: 'pricing' },
+            { pattern: /do you (only )?do wedding/i, answerKey: 'only_weddings' },
+            { pattern: /(what do|what does) .*rnb.*do/i, answerKey: 'what_we_do' },
+            { pattern: /can you (help|guide).*never.*plan/i, answerKey: 'beginner_help' },
+            { pattern: /(full planning|just decor|decoration only)/i, answerKey: 'planning_or_decor' },
+            { pattern: /(match|recreate|customize).*theme/i, answerKey: 'custom_theme' },
+            { pattern: /how (do i|to) (get )?start/i, answerKey: 'get_started' },
+            { pattern: /how (do i|to) (secure|book).*date/i, answerKey: 'secure_date' },
+            { pattern: /(how far|when.*book)/i, answerKey: 'when_to_book' },
+            { pattern: /client portal/i, answerKey: 'portal_what' },
+            { pattern: /why choose/i, answerKey: 'why_choose' },
+            { pattern: /(travel|destination)/i, answerKey: 'travel' },
+            { pattern: /work.*venue/i, answerKey: 'work_with_venue' },
+            { pattern: /what.*(included|include)/i, answerKey: 'whats_included' }
+        ];
+
+        // Check pattern matches first
+        for (const pattern of questionPatterns) {
+            if (pattern.pattern.test(input)) {
+                const match = this.findFAQByKey(pattern.answerKey);
+                if (match) {
+                    return {
+                        answer: match.a,
+                        triggerQuote: shouldTriggerQuote || match.triggerQuote
+                    };
+                }
+            }
+        }
+
+        // Search for best matching FAQ using enhanced scoring
         let bestMatch = null;
         let highestScore = 0;
 
         allFAQs.forEach(faq => {
             const questionLower = faq.q.toLowerCase();
-            const words = input.split(' ');
+            const answerLower = faq.a.toLowerCase();
             let score = 0;
 
-            // Calculate match score
-            words.forEach(word => {
-                if (word.length > 3 && questionLower.includes(word)) {
-                    score += 2;
+            // Extract meaningful words from user input
+            const inputWords = input.split(/\s+/).filter(w => w.length > 2);
+            
+            // Score based on word matching in question
+            inputWords.forEach(word => {
+                // Direct match in question
+                if (questionLower.includes(word)) {
+                    score += 5;
+                }
+                
+                // Check keyword synonyms
+                for (const [key, synonyms] of Object.entries(keywordMaps)) {
+                    if (synonyms.includes(word)) {
+                        // Check if any synonym appears in the FAQ question
+                        synonyms.forEach(syn => {
+                            if (questionLower.includes(syn)) {
+                                score += 3;
+                            }
+                        });
+                    }
+                }
+
+                // Match in answer (lower priority)
+                if (answerLower.includes(word)) {
+                    score += 1;
                 }
             });
 
+            // Bonus for question type matching (what, how, can, do, etc.)
+            const userQuestionType = input.match(/^(what|how|can|do|does|is|are|will)/);
+            const faqQuestionType = questionLower.match(/^(what|how|can|do|does|is|are|will)/);
+            if (userQuestionType && faqQuestionType && userQuestionType[0] === faqQuestionType[0]) {
+                score += 2;
+            }
+
             // Exact phrase bonus
             if (questionLower.includes(input) || input.includes(questionLower.substring(0, 20))) {
-                score += 10;
+                score += 15;
+            }
+
+            // Similar length bonus (questions of similar length tend to be similar)
+            const lengthDiff = Math.abs(input.length - questionLower.length);
+            if (lengthDiff < 20) {
+                score += 2;
             }
 
             if (score > highestScore) {
@@ -408,19 +493,44 @@ class RNBChatbot {
             }
         });
 
-        // If we found a good match
-        if (bestMatch && highestScore > 0) {
+        // Require minimum score for confidence
+        if (bestMatch && highestScore >= 5) {
             return {
                 answer: bestMatch.a,
                 triggerQuote: shouldTriggerQuote || bestMatch.triggerQuote
             };
         }
 
-        // Default response
+        // Default response with suggestions
         return {
-            answer: "I'd love to help with that! For specific questions about your event, I recommend requesting a quote so our team can provide personalized assistance. You can also explore our services page or check out our portfolio for inspiration.",
+            answer: "I'd love to help with that! For specific questions about your event, I recommend requesting a quote so our team can provide personalized assistance. You can also try asking: 'What are the packages?' or 'How do I get started?'",
             triggerQuote: shouldTriggerQuote
         };
+    }
+
+    findFAQByKey(key) {
+        const keyMap = {
+            'packages': 'Do you offer packages?',
+            'pricing': 'How much does it cost?',
+            'only_weddings': 'Do you only do weddings?',
+            'what_we_do': 'What does RNB Events do exactly?',
+            'beginner_help': "Can you help if I've never planned an event before?",
+            'planning_or_decor': 'Do you offer full planning or just decoration?',
+            'custom_theme': 'Can you match my theme or colors?',
+            'get_started': 'How do I get started?',
+            'secure_date': 'How do I secure my date?',
+            'when_to_book': 'How far in advance should I book?',
+            'portal_what': 'What is the client portal?',
+            'why_choose': 'Why choose RNB Events?',
+            'travel': 'Do you travel for events?',
+            'work_with_venue': 'Do you work with my venue?',
+            'whats_included': "What's included in your pricing?"
+        };
+
+        const questionText = keyMap[key];
+        if (!questionText) return null;
+
+        return allFAQs.find(faq => faq.q === questionText);
     }
 
     addMessage(message) {
