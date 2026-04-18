@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DK2C6GZWJZ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-DK2C6GZWJZ');
+    </script>
+    <title>Demo Area | RNB Events</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Override chatbot hidden state for demo */
+        .chatbot-section {
+            display: block !important;
+        }
+
+        /* Demo page specific styles */
+        .demo-gate-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2c3e2c 0%, #1a251a 100%);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .demo-gate-overlay.hidden {
+            display: none;
+        }
+
+        .demo-gate-card {
+            background: #fff;
+            padding: 50px 40px;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .demo-gate-card.hidden {
+            display: none;
+        }
+
+        .demo-gate-logo-img {
+            height: 60px;
+            margin-bottom: 20px;
+        }
+
+        .demo-gate-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #77a361;
+            margin-bottom: 10px;
+        }
+
+        .demo-gate-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 32px;
+            font-weight: 500;
+            color: #2c3e2c;
+            margin-bottom: 8px;
+        }
+
+        .demo-gate-subtitle {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .demo-step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+
+        .demo-step-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e8f0e3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: #999;
+            font-weight: 500;
+        }
+
+        .demo-step-dot.active {
+            background: #77a361;
+            color: #fff;
+        }
+
+        .demo-step-dot.done {
+            background: #527141;
+            color: #fff;
+        }
+
+        .demo-step-line {
+            width: 40px;
+            height: 2px;
+            background: #e8f0e3;
+        }
+
+        .demo-step-line.done {
+            background: #527141;
+        }
+
+        .demo-gate-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 15px;
+            font-family: inherit;
+            margin-bottom: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .demo-gate-input:focus {
+            outline: none;
+            border-color: #77a361;
+        }
+
+        .demo-totp-input {
+            width: 100%;
+            padding: 18px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 24px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            letter-spacing: 8px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .demo-totp-input:focus {
+            outline: none;
+            border-color: #77a361;
+        }
+
+        .demo-gate-btn {
+            width: 100%;
+            padding: 16px;
+            background: #77a361;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .demo-gate-btn:hover {
+            background: #527141;
+        }
+
+        .demo-gate-error {
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 12px;
+            min-height: 20px;
+        }
+
+        .demo-content {
+            display: none;
+            padding: 40px 20px;
+        }
+
+        .demo-content.visible {
+            display: block;
+        }
+
+        .demo-header {
+            background: linear-gradient(135deg, #2c3e2c 0%, #527141 100%);
+            color: #fff;
+            padding: 60px 20px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .demo-header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 48px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .demo-header p {
+            font-size: 16px;
+            color: #d0dfc8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .demo-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ACCESS GATE -->
+    <div id="demo-gate" class="demo-gate-overlay">
+
+        <!-- STEP 1 — Admin Code -->
+        <div id="demo-step1" class="demo-gate-card">
+            <div class="demo-gate-logo">
+                <img src="RNB Logo Olive.png" alt="RNB Events" class="demo-gate-logo-img">
+            </div>
+            <p class="demo-gate-label">STAGING ACCESS</p>
+            <h1 class="demo-gate-title">Demo Area</h1>
+            <p class="demo-gate-subtitle">Test new features before they go live. Admin access only.</p>
+
+            <div class="demo-step-indicator">
+                <div class="demo-step-dot active"><span>1</span></div>
+                <div class="demo-step-line"></div>
+                <div class="demo-step-dot"><span>2</span></div>
+            </div>
+
+            <form class="demo-gate-form" onsubmit="return false;">
+                <input type="password" id="demo-access-input" class="demo-gate-input" placeholder="Admin Code" autocomplete="off" maxlength="64">
+                <button type="submit" class="demo-gate-btn" onclick="demoStep1()">NEXT →</button>
+                <p id="demo-error-1" class="demo-gate-error" aria-live="polite"></p>
+            </form>
+        </div>
+
+        <!-- STEP 2 — TOTP -->
+        <div id="demo-step2" class="demo-gate-card hidden">
+            <div class="demo-gate-logo">
+                <img src="RNB Logo Olive.png" alt="RNB Events" class="demo-gate-logo-img">
+            </div>
+            <p class="demo-gate-label">TWO-FACTOR AUTH</p>
+            <h1 class="demo-gate-title">Verify Identity</h1>
+            <p class="demo-gate-subtitle">Enter the 6-digit code from your authenticator app.</p>
+
+            <div class="demo-step-indicator">
+                <div class="demo-step-dot done"><span>1</span></div>
+                <div class="demo-step-line done"></div>
+                <div class="demo-step-dot active"><span>2</span></div>
+            </div>
+
+            <form class="demo-gate-form" onsubmit="return false;">
+                <input type="text" id="demo-totp-input" class="demo-totp-input"
+                    placeholder="000000" inputmode="numeric"
+                    pattern="[0-9]*" maxlength="6" autocomplete="one-time-code">
+                <button type="submit" class="demo-gate-btn" onclick="demoStep2()">VERIFY</button>
+                <p id="demo-error-2" class="demo-gate-error" aria-live="polite"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- DEMO CONTENT -->
+    <div id="demo-content" class="demo-content">
+        
+        <!-- Demo Header -->
+        <div class="demo-header">
+            <span class="demo-badge">🚀 STAGING ENVIRONMENT</span>
+            <h1>Feature Testing Area</h1>
+            <p>Test new features in a safe environment before deploying to the live site. Changes here won't affect your customers.</p>
+        </div>
+
+        <!-- Chatbot Section (Currently Testing) -->
+        <section class="chatbot-section">
+            <div class="chatbot-container">
+                <div class="chatbot-header">
+                    <h2>Have Questions? Ask Me Anything!</h2>
+                    <p>Get instant answers about our services, pricing, and event planning process</p>
+                </div>
+                <div id="rnb-chatbot">
+                    <div class="chatbot-window">
+                        <div id="chatbot-messages"></div>
+                        <div class="chatbot-input-area">
+                            <input 
+                                type="text" 
+                                id="chatbot-input" 
+                                placeholder="Ask me anything..." 
+                                autocomplete="off"
+                            >
+                            <button id="chatbot-send">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer Note -->
+        <div style="text-align: center; padding: 40px 20px; color: #999; font-size: 13px;">
+            <p>🔒 This is a secure staging area. Features shown here are in development.</p>
+            <p style="margin-top: 8px;">Questions? Contact the admin team.</p>
+        </div>
+
+    </div>
+
+    <!-- Load Admin Config (same as admin page) -->
+    <script src="Admin/admin-data.js"></script>
+
+    <!-- Chatbot Script -->
+    <script src="chatbot.js"></script>
+
+    <!-- Demo Authentication Script -->
+    <script>
+        (function() {
+            'use strict';
+
+            const SESSION_KEY = 'rnb_demo_access';
+            let pendingAuth = false;
+            let authAttempts = 0;
+
+            const gate = document.getElementById('demo-gate');
+            const content = document.getElementById('demo-content');
+            const input = document.getElementById('demo-access-input');
+
+            // SHA-256 hash function
+            async function sha256Hex(str) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(str);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            // Decode TOTP key from admin config
+            function decodeTotpKey() {
+                const arr = (window.ADMIN_CONFIG || {}).totpKey;
+                if (!arr || !arr.length) return '';
+                return arr.map(c => String.fromCharCode(c)).join('');
+            }
+
+            // Base32 decode for TOTP secret
+            function base32Decode(base32) {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+                const clean = base32.toUpperCase().replace(/=+$/, '').replace(/\s/g, '');
+                let bits = 0, val = 0, idx = 0;
+                const out = new Uint8Array(Math.floor(clean.length * 5 / 8));
+                for (let i = 0; i < clean.length; i++) {
+                    const c = chars.indexOf(clean[i]);
+                    if (c === -1) continue;
+                    val = (val << 5) | c;
+                    bits += 5;
+                    if (bits >= 8) {
+                        out[idx++] = (val >>> (bits - 8)) & 0xff;
+                        bits -= 8;
+                    }
+                }
+                return out.buffer;
+            }
+
+            // Verify TOTP code
+            function verifyTOTP(secret, token) {
+                let keyData;
+                try { 
+                    keyData = base32Decode(secret); 
+                } catch (e) { 
+                    return Promise.resolve(false); 
+                }
+
+                return crypto.subtle.importKey(
+                    'raw', keyData,
+                    { name: 'HMAC', hash: { name: 'SHA-1' } },
+                    false, ['sign']
+                ).then(function(cryptoKey) {
+                    const now = Math.floor(Date.now() / 1000 / 30);
+                    // Check ±1 window (90 s grace for clock drift)
+                    const checks = [-1, 0, 1].map(function(delta) {
+                        const buf = new ArrayBuffer(8);
+                        const view = new DataView(buf);
+                        view.setUint32(4, now + delta, false); // counter in low 4 bytes (big-endian)
+                        return crypto.subtle.sign('HMAC', cryptoKey, buf).then(function(sig) {
+                            const hash = new Uint8Array(sig);
+                            const offset = hash[19] & 0xf;
+                            const code = (
+                                ((hash[offset]     & 0x7f) << 24) |
+                                ((hash[offset + 1] & 0xff) << 16) |
+                                ((hash[offset + 2] & 0xff) <<  8) |
+                                 (hash[offset + 3] & 0xff)
+                            ) % 1000000;
+                            return code.toString().padStart(6, '0') === token;
+                        });
+                    });
+                    return Promise.all(checks).then(function(results) {
+                        return results.some(Boolean);
+                    });
+                }).catch(function() { 
+                    return false; 
+                });
+            }
+
+            // Show error message
+            function showErr(id, msg) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.textContent = msg;
+                    el.style.display = 'block';
+                }
+            }
+
+            // Clear error message
+            function clearErr(id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.textContent = '';
+                    el.style.display = 'none';
+                }
+            }
+
+            // Step 1: Validate admin code
+            window.demoStep1 = async function() {
+                const entered = (input ? input.value : '').trim();
+                const cfg = window.ADMIN_CONFIG || {};
+
+                if (!entered) {
+                    showErr('demo-error-1', 'Please enter admin code.');
+                    if (input) { input.value = ''; input.focus(); }
+                    return;
+                }
+
+                try {
+                    const hash = await sha256Hex(entered);
+                    const validHash = cfg.codeHash;
+
+                    if (hash !== validHash) {
+                        authAttempts++;
+                        showErr('demo-error-1', 'Invalid admin code.');
+                        if (input) { input.value = ''; input.focus(); }
+                        
+                        if (authAttempts >= 5) {
+                            showErr('demo-error-1', 'Too many failed attempts. Please try again later.');
+                            setTimeout(() => { authAttempts = 0; }, 300000); // 5 min lockout
+                        }
+                        return;
+                    }
+
+                    authAttempts = 0;
+                    clearErr('demo-error-1');
+                    pendingAuth = true;
+
+                    document.getElementById('demo-step1').classList.add('hidden');
+                    const step2 = document.getElementById('demo-step2');
+                    step2.classList.remove('hidden');
+                    const totpInput = document.getElementById('demo-totp-input');
+                    if (totpInput) totpInput.focus();
+                } catch (err) {
+                    showErr('demo-error-1', 'Authentication error. Ensure you are using HTTPS.');
+                    console.error('Demo auth error:', err);
+                }
+            };
+
+            // Step 2: Validate TOTP
+            window.demoStep2 = function() {
+                if (!pendingAuth) return;
+
+                const token = (document.getElementById('demo-totp-input').value || '').trim();
+                const secret = decodeTotpKey();
+                const btn = document.querySelector('#demo-step2 .demo-gate-btn');
+
+                // If no secret configured, skip TOTP
+                if (!secret) {
+                    sessionStorage.setItem(SESSION_KEY, 'ok');
+                    pendingAuth = false;
+                    showDemoContent();
+                    return;
+                }
+
+                if (token.length !== 6 || !/^\d{6}$/.test(token)) {
+                    showErr('demo-error-2', 'Please enter a 6-digit code.');
+                    return;
+                }
+
+                if (btn) { 
+                    btn.textContent = 'VERIFYING...'; 
+                    btn.disabled = true; 
+                }
+
+                // Validate TOTP using crypto API
+                verifyTOTP(secret, token).then(function(valid) {
+                    if (btn) { 
+                        btn.textContent = 'VERIFY'; 
+                        btn.disabled = false; 
+                    }
+
+                    if (valid) {
+                        authAttempts = 0;
+                        sessionStorage.setItem(SESSION_KEY, 'ok');
+                        pendingAuth = false;
+                        clearErr('demo-error-2');
+                        showDemoContent();
+                    } else {
+                        authAttempts++;
+                        showErr('demo-error-2', 'Invalid verification code. Please try again.');
+                        document.getElementById('demo-totp-input').value = '';
+                        document.getElementById('demo-totp-input').focus();
+                        
+                        if (authAttempts >= 5) {
+                            showErr('demo-error-2', 'Too many failed attempts. Please refresh and try again.');
+                        }
+                    }
+                }).catch(function(err) {
+                    if (btn) { 
+                        btn.textContent = 'VERIFY'; 
+                        btn.disabled = false; 
+                    }
+                    showErr('demo-error-2', 'Verification error. Please try again.');
+                    console.error('TOTP verification error:', err);
+                });
+            };
+
+            // Show demo content
+            function showDemoContent() {
+                gate.classList.add('hidden');
+                content.classList.add('visible');
+            }
+
+            // Check if already authenticated
+            function checkAuth() {
+                if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
+                    showDemoContent();
+                } else {
+                    if (input) input.focus();
+                }
+            }
+
+            // Enter key handlers
+            if (input) {
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') demoStep1();
+                });
+            }
+
+            const totpInput = document.getElementById('demo-totp-input');
+            if (totpInput) {
+                totpInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') demoStep2();
+                });
+            }
+
+            // Initialize
+            checkAuth();
+        })();
+    </script>
+
+</body>
+</html>
