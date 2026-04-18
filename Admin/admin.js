@@ -79,7 +79,8 @@
         prospects:    [],
         tasks:        [],
         clients:      [],
-        activeFilter: 'all'
+        activeFilter: 'New Lead',
+        dashboardClientFilter: 'active'
     };
     var contentDrafts        = {};
     var activeContentPage    = 'home';
@@ -1927,6 +1928,14 @@
         });
         el.innerHTML = html;
     }
+
+    function filterDashboardClients(filter, btn) {
+        state.dashboardClientFilter = filter || 'active';
+        document.querySelectorAll('#panel-clients-dash .filter-btn').forEach(function (b) { b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+        renderDashboardClients();
+    }
+    window.filterDashboardClients = filterDashboardClients;
 
     /* ── Auto-create client from Booked prospect ─── */
     function autoCreateClientFromProspect(prospect) {
