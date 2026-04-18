@@ -2203,6 +2203,7 @@ section.visible,
    =========================== */
 
 .chatbot-section {
+    display: none; /* Hidden - chatbot in development */
     background: linear-gradient(135deg, #f9faf8 0%, #e8f0e3 100%);
     padding: 50px 0;
     position: relative;
