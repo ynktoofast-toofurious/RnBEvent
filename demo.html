@@ -715,12 +715,33 @@
 
         @media (max-width: 900px) {
             .builder-layout { display: block; }
-            .builder-hud { flex-wrap: wrap; border-radius: 12px; top: 8px; }
+            .builder-hud { flex-wrap: nowrap; border-radius: 28px; top: 8px; }
         }
         @media (max-width: 600px) {
-            .builder-hud { gap: 4px; padding: 5px 8px; }
-            .hud-btn { padding: 5px 8px; font-size: 10px; }
+            /* Taller canvas on mobile so HUD doesn't eat the view */
+            .builder-canvas-wrap { aspect-ratio: 4/5; min-height: 340px; }
+
+            /* Slim icon-only HUD — no text labels */
+            .builder-hud {
+                gap: 2px;
+                padding: 5px 8px;
+                top: 8px;
+            }
+            .hud-btn {
+                padding: 7px 9px;
+                font-size: 0;          /* hide text */
+                border-radius: 50%;
+                width: 34px;
+                height: 34px;
+                justify-content: center;
+            }
+            .hud-btn svg { width: 16px; height: 16px; }
             .hud-sep { display: none; }
+
+            /* Panels take max 55% height so canvas is still visible above */
+            .builder-panel { max-height: 55%; }
+            .builder-freeze-badge { font-size: 9px; top: 52px; padding: 3px 12px; }
+
             .concierge-panel { height: 520px; }
         }
 
