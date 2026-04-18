@@ -13,6 +13,22 @@ const chatbotFAQ = {
             a: "No, we handle weddings, birthdays, engagements, corporate events, and other special occasions."
         },
         {
+            q: "Do you do corporate events?",
+            a: "Yes! We specialize in corporate events including galas, conferences, holiday parties, product launches, and team celebrations. We handle everything from elegant décor to full event planning."
+        },
+        {
+            q: "Do you do birthdays?",
+            a: "Yes! We create stunning birthday celebrations of all sizes—from intimate gatherings to grand milestone parties. Custom themes, décor, and full planning available."
+        },
+        {
+            q: "Do you do engagements?",
+            a: "Yes! We design beautiful engagement parties that set the perfect tone for your journey to the altar. Custom décor, styling, and planning services available."
+        },
+        {
+            q: "What types of events do you do?",
+            a: "We handle weddings, corporate events, birthdays, engagements, baby showers, anniversaries, galas, and any special occasion that deserves beautiful design and flawless execution."
+        },
+        {
             q: "Can you help if I've never planned an event before?",
             a: "Absolutely. We guide you step by step—from ideas to execution."
         },
@@ -255,12 +271,12 @@ const allFAQs = Object.values(chatbotFAQ).flat();
 const sampleQuestions = [
     "What does RNB Events do?",
     "Where are you located?",
+    "Do you do corporate events?",
     "What are the packages?",
     "How much does it cost?",
     "Can you match my theme?",
     "Do you travel for events?",
-    "How do I get started?",
-    "Do you only do weddings?"
+    "How do I get started?"
 ];
 
 class RNBChatbot {
@@ -407,6 +423,9 @@ class RNBChatbot {
         const keywordMaps = {
             'location': ['location', 'located', 'where', 'area', 'based', 'serve', 'dfw', 'dallas', 'fort worth', 'texas'],
             'contact': ['contact', 'email', 'phone', 'call', 'reach', 'number', 'touch'],
+            'corporate': ['corporate', 'business', 'company', 'gala', 'conference', 'professional', 'work event'],
+            'birthday': ['birthday', 'bday', 'birthdays', 'birthday party', 'milestone'],
+            'engagement': ['engagement', 'engagements', 'engaged', 'proposal'],
             'package': ['package', 'packages', 'tier', 'tiers', 'level', 'levels', 'option', 'options'],
             'pricing': ['price', 'pricing', 'cost', 'costs', 'how much', 'expensive', 'afford', 'budget'],
             'wedding': ['wedding', 'weddings', 'marry', 'marriage', 'bride', 'groom'],
@@ -438,6 +457,13 @@ class RNBChatbot {
             { pattern: /(what|where).*(email|contact|reach)/i, answerKey: 'contact' },
             { pattern: /(phone|call|number)/i, answerKey: 'phone' },
             { pattern: /serve my area/i, answerKey: 'serve_area' },
+            
+            // Event Types (Specific before general)
+            { pattern: /do you (do|handle|plan).*corporate/i, answerKey: 'do_corporate' },
+            { pattern: /corporate.*event/i, answerKey: 'do_corporate' },
+            { pattern: /do you (do|handle|plan).*(birthday|bday)/i, answerKey: 'do_birthdays' },
+            { pattern: /do you (do|handle|plan).*engagement/i, answerKey: 'do_engagements' },
+            { pattern: /what (type|kind).*event/i, answerKey: 'event_types' },
             
             // Packages & Pricing
             { pattern: /what (are|is) (the |your )?package/i, answerKey: 'packages' },
@@ -563,6 +589,12 @@ class RNBChatbot {
             'contact': 'How do I contact you?',
             'phone': "What's your phone number?",
             'serve_area': 'Do you serve my area?',
+            
+            // Event Types
+            'do_corporate': 'Do you do corporate events?',
+            'do_birthdays': 'Do you do birthdays?',
+            'do_engagements': 'Do you do engagements?',
+            'event_types': 'What types of events do you do?',
             
             // Packages & Pricing
             'packages': 'Do you offer packages?',
