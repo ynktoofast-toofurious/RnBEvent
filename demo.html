@@ -441,7 +441,7 @@
             aspect-ratio: 16/10;
         }
         .builder-canvas-wrap.asset-workspace {
-            background: transparent;
+            background: #000;
             box-shadow: none;
         }
         #builder-canvas {
@@ -541,6 +541,7 @@
         }
         .hud-btn:hover { background: rgba(119,163,97,0.35); color: #fff; border-color: #77a361; }
         .hud-btn.active { background: #77a361; color: #fff; border-color: #77a361; }
+        .hud-btn.disabled { opacity: 0.45; pointer-events: none; }
         .hud-btn.danger:hover { background: rgba(220,70,70,0.4); border-color: #e05555; }
         .hud-sep { width: 1px; background: rgba(255,255,255,0.14); margin: 4px 2px; }
 
@@ -742,6 +743,14 @@
             letter-spacing: 0.5px;
         }
         .panel-obj-add:hover { background: #5d8a49; }
+        .panel-obj-add.danger { background: rgba(180,72,72,0.9); }
+        .panel-obj-add.danger:hover { background: rgba(210,82,82,1); }
+        .panel-obj-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-shrink: 0;
+        }
 
         /* Inspector panel (selected object) */
         .inspector-empty {
@@ -1455,6 +1464,10 @@
                                     <div class="hud-sep"></div>
                                     <button class="hud-btn" id="venue-hud-inspector" onclick="hudTogglePanel('venue', 'inspector')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/></svg>Inspector<span class="hud-sel-badge" id="venue-sel-badge"></span></button>
                                     <div class="hud-sep"></div>
+                                    <button class="hud-btn active" id="venue-hud-rotate-toggle" onclick="builderQuickToggleRotate('venue')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M10 16.5v-9l6 4.5-6 4.5zm2-14.5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg><span id="venue-hud-rotate-label">Pause</span></button>
+                                    <button class="hud-btn disabled" id="venue-hud-undo" onclick="builderUndo('venue')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.67 0-5.1 1.05-6.9 2.76L2 7.17V16h8.83l-4.3-4.3A7.96 7.96 0 0 1 12.5 10c3.54 0 6.55 2.29 7.61 5.47l1.9-.63C20.69 10.77 16.93 8 12.5 8z"/></svg>Undo</button>
+                                    <button class="hud-btn disabled" id="venue-hud-redo" onclick="builderRedo('venue')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 8c2.67 0 5.1 1.05 6.9 2.76L22 7.17V16h-8.83l4.3-4.3A7.96 7.96 0 0 0 11.5 10c-3.54 0-6.55 2.29-7.61 5.47l-1.9-.63C3.31 10.77 7.07 8 11.5 8z"/></svg>Redo</button>
+                                    <div class="hud-sep"></div>
                                     <button class="hud-btn" id="venue-hud-freeze" onclick="builderToggleFreeze('venue')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>Freeze</button>
                                 </div>
                                 <div class="builder-panel" id="venue-panel-objects">
@@ -1535,6 +1548,10 @@
                                     <div class="hud-sep"></div>
                                     <button class="hud-btn" id="asset-hud-inspector" onclick="hudTogglePanel('asset', 'inspector')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/></svg>Inspector<span class="hud-sel-badge" id="asset-sel-badge"></span></button>
                                     <div class="hud-sep"></div>
+                                    <button class="hud-btn" id="asset-hud-rotate-toggle" onclick="builderQuickToggleRotate('asset')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M10 16.5v-9l6 4.5-6 4.5zm2-14.5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg><span id="asset-hud-rotate-label">Play</span></button>
+                                    <button class="hud-btn disabled" id="asset-hud-undo" onclick="builderUndo('asset')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.67 0-5.1 1.05-6.9 2.76L2 7.17V16h8.83l-4.3-4.3A7.96 7.96 0 0 1 12.5 10c3.54 0 6.55 2.29 7.61 5.47l1.9-.63C20.69 10.77 16.93 8 12.5 8z"/></svg>Undo</button>
+                                    <button class="hud-btn disabled" id="asset-hud-redo" onclick="builderRedo('asset')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 8c2.67 0 5.1 1.05 6.9 2.76L22 7.17V16h-8.83l4.3-4.3A7.96 7.96 0 0 0 11.5 10c-3.54 0-6.55 2.29-7.61 5.47l-1.9-.63C3.31 10.77 7.07 8 11.5 8z"/></svg>Redo</button>
+                                    <div class="hud-sep"></div>
                                     <button class="hud-btn" id="asset-hud-freeze" onclick="builderToggleFreeze('asset')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>Freeze</button>
                                 </div>
                                 <div class="builder-panel" id="asset-panel-objects">
@@ -1547,7 +1564,7 @@
                                 </div>
                                 <div class="builder-panel" id="asset-panel-camera"><div class="builder-panel-header"><span class="builder-panel-title">Camera Views</span><button class="builder-panel-close" onclick="hudClosePanel('asset', 'camera')">&#x2715;</button></div><div class="panel-btn-grid"><button class="panel-btn" onclick="builderCam('asset', 'front')">Front</button><button class="panel-btn" onclick="builderCam('asset', 'top')">Top</button><button class="panel-btn" onclick="builderCam('asset', 'side')">Side</button><button class="panel-btn" onclick="builderCam('asset', 'iso')">Iso</button><button class="panel-btn" onclick="builderCam('asset', 'reset')">Reset</button></div></div>
                                 <div class="builder-panel" id="asset-panel-light"><div class="builder-panel-header"><span class="builder-panel-title">Lighting</span><button class="builder-panel-close" onclick="hudClosePanel('asset', 'light')">&#x2715;</button></div><div class="panel-btn-grid"><button class="panel-btn active" id="asset-btn-light-day" onclick="builderLight('asset', 'day')">Day</button><button class="panel-btn" id="asset-btn-light-evening" onclick="builderLight('asset', 'evening')">Evening</button><button class="panel-btn" id="asset-btn-light-night" onclick="builderLight('asset', 'night')">Night</button></div></div>
-                                <div class="builder-panel" id="asset-panel-display"><div class="builder-panel-header"><span class="builder-panel-title">Display</span><button class="builder-panel-close" onclick="hudClosePanel('asset', 'display')">&#x2715;</button></div><div class="panel-toggle-row"><span class="panel-toggle-label">Wireframe</span><button class="panel-toggle" id="asset-tog-wire" onclick="builderToggle('asset', 'wire')"></button></div><div class="panel-toggle-row"><span class="panel-toggle-label">Auto-rotate</span><button class="panel-toggle on" id="asset-tog-rotate" onclick="builderToggle('asset', 'rotate')"></button></div><div class="panel-toggle-row"><span class="panel-toggle-label">Grid floor</span><button class="panel-toggle on" id="asset-tog-grid" onclick="builderToggle('asset', 'grid')"></button></div></div>
+                                <div class="builder-panel" id="asset-panel-display"><div class="builder-panel-header"><span class="builder-panel-title">Display</span><button class="builder-panel-close" onclick="hudClosePanel('asset', 'display')">&#x2715;</button></div><div class="panel-toggle-row"><span class="panel-toggle-label">Wireframe</span><button class="panel-toggle" id="asset-tog-wire" onclick="builderToggle('asset', 'wire')"></button></div><div class="panel-toggle-row"><span class="panel-toggle-label">Auto-rotate</span><button class="panel-toggle" id="asset-tog-rotate" onclick="builderToggle('asset', 'rotate')"></button></div><div class="panel-toggle-row"><span class="panel-toggle-label">Grid floor</span><button class="panel-toggle" id="asset-tog-grid" onclick="builderToggle('asset', 'grid')"></button></div></div>
                                 <div class="builder-panel" id="asset-panel-inspector"><div class="builder-panel-header"><span class="builder-panel-title">Inspector</span><button class="builder-panel-close" onclick="hudClosePanel('asset', 'inspector')">&#x2715;</button></div><div id="asset-inspector-body"><div class="inspector-empty">No object selected — click an object in the scene</div></div></div>
                                 <div class="builder-panel" id="asset-panel-align"><div class="builder-panel-header"><span class="builder-panel-title">Align Objects</span><button class="builder-panel-close" onclick="hudClosePanel('asset', 'align')">&#x2715;</button></div><div class="panel-section-title">Align (select 2+ objects)</div><div class="align-grid"><button class="align-btn" onclick="builderAlign('asset', 'left')">Left</button><button class="align-btn" onclick="builderAlign('asset', 'centerX')">Ctr X</button><button class="align-btn" onclick="builderAlign('asset', 'right')">Right</button><button class="align-btn" onclick="builderAlign('asset', 'front')">Front</button><button class="align-btn" onclick="builderAlign('asset', 'centerZ')">Ctr Z</button><button class="align-btn" onclick="builderAlign('asset', 'back')">Back</button></div><div class="panel-section-title">Distribute evenly (3+ objects)</div><div class="align-dist-grid"><button class="align-btn" onclick="builderAlign('asset', 'distX')">Spread X</button><button class="align-btn" onclick="builderAlign('asset', 'distZ')">Spread Z</button></div><div style="color:rgba(255,255,255,0.3);font-size:10px;margin-top:12px;text-align:center;">Shift+click to multi-select objects first</div></div>
                             </div>
@@ -2168,6 +2185,7 @@
                         loadVenueModel: true,
                         defaultGridVisible: false,
                         defaultCamera: BASE_CAMERA.clone(),
+                        defaultAutoRotate: true,
                         background: 0xf0ede8,
                         fog: { near: 30, far: 80 },
                         hintFadeMs: 3000,
@@ -2187,10 +2205,11 @@
                         loadVenueModel: false,
                         defaultGridVisible: false,
                         defaultCamera: new THREE.Vector3(6.5, 4.5, 7.5),
-                        background: null,
+                        defaultAutoRotate: false,
+                        background: 0x000000,
                         fog: null,
                         hintFadeMs: 0,
-                        transparentBackground: true,
+                        transparentBackground: false,
                     },
                 };
 
@@ -2199,6 +2218,8 @@
                 const templatePromises = {};
                 let customAssets = loadCustomAssets();
                 let pendingCustomAssetBuilderId = null;
+                let sceneObjectIdCounter = 1;
+                let clipboardPayload = null;
 
                 window._activeBuilderWorkspace = 'venue';
 
@@ -2268,6 +2289,52 @@
 
                 function getHudBtn(builderId, panelName) {
                     return document.getElementById(`${builderId}-hud-${panelName}`);
+                }
+
+                function ensureSceneObjectId(object3d) {
+                    if (!object3d.userData.sceneObjectId) {
+                        object3d.userData.sceneObjectId = `scene-${sceneObjectIdCounter++}`;
+                    }
+                    return object3d.userData.sceneObjectId;
+                }
+
+                function setAutoRotate(ctx, enabled) {
+                    ctx.controls.autoRotate = enabled;
+                    const displayToggle = document.getElementById(`${ctx.id}-tog-rotate`);
+                    const hudButton = document.getElementById(`${ctx.id}-hud-rotate-toggle`);
+                    const hudLabel = document.getElementById(`${ctx.id}-hud-rotate-label`);
+                    if (displayToggle) displayToggle.classList.toggle('on', enabled);
+                    if (hudButton) hudButton.classList.toggle('active', enabled);
+                    if (hudLabel) hudLabel.textContent = enabled ? 'Pause' : 'Play';
+                }
+
+                function serializeSceneObject(object3d) {
+                    const payload = {
+                        id: ensureSceneObjectId(object3d),
+                        type: object3d.userData.objectType,
+                        position: { x: object3d.position.x, y: object3d.position.y, z: object3d.position.z },
+                        rotationY: object3d.rotation.y,
+                        scale: { x: object3d.scale.x, y: object3d.scale.y, z: object3d.scale.z },
+                    };
+                    if (payload.type === 'text-label') payload.text = object3d.userData.labelText || 'Label';
+                    if (payload.type === 'custom-asset') {
+                        payload.customAssetId = object3d.userData.customAssetId;
+                        payload.assetName = object3d.userData.assetName;
+                        payload.assetItems = cloneUserData(object3d.userData.assetItems || []);
+                    }
+                    return payload;
+                }
+
+                function serializeBuilderState(ctx) {
+                    return {
+                        objects: ctx.placedObjects.map(serializeSceneObject),
+                        groups: ctx.groups.map(group => ({
+                            name: group.name,
+                            members: group.members.map(member => ensureSceneObjectId(member)),
+                        })),
+                        selectedIds: ctx.selectedObjects.map(object3d => ensureSceneObjectId(object3d)),
+                        selectedId: ctx.selectedObject ? ensureSceneObjectId(ctx.selectedObject) : null,
+                    };
                 }
 
                 function setSelectionHighlight(object3d, color, intensity) {
@@ -2588,6 +2655,7 @@
                 }
 
                 function addPlacedObject(ctx, object3d, options = {}) {
+                    ensureSceneObjectId(object3d);
                     ctx.scene.add(object3d);
                     ctx.placedObjects.push(object3d);
                     if (options.select === false) {
@@ -2611,6 +2679,7 @@
                         object3d = await instantiateBaseObject(ctx, type, options);
                     }
                     addPlacedObject(ctx, object3d, options);
+                    if (!options.skipHistory) commitHistory(builderId);
                     return object3d;
                 }
 
@@ -2670,6 +2739,133 @@
                     syncSelectionUI(ctx);
                 }
 
+                async function restoreBuilderState(builderId, state) {
+                    const ctx = getBuilder(builderId);
+                    if (!ctx || !state) return;
+                    ctx.suppressHistory = true;
+
+                    ctx.placedObjects.forEach(object3d => ctx.scene.remove(object3d));
+                    ctx.placedObjects = [];
+                    ctx.selectedObjects = [];
+                    ctx.selectedObject = null;
+                    ctx.groups = [];
+
+                    const idMap = new Map();
+                    for (const item of state.objects || []) {
+                        let object3d = null;
+                        const position = new THREE.Vector3(item.position.x, item.position.y, item.position.z);
+                        if (item.type === 'text-label') {
+                            object3d = await addObject(builderId, 'text-label', { text: item.text, position, rotationY: item.rotationY, scale: item.scale, skipHistory: true, select: false });
+                        } else if (item.type === 'custom-asset') {
+                            const definition = customAssets.find(asset => asset.id === item.customAssetId) || {
+                                id: item.customAssetId,
+                                name: item.assetName || 'Custom Asset',
+                                items: cloneUserData(item.assetItems || []),
+                            };
+                            object3d = await addObject(builderId, 'custom-asset', { definition, position, rotationY: item.rotationY, skipHistory: true, select: false });
+                            if (object3d) object3d.scale.set(item.scale.x, item.scale.y, item.scale.z);
+                        } else {
+                            object3d = await addObject(builderId, item.type, { position, rotationY: item.rotationY, scale: item.scale, snapToFloor: false, skipHistory: true, select: false });
+                        }
+                        if (!object3d) continue;
+                        object3d.userData.sceneObjectId = item.id;
+                        idMap.set(item.id, object3d);
+                    }
+
+                    ctx.groups = (state.groups || []).map(group => ({
+                        name: group.name,
+                        members: (group.members || []).map(id => idMap.get(id)).filter(Boolean),
+                    })).filter(group => group.members.length > 0);
+                    ctx.selectedObjects = (state.selectedIds || []).map(id => idMap.get(id)).filter(Boolean);
+                    ctx.selectedObject = idMap.get(state.selectedId) || ctx.selectedObjects[ctx.selectedObjects.length - 1] || null;
+
+                    updateObjectCount(builderId);
+                    syncSelectionUI(ctx);
+                    ctx.suppressHistory = false;
+                    updateHistoryButtons(builderId);
+                }
+
+                function commitHistory(builderId) {
+                    const ctx = getBuilder(builderId);
+                    if (!ctx || ctx.suppressHistory) return;
+                    const snapshot = serializeBuilderState(ctx);
+                    const next = JSON.stringify(snapshot);
+                    const last = ctx.undoStack.length ? JSON.stringify(ctx.undoStack[ctx.undoStack.length - 1]) : null;
+                    if (next === last) return;
+                    ctx.undoStack.push(snapshot);
+                    if (ctx.undoStack.length > 50) ctx.undoStack.shift();
+                    ctx.redoStack = [];
+                    updateHistoryButtons(builderId);
+                }
+
+                function updateHistoryButtons(builderId) {
+                    const ctx = getBuilder(builderId);
+                    if (!ctx) return;
+                    document.getElementById(`${builderId}-hud-undo`)?.classList.toggle('disabled', ctx.undoStack.length <= 1);
+                    document.getElementById(`${builderId}-hud-redo`)?.classList.toggle('disabled', ctx.redoStack.length === 0);
+                }
+
+                async function undoBuilder(builderId) {
+                    const ctx = getBuilder(builderId);
+                    if (!ctx || ctx.undoStack.length <= 1) return;
+                    const current = ctx.undoStack.pop();
+                    ctx.redoStack.push(current);
+                    await restoreBuilderState(builderId, ctx.undoStack[ctx.undoStack.length - 1]);
+                    updateHistoryButtons(builderId);
+                }
+
+                async function redoBuilder(builderId) {
+                    const ctx = getBuilder(builderId);
+                    if (!ctx || ctx.redoStack.length === 0) return;
+                    const next = ctx.redoStack.pop();
+                    ctx.undoStack.push(next);
+                    await restoreBuilderState(builderId, next);
+                    updateHistoryButtons(builderId);
+                }
+
+                function serializeClipboardSelection(ctx) {
+                    if (!ctx || ctx.selectedObjects.length === 0) return null;
+                    const box = new THREE.Box3();
+                    ctx.selectedObjects.forEach(object3d => box.expandByObject(object3d));
+                    const center = box.getCenter(new THREE.Vector3());
+                    const anchor = new THREE.Vector3(center.x, box.min.y, center.z);
+                    return ctx.selectedObjects.map(object3d => {
+                        const item = serializeSceneObject(object3d);
+                        item.position = {
+                            x: object3d.position.x - anchor.x,
+                            y: object3d.position.y - anchor.y,
+                            z: object3d.position.z - anchor.z,
+                        };
+                        return item;
+                    });
+                }
+
+                async function pasteClipboard(builderId) {
+                    const ctx = getBuilder(builderId);
+                    if (!ctx || !clipboardPayload || clipboardPayload.length === 0) return;
+                    const targetCenter = ctx.resetTarget.clone();
+                    const base = new THREE.Vector3(targetCenter.x, ctx.floorY, targetCenter.z + ctx.sceneUnitsPerFoot * 2);
+                    const created = [];
+                    for (const item of clipboardPayload) {
+                        const position = new THREE.Vector3(base.x + item.position.x, base.y + item.position.y, base.z + item.position.z);
+                        let object3d = null;
+                        if (item.type === 'text-label') {
+                            object3d = await addObject(builderId, 'text-label', { text: item.text, position, rotationY: item.rotationY, scale: item.scale, skipHistory: true, select: false });
+                        } else if (item.type === 'custom-asset') {
+                            const definition = customAssets.find(asset => asset.id === item.customAssetId) || { id: item.customAssetId, name: item.assetName || 'Custom Asset', items: cloneUserData(item.assetItems || []) };
+                            object3d = await addObject(builderId, 'custom-asset', { definition, position, rotationY: item.rotationY, skipHistory: true, select: false });
+                            if (object3d) object3d.scale.set(item.scale.x, item.scale.y, item.scale.z);
+                        } else {
+                            object3d = await addObject(builderId, item.type, { position, rotationY: item.rotationY, scale: item.scale, snapToFloor: false, skipHistory: true, select: false });
+                        }
+                        if (object3d) created.push(object3d);
+                    }
+                    ctx.selectedObjects = created;
+                    ctx.selectedObject = created[created.length - 1] || null;
+                    syncSelectionUI(ctx);
+                    commitHistory(builderId);
+                }
+
                 function serializePlacedObject(object3d, anchor) {
                     return {
                         type: object3d.userData.objectType,
@@ -2714,6 +2910,15 @@
                     alert(`Saved "${name}" to the venue builder asset library.`);
                 }
 
+                function deleteCustomAsset(assetId) {
+                    customAssets = customAssets.filter(asset => asset.id !== assetId);
+                    persistCustomAssets();
+                }
+
+                window.deleteCustomAsset = function(assetId) {
+                    deleteCustomAsset(assetId);
+                };
+
                 function renderCustomAssetLibraries() {
                     const emptyMarkup = '<div class="custom-assets-empty">No saved custom assets yet. Build an arrangement in Asset Builder, select it, and save it to reuse in Venue Builder.</div>';
                     const venueContainer = document.getElementById('venue-custom-assets');
@@ -2734,7 +2939,10 @@
                                     <div class="panel-obj-name">${escapeHtml(asset.name)}</div>
                                     <div class="panel-obj-sub">${itemCount} grouped item${itemCount === 1 ? '' : 's'} · reusable custom asset</div>
                                 </div>
-                                <button class="panel-obj-add" onclick="builderAddCustomAsset('venue', '${asset.id}')">+ ADD</button>
+                                <div class="panel-obj-actions">
+                                    <button class="panel-obj-add" onclick="builderAddCustomAsset('venue', '${asset.id}')">+ ADD</button>
+                                    <button class="panel-obj-add danger" onclick="deleteCustomAsset('${asset.id}')">DELETE</button>
+                                </div>
                             </div>
                         `;
                     }).join('');
@@ -2748,7 +2956,10 @@
                                     <div class="panel-obj-name">${escapeHtml(asset.name)}</div>
                                     <div class="panel-obj-sub">${itemCount} grouped item${itemCount === 1 ? '' : 's'} · ready for Venue Builder</div>
                                 </div>
-                                <button class="panel-obj-add" onclick="switchBuilderWorkspace('venue'); setTimeout(() => builderAddCustomAsset('venue', '${asset.id}'), 80)">USE IN VENUE</button>
+                                <div class="panel-obj-actions">
+                                    <button class="panel-obj-add" onclick="switchBuilderWorkspace('venue'); setTimeout(() => builderAddCustomAsset('venue', '${asset.id}'), 80)">USE IN VENUE</button>
+                                    <button class="panel-obj-add danger" onclick="deleteCustomAsset('${asset.id}')">DELETE</button>
+                                </div>
                             </div>
                         `;
                     }).join('');
@@ -2809,12 +3020,15 @@
                                 object3d.position.x = hitPoint.x + offset.x;
                                 object3d.position.z = hitPoint.z + offset.z;
                             });
+                            ctx.didDrag = true;
                             if (getPanelEl(ctx.id, 'inspector')?.classList.contains('open')) refreshInspector(ctx.id);
                         }
                     });
 
                     const finishDrag = () => {
+                        if (ctx.dragging && ctx.didDrag) commitHistory(ctx.id);
                         ctx.dragging = false;
+                        ctx.didDrag = false;
                         ctx.controls.enabled = true;
                         ctx.dragOffsets.clear();
                     };
@@ -2844,10 +3058,35 @@
                         if (!event.target.closest('.ctx-menu')) hideAllCtxMenus();
                     }, true);
 
-                    document.addEventListener('keydown', event => {
+                    document.addEventListener('keydown', async event => {
+                        const target = event.target;
+                        const editing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
                         const activeId = window._activeBuilderWorkspace || 'venue';
                         const ctx = getBuilder(activeId);
-                        if (!ctx || !ctx.selectedObject) return;
+                        if ((event.ctrlKey || event.metaKey) && !editing) {
+                            const key = event.key.toLowerCase();
+                            if (key === 'c') {
+                                event.preventDefault();
+                                clipboardPayload = serializeClipboardSelection(ctx);
+                                return;
+                            }
+                            if (key === 'v') {
+                                event.preventDefault();
+                                await pasteClipboard(activeId);
+                                return;
+                            }
+                            if (key === 'z' && !event.shiftKey) {
+                                event.preventDefault();
+                                await undoBuilder(activeId);
+                                return;
+                            }
+                            if (key === 'y' || (key === 'z' && event.shiftKey)) {
+                                event.preventDefault();
+                                await redoBuilder(activeId);
+                                return;
+                            }
+                        }
+                        if (!ctx || !ctx.selectedObject || editing) return;
                         if (event.key === 'ArrowLeft') {
                             event.preventDefault();
                             window.builderRotateSelected(activeId, -15);
@@ -2855,6 +3094,10 @@
                         if (event.key === 'ArrowRight') {
                             event.preventDefault();
                             window.builderRotateSelected(activeId, 15);
+                        }
+                        if (event.key === 'Delete' || event.key === 'Backspace') {
+                            event.preventDefault();
+                            window.builderRemoveSelected(activeId);
                         }
                     });
                 }
@@ -2962,7 +3205,7 @@
                     const controls = new OrbitControls(camera, renderer.domElement);
                     controls.enableDamping = true;
                     controls.dampingFactor = 0.07;
-                    controls.autoRotate = true;
+                    controls.autoRotate = !!config.defaultAutoRotate;
                     controls.autoRotateSpeed = 0.8;
                     controls.minDistance = 1;
                     controls.maxDistance = 60;
@@ -3001,6 +3244,10 @@
                         resetTarget: new THREE.Vector3(),
                         resetCameraPosition: config.defaultCamera.clone(),
                         resetDistance: builderId === 'venue' ? 12 : 9,
+                        undoStack: [],
+                        redoStack: [],
+                        suppressHistory: false,
+                        didDrag: false,
                     };
                     builders[builderId] = ctx;
 
@@ -3077,8 +3324,12 @@
 
                     bindPointerEvents(ctx);
                     animateBuilder(ctx);
+                    setAutoRotate(ctx, !!config.defaultAutoRotate);
                     updateObjectCount(builderId);
                     syncSelectionUI(ctx);
+                    ctx.undoStack = [serializeBuilderState(ctx)];
+                    ctx.redoStack = [];
+                    updateHistoryButtons(builderId);
                     return ctx;
                 }
 
@@ -3168,8 +3419,22 @@
                     button.classList.toggle('on');
                     const enabled = button.classList.contains('on');
                     if (toggleName === 'wire') applyWireframe(ctx, enabled);
-                    if (toggleName === 'rotate') ctx.controls.autoRotate = enabled;
+                    if (toggleName === 'rotate') setAutoRotate(ctx, enabled);
                     if (toggleName === 'grid') ctx.gridHelper.visible = enabled;
+                };
+
+                window.builderQuickToggleRotate = function(builderId) {
+                    const ctx = getBuilder(builderId);
+                    if (!ctx) return;
+                    setAutoRotate(ctx, !ctx.controls.autoRotate);
+                };
+
+                window.builderUndo = async function(builderId) {
+                    await undoBuilder(builderId);
+                };
+
+                window.builderRedo = async function(builderId) {
+                    await redoBuilder(builderId);
                 };
 
                 window.builderAddObject = async function(builderId, type) {
@@ -3214,6 +3479,7 @@
                     const group = { name: `Group ${ctx.groups.length + 1}`, members: [...ctx.selectedObjects] };
                     ctx.groups.push(group);
                     refreshInspector(builderId);
+                    commitHistory(builderId);
                 };
 
                 window.builderAddToGroup = function(builderId, index) {
@@ -3224,6 +3490,7 @@
                     });
                     ctx.selectedObjects.forEach(object3d => ctx.groups[index].members.push(object3d));
                     refreshInspector(builderId);
+                    commitHistory(builderId);
                 };
 
                 window.builderSelectGroup = function(builderId, index) {
@@ -3259,6 +3526,7 @@
                     ctx.selectedObject = duplicates[duplicates.length - 1] || null;
                     updateObjectCount(builderId);
                     syncSelectionUI(ctx);
+                    commitHistory(builderId);
                 };
 
                 window.builderSetRotation = function(builderId, degrees) {
@@ -3268,6 +3536,7 @@
                     const value = Math.round(Number.parseFloat(degrees));
                     const label = document.getElementById(`${builderId}-insp-rot-val`);
                     if (label) label.textContent = `${value}°`;
+                    commitHistory(builderId);
                 };
 
                 window.builderRotateSelected = function(builderId, degrees) {
@@ -3280,12 +3549,14 @@
                     const next = Math.round(((ctx.selectedObject.rotation.y * 180 / Math.PI) % 360 + 360) % 360);
                     if (slider) slider.value = next;
                     if (label) label.textContent = `${next}°`;
+                    commitHistory(builderId);
                 };
 
                 window.builderRemoveSelected = function(builderId) {
                     const ctx = getBuilder(builderId);
                     if (!ctx) return;
                     removeObjects(builderId, [...ctx.selectedObjects]);
+                    commitHistory(builderId);
                 };
 
                 window.builderClearObjects = function(builderId) {
@@ -3298,6 +3569,7 @@
                     ctx.groups = [];
                     updateObjectCount(builderId);
                     syncSelectionUI(ctx);
+                    commitHistory(builderId);
                 };
 
                 window.ctxDuplicate = function(builderId) {
@@ -3365,6 +3637,7 @@
                         }
                     }
                     refreshInspector(builderId);
+                    commitHistory(builderId);
                 };
 
                 window.builderPromptSaveCustomAsset = function(builderId) {
@@ -3404,10 +3677,13 @@
 
                 window.builderLoadTwoTableSetup = async function() {
                     const ctx = initBuilder('venue');
+                    ctx.suppressHistory = true;
                     window.builderClearObjects('venue');
                     const spacing = ctx.sceneUnitsPerFoot * 8;
-                    await addObject('venue', 'serpentine-table', { position: new THREE.Vector3(-spacing / 2, 0, 0), select: false });
-                    await addObject('venue', 'serpentine-table', { position: new THREE.Vector3(spacing / 2, 0, 0), select: true });
+                    await addObject('venue', 'serpentine-table', { position: new THREE.Vector3(-spacing / 2, 0, 0), select: false, skipHistory: true });
+                    await addObject('venue', 'serpentine-table', { position: new THREE.Vector3(spacing / 2, 0, 0), select: true, skipHistory: true });
+                    ctx.suppressHistory = false;
+                    commitHistory('venue');
                     window.hudTogglePanel('venue', 'objects');
                 };
 
