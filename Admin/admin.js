@@ -19,6 +19,10 @@
     var STORAGE_CONTENT         = 'rnb_content_drafts';
     var STORAGE_CONTENT_HISTORY = 'rnb_content_drafts_history';
     var STORAGE_CLIENTS         = 'rnb_admin_clients';
+    var CONTENT_DB_NAME         = 'rnb_admin_content_db';
+    var CONTENT_DB_STORE        = 'drafts';
+    var CONTENT_DB_CURRENT_KEY  = 'current';
+    var CONTENT_DB_HISTORY_KEY  = 'history';
 
     var CONTENT_PAGE_URLS = {
         home:     'https://rnbevents716.com/',
@@ -83,9 +87,12 @@
         dashboardClientFilter: 'active'
     };
     var contentDrafts        = {};
+    var contentDraftHistory  = {};
+    var savedContentDrafts   = {};
     var activeContentPage    = 'home';
     var contentPreviewActive = false;
     var kanbanPendingMap     = {};
+    var contentDbPromise     = null;
 
     function decodeTotpKey() {
         var arr = (window.ADMIN_CONFIG || {}).totpKey;
@@ -570,6 +577,7 @@
 
     var S3_CLIENTS_URL = 'https://rnbevents716.s3.us-east-2.amazonaws.com/clients.json';
     var LAMBDA_BASE    = 'https://api.rnbevents716.com';
+    var ADMIN_CONTENT_UPLOAD_URL = LAMBDA_BASE + '/admin-upload-content-image';
 
     /* ── Post-event automation ────────────────────────── */
     function runPostEventTasks() {
@@ -675,6 +683,7 @@
         content.classList.remove('hidden');
         loadState();
         renderAll();
+        hydrateContentDraftStorage();
         syncFromCloud();
         fetchS3Clients();
         runPostEventTasks();
@@ -696,10 +705,117 @@
 
         // Content drafts
         contentDrafts = safeJSON(localStorage.getItem(STORAGE_CONTENT)) || {};
+        contentDraftHistory = safeJSON(localStorage.getItem(STORAGE_CONTENT_HISTORY)) || {};
+        savedContentDrafts = cloneContentDrafts(contentDrafts);
 
         // Clients
         var storedC = safeJSON(localStorage.getItem(STORAGE_CLIENTS));
         state.clients = Array.isArray(storedC) ? storedC : [];
+    }
+
+    function cloneContentDrafts(data) {
+        return safeJSON(JSON.stringify(data || {})) || {};
+    }
+
+    function removeLegacyContentDraftKeys() {
+        try {
+            localStorage.removeItem(STORAGE_CONTENT);
+            localStorage.removeItem(STORAGE_CONTENT_HISTORY);
+        } catch (e) {}
+    }
+
+    function openContentDraftDb() {
+        if (!window.indexedDB) {
+            return Promise.reject(new Error('IndexedDB unavailable'));
+        }
+        if (contentDbPromise) return contentDbPromise;
+        contentDbPromise = new Promise(function (resolve, reject) {
+            var request = indexedDB.open(CONTENT_DB_NAME, 1);
+            request.onupgradeneeded = function (event) {
+                var db = event.target.result;
+                if (!db.objectStoreNames.contains(CONTENT_DB_STORE)) {
+                    db.createObjectStore(CONTENT_DB_STORE);
+                }
+            };
+            request.onsuccess = function () { resolve(request.result); };
+            request.onerror = function () { reject(request.error || new Error('Failed to open IndexedDB')); };
+        });
+        return contentDbPromise;
+    }
+
+    function readContentDraftRecord(key) {
+        return openContentDraftDb().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var tx = db.transaction(CONTENT_DB_STORE, 'readonly');
+                var store = tx.objectStore(CONTENT_DB_STORE);
+                var request = store.get(key);
+                request.onsuccess = function () { resolve(request.result || null); };
+                request.onerror = function () { reject(request.error || new Error('Failed to read IndexedDB')); };
+            });
+        });
+    }
+
+    function writeContentDraftRecords(currentDrafts, historyDrafts) {
+        return openContentDraftDb().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var tx = db.transaction(CONTENT_DB_STORE, 'readwrite');
+                var store = tx.objectStore(CONTENT_DB_STORE);
+                tx.oncomplete = function () { resolve(true); };
+                tx.onerror = function () { reject(tx.error || new Error('Failed to write IndexedDB')); };
+                store.put(cloneContentDrafts(currentDrafts), CONTENT_DB_CURRENT_KEY);
+                store.put(cloneContentDrafts(historyDrafts), CONTENT_DB_HISTORY_KEY);
+            });
+        });
+    }
+
+    function persistContentDraftState(currentDrafts, historyDrafts) {
+        var currentCopy = cloneContentDrafts(currentDrafts);
+        var historyCopy = cloneContentDrafts(historyDrafts);
+        return writeContentDraftRecords(currentCopy, historyCopy).then(function () {
+            removeLegacyContentDraftKeys();
+            return true;
+        }).catch(function (error) {
+            var historySaved = safeSave(STORAGE_CONTENT_HISTORY, historyCopy);
+            var currentSaved = safeSave(STORAGE_CONTENT, currentCopy);
+            if (!historySaved || !currentSaved) {
+                console.error('Content draft persistence failed:', error);
+                return false;
+            }
+            return true;
+        });
+    }
+
+    function hydrateContentDraftStorage() {
+        var legacyCurrent = cloneContentDrafts(contentDrafts);
+        var legacyHistory = cloneContentDrafts(contentDraftHistory);
+        readContentDraftRecord(CONTENT_DB_CURRENT_KEY).then(function (storedCurrent) {
+            return Promise.all([
+                Promise.resolve(storedCurrent),
+                readContentDraftRecord(CONTENT_DB_HISTORY_KEY)
+            ]);
+        }).then(function (records) {
+            var current = records[0] && typeof records[0] === 'object' ? records[0] : null;
+            var history = records[1] && typeof records[1] === 'object' ? records[1] : null;
+            var hasLegacyCurrent = Object.keys(legacyCurrent).length > 0;
+            var hasLegacyHistory = Object.keys(legacyHistory).length > 0;
+            if (!current && !history && (hasLegacyCurrent || hasLegacyHistory)) {
+                return persistContentDraftState(legacyCurrent, legacyHistory).then(function () {
+                    return { current: legacyCurrent, history: legacyHistory };
+                });
+            }
+            removeLegacyContentDraftKeys();
+            return {
+                current: current || legacyCurrent,
+                history: history || legacyHistory
+            };
+        }).then(function (payload) {
+            contentDrafts = cloneContentDrafts(payload.current);
+            contentDraftHistory = cloneContentDrafts(payload.history);
+            savedContentDrafts = cloneContentDrafts(contentDrafts);
+            renderContentFields(activeContentPage);
+        }).catch(function () {
+            savedContentDrafts = cloneContentDrafts(contentDrafts);
+        });
     }
 
     function safeSave(key, data) {
@@ -787,14 +903,6 @@
     }
 
     function filterCloudPayload(payload) {
-        if (!payload.content) return payload;
-        var clean = {};
-        Object.keys(payload.content).forEach(function (k) {
-            if (String(payload.content[k]).indexOf('data:image') !== 0) {
-                clean[k] = payload.content[k];
-            }
-        });
-        payload.content = clean;
         return payload;
     }
 
@@ -845,7 +953,13 @@
                         contentDrafts[k] = data.content[k];
                     }
                 });
-                safeSave(STORAGE_CONTENT, contentDrafts);
+                savedContentDrafts = cloneContentDrafts(contentDrafts);
+                persistContentDraftState(savedContentDrafts, contentDraftHistory);
+                changed = true;
+            }
+            if (data.contentHistory && typeof data.contentHistory === 'object') {
+                contentDraftHistory = cloneContentDrafts(data.contentHistory);
+                persistContentDraftState(savedContentDrafts, contentDraftHistory);
                 changed = true;
             }
             if (Array.isArray(data.clients) && data.clients.length) {
@@ -894,6 +1008,72 @@
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
+        });
+    }
+
+    function getDataUrlMimeType(dataUrl) {
+        var match = String(dataUrl || '').match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/i);
+        return match ? match[1].toLowerCase() : '';
+    }
+
+    function guessImageExtension(mimeType) {
+        if (mimeType === 'image/jpeg') return 'jpg';
+        if (mimeType === 'image/png') return 'png';
+        if (mimeType === 'image/webp') return 'webp';
+        if (mimeType === 'image/gif') return 'gif';
+        return 'jpg';
+    }
+
+    function uploadAdminContentImage(fileName, contentType, base64Data, draftKey) {
+        return fetch(ADMIN_CONTENT_UPLOAD_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminCodeHash: cloudCodeHash,
+                fileName: fileName,
+                contentType: contentType,
+                data: base64Data,
+                draftKey: draftKey
+            })
+        }).then(function (r) {
+            return r.json().then(function (data) {
+                if (!r.ok || !data || !data.ok || !data.url) {
+                    throw new Error(data && data.error ? data.error : 'Upload failed');
+                }
+                return data.url;
+            });
+        });
+    }
+
+    function uploadDraftImagesForObject(drafts) {
+        var keys = Object.keys(drafts || {}).filter(function (key) {
+            return typeof drafts[key] === 'string' && /^data:image\//i.test(drafts[key]);
+        });
+        if (!keys.length) return Promise.resolve(cloneContentDrafts(drafts));
+
+        var nextDrafts = cloneContentDrafts(drafts);
+        return Promise.all(keys.map(function (key) {
+            var dataUrl = nextDrafts[key];
+            var mimeType = getDataUrlMimeType(dataUrl);
+            var fileName = nextDrafts[key + '__filename'] || (key + '.' + guessImageExtension(mimeType));
+            var base64Data = String(dataUrl).replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/i, '');
+            return uploadAdminContentImage(fileName, mimeType || 'image/jpeg', base64Data, key).then(function (url) {
+                nextDrafts[key] = url;
+            });
+        })).then(function () {
+            return nextDrafts;
+        });
+    }
+
+    function prepareContentDraftsForCloud(currentDrafts, historyDrafts) {
+        return Promise.all([
+            uploadDraftImagesForObject(currentDrafts),
+            uploadDraftImagesForObject(historyDrafts)
+        ]).then(function (results) {
+            return {
+                current: results[0],
+                history: results[1]
+            };
         });
     }
 
@@ -1723,11 +1903,18 @@
 
     function saveContentDrafts() {
         saveCurrentContentFields();
-        var existing = safeJSON(localStorage.getItem(STORAGE_CONTENT));
-        if (existing) safeSave(STORAGE_CONTENT_HISTORY, existing);
-        safeSave(STORAGE_CONTENT, contentDrafts);
-        cloudPush({ content: contentDrafts });
-        showToast('All drafts saved.');
+        prepareContentDraftsForCloud(contentDrafts, savedContentDrafts).then(function (prepared) {
+            contentDrafts = prepared.current;
+            contentDraftHistory = prepared.history;
+            savedContentDrafts = cloneContentDrafts(contentDrafts);
+            persistContentDraftState(savedContentDrafts, contentDraftHistory);
+            cloudPush({ content: savedContentDrafts, contentHistory: contentDraftHistory });
+            renderContentFields(activeContentPage);
+            showToast('All drafts saved.');
+        }).catch(function (error) {
+            console.error('Content save failed:', error);
+            showToast('Draft save failed — image upload did not complete.');
+        });
     }
 
     function viewContentChanges() {
@@ -1811,18 +1998,29 @@
 
     function submitContentPage() {
         saveCurrentContentFields();
-        var existing = safeJSON(localStorage.getItem(STORAGE_CONTENT));
-        if (existing) safeSave(STORAGE_CONTENT_HISTORY, existing);
-        safeSave(STORAGE_CONTENT, contentDrafts);
-        cloudPush({ content: contentDrafts });
-        showToast(activeContentPage.toUpperCase() + ' page changes submitted.');
+        prepareContentDraftsForCloud(contentDrafts, savedContentDrafts).then(function (prepared) {
+            contentDrafts = prepared.current;
+            contentDraftHistory = prepared.history;
+            savedContentDrafts = cloneContentDrafts(contentDrafts);
+            persistContentDraftState(savedContentDrafts, contentDraftHistory);
+            cloudPush({ content: savedContentDrafts, contentHistory: contentDraftHistory });
+            renderContentFields(activeContentPage);
+            showToast(activeContentPage.toUpperCase() + ' page changes submitted.');
+        }).catch(function (error) {
+            console.error('Content submit failed:', error);
+            showToast('Submit failed — image upload did not complete.');
+        });
     }
 
     function undoContentDraft() {
-        var history = safeJSON(localStorage.getItem(STORAGE_CONTENT_HISTORY));
-        if (!history) { showToast('No previous save to undo to.'); return; }
-        contentDrafts = history;
-        safeSave(STORAGE_CONTENT, contentDrafts);
+        if (!contentDraftHistory || !Object.keys(contentDraftHistory).length) {
+            showToast('No previous save to undo to.');
+            return;
+        }
+        contentDrafts = cloneContentDrafts(contentDraftHistory);
+        savedContentDrafts = cloneContentDrafts(contentDraftHistory);
+        persistContentDraftState(savedContentDrafts, contentDraftHistory);
+        cloudPush({ content: savedContentDrafts, contentHistory: contentDraftHistory });
         renderContentFields(activeContentPage);
         showToast('Restored to last saved state.');
     }

@@ -725,6 +725,19 @@ async function writeAdminData(data) {
     }));
 }
 
+function getKnownAdminHash(adminData) {
+    return ((adminData.adminCodeHash || '') || '47d538bc9bbdba86910d104f78b851d87356c7fcee36e214878a5a24f7bbedf4').toLowerCase();
+}
+
+async function ensureAuthorizedAdmin(submittedAdminHash) {
+    const submittedHash = String(submittedAdminHash || '').toLowerCase().trim();
+    if (!submittedHash || !/^[a-f0-9]{64}$/.test(submittedHash)) {
+        return false;
+    }
+    const adminData = await readAdminData();
+    return submittedHash === getKnownAdminHash(adminData);
+}
+
 /* ── Create admin task via S3 ─────────────────── */
 async function createAdminTask(taskObj) {
     try {
@@ -798,9 +811,48 @@ exports.handler = async (event) => {
             if (body.content && typeof body.content === 'object') {
                 updated.content = { ...(current.content || {}), ...body.content };
             }
+            if (body.contentHistory && typeof body.contentHistory === 'object') {
+                updated.contentHistory = body.contentHistory;
+            }
             if (typeof body.adminCodeHash === 'string') updated.adminCodeHash = body.adminCodeHash;
             await writeAdminData(updated);
             return respond(200, { ok: true, ts: new Date().toISOString() });
+        }
+
+        if (path === '/admin-upload-content-image' && method === 'POST') {
+            const isAuthorized = await ensureAuthorizedAdmin(body.adminCodeHash);
+            if (!isAuthorized) return respond(401, { ok: false, error: 'Unauthorized' });
+
+            const fileName = String(body.fileName || 'content-image').slice(0, 200);
+            const contentType = String(body.contentType || '').toLowerCase();
+            const draftKey = String(body.draftKey || 'draft').replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 80) || 'draft';
+            const data = String(body.data || '');
+            const allowed = {
+                'image/jpeg': 'jpg',
+                'image/png': 'png',
+                'image/webp': 'webp',
+                'image/gif': 'gif'
+            };
+            const ext = allowed[contentType];
+            if (!ext) return respond(400, { ok: false, error: 'Only JPEG, PNG, WebP, or GIF images are allowed.' });
+            if (!/^[A-Za-z0-9+/=]+$/.test(data)) return respond(400, { ok: false, error: 'Invalid image payload.' });
+
+            const buf = Buffer.from(data, 'base64');
+            if (!buf.length) return respond(400, { ok: false, error: 'Image payload is empty.' });
+            if (buf.length > 8 * 1024 * 1024) return respond(400, { ok: false, error: 'Image exceeds 8 MB limit.' });
+
+            const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.[^.]+$/, '').slice(0, 80) || 'content-image';
+            const key = `admin-content-drafts/${Date.now()}-${draftKey}-${safeName}.${ext}`;
+
+            await s3.send(new PutObjectCommand({
+                Bucket: BUCKET,
+                Key: key,
+                Body: buf,
+                ContentType: contentType,
+                CacheControl: 'public, max-age=31536000, immutable'
+            }));
+
+            return respond(200, { ok: true, url: `https://${BUCKET}.s3.us-east-2.amazonaws.com/${key}` });
         }
 
         /* ── Admin: full publish ────────────────────── */
