@@ -404,6 +404,13 @@
         <div class="ev-editor__footer">
             <span id="ed-save-status" class="ev-editor__save-status">Unsaved</span>
             <div class="ev-editor__footer-right">
+                <button class="ev-history-btn" id="btn-undo" onclick="undo()" title="Undo (Ctrl+Z)" disabled aria-label="Undo">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                </button>
+                <button class="ev-history-btn" id="btn-redo" onclick="redo()" title="Redo (Ctrl+Y)" disabled aria-label="Redo">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                </button>
+                <span class="ev-footer-divider"></span>
                 <button class="ev-btn ev-btn--outline ev-btn--sm" id="btn-save-draft" onclick="saveDraft()">Save Draft</button>
                 <button class="ev-btn ev-btn--gold" id="btn-publish" onclick="publishEvent()">Publish Event →</button>
             </div>
@@ -420,7 +427,7 @@
         var state = {
             step: 1,
             creatorToken: localStorage.getItem('rnb_creator_token') || null,
-            creator: null,
+            creator: JSON.parse(localStorage.getItem('rnb_creator') || 'null'),
             pendingPhone: '',
             eventId: null,
             shareUrl: '',
@@ -429,17 +436,23 @@
             editorTheme: 'night',
             editorFont: 'classic',
             editorEffect: 'none',
-            parsedGuests: []
+            parsedGuests: [],
+            // Undo/redo + autosave
+            history: [],
+            historyIdx: -1,
+            isApplyingHistory: false,
+            autosaveTimer: null,
+            historyTimer: null
         };
 
         /* ── Init ───────────────────────────────────── */
-        (function init() {
+        function _runInit() {
             wireOtpInputs();
             // Dev bypass: ?skip=3 jumps straight to editor
             var skipStep = parseInt(new URLSearchParams(location.search).get('skip'));
             if (skipStep >= 2 && skipStep <= 5) {
                 state.creatorToken = state.creatorToken || 'dev-bypass';
-                state.creator = { name: 'Dev User', phone: '+17160000000' };
+                state.creator = state.creator || { name: 'Dev User', phone: '+17160000000' };
                 if (skipStep >= 3) { goToEditor(); return; }
                 goToStep(skipStep);
                 return;
@@ -447,7 +460,12 @@
             if (state.creatorToken) {
                 goToEditor();
             }
-        })();
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', _runInit);
+        } else {
+            _runInit();
+        }
 
         /* ── Step navigation (1-2 only) ─────────────── */
         function goToStep(n) {
@@ -499,6 +517,9 @@
             }
             // Load drafts in background
             loadDrafts();
+            // Wire autosave + undo/redo (idempotent)
+            initEditorAutosave();
+            initEditorHistory();
         }
 
         function setTheme(name) {
@@ -535,6 +556,8 @@
             var btn = document.getElementById('sb-btn-' + name);
             if (btn) btn.classList.add('active');
             _activePanel = name;
+            // Refresh drafts each time Settings opens
+            if (name === 'settings') loadDrafts();
         }
 
         /* ── Font picker ─────────────────────────────── */
@@ -910,6 +933,7 @@
             state.creatorToken = res.token;
             state.creator      = res.creator;
             localStorage.setItem('rnb_creator_token', res.token);
+            localStorage.setItem('rnb_creator', JSON.stringify(res.creator));
             goToEditor();
         }
 
@@ -928,6 +952,7 @@
             state.creatorToken = res.token;
             state.creator      = res.creator;
             localStorage.setItem('rnb_creator_token', res.token);
+            localStorage.setItem('rnb_creator', JSON.stringify(res.creator));
             goToEditor();
         }
 
@@ -1082,6 +1107,7 @@
                     { label: 'Cancel' },
                     { label: 'Sign out', primary: true, onClick: function() {
                         localStorage.removeItem('rnb_creator_token');
+                        localStorage.removeItem('rnb_creator');
                         window.location.href = '/event-create.html';
                     }}
                 ]
@@ -1151,6 +1177,134 @@
             );
         }
 
+        /* ── Editor snapshot (for autosave + history) ── */
+        var EDITOR_FIELDS = ['ed-title', 'ed-type', 'ed-date', 'ed-time', 'ed-venue', 'ed-description'];
+
+        function getEditorSnapshot() {
+            var snap = { theme: state.editorTheme, font: state.editorFont, effect: state.editorEffect };
+            EDITOR_FIELDS.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                snap[id] = el.isContentEditable ? el.textContent : el.value;
+            });
+            return snap;
+        }
+
+        function applyEditorSnapshot(snap) {
+            if (!snap) return;
+            state.isApplyingHistory = true;
+            EDITOR_FIELDS.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el || snap[id] === undefined) return;
+                if (el.isContentEditable) el.textContent = snap[id];
+                else el.value = snap[id];
+            });
+            if (snap.theme && typeof setTheme === 'function') setTheme(snap.theme);
+            if (snap.font  && typeof setFont  === 'function') setFont(snap.font);
+            if (snap.effect && typeof setEffect === 'function') setEffect(snap.effect);
+            setTimeout(function() { state.isApplyingHistory = false; }, 30);
+        }
+
+        /* ── Autosave (debounced) ──────────────────── */
+        var _autosaveInit = false;
+        function initEditorAutosave() {
+            if (_autosaveInit) return;
+            _autosaveInit = true;
+            var handler = function() {
+                if (state.isApplyingHistory) return;
+                pushHistory();
+                clearTimeout(state.autosaveTimer);
+                state.autosaveTimer = setTimeout(function() { autoSaveDraft(); }, 1500);
+            };
+            EDITOR_FIELDS.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                var evt = el.isContentEditable ? 'input' : 'change';
+                el.addEventListener('input', handler);
+                if (evt !== 'input') el.addEventListener(evt, handler);
+            });
+        }
+
+        async function autoSaveDraft() {
+            var title = (document.getElementById('ed-title').textContent || '').trim();
+            var date  = document.getElementById('ed-date').value;
+            var venue = (document.getElementById('ed-venue').textContent || '').trim();
+            // Minimum viable: need a title to autosave
+            if (!title || title === document.getElementById('ed-title').dataset.placeholder) return;
+            if (!date || !venue) { setEditorStatus('Add date & venue to enable auto-save'); return; }
+            setEditorStatus('Auto-saving…');
+            var ok = await doCreateEvent('draft');
+            if (ok) {
+                var ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                setEditorStatus('Auto-saved at ' + ts);
+                var s = document.getElementById('ed-save-status');
+                s.classList.add('saved');
+                setTimeout(function() { s.classList.remove('saved'); }, 2000);
+            }
+        }
+
+        /* ── Undo / Redo ───────────────────────────── */
+        var HISTORY_MAX = 50;
+        var _historyInit = false;
+        function initEditorHistory() {
+            if (_historyInit) return;
+            _historyInit = true;
+            // Seed initial snapshot
+            pushHistory(true);
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                var inEditor = !document.getElementById('panel-editor').classList.contains('hidden');
+                if (!inEditor) return;
+                var mod = e.ctrlKey || e.metaKey;
+                if (!mod) return;
+                if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+                else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+            });
+            updateHistoryButtons();
+        }
+
+        function pushHistory(force) {
+            if (state.isApplyingHistory) return;
+            // Coalesce rapid keystrokes
+            clearTimeout(state.historyTimer);
+            var doPush = function() {
+                var snap = getEditorSnapshot();
+                var prev = state.history[state.historyIdx];
+                if (!force && prev && JSON.stringify(prev) === JSON.stringify(snap)) return;
+                // Drop any redo branch
+                state.history = state.history.slice(0, state.historyIdx + 1);
+                state.history.push(snap);
+                if (state.history.length > HISTORY_MAX) state.history.shift();
+                state.historyIdx = state.history.length - 1;
+                updateHistoryButtons();
+            };
+            if (force) doPush();
+            else state.historyTimer = setTimeout(doPush, 350);
+        }
+
+        function undo() {
+            if (state.historyIdx <= 0) return;
+            state.historyIdx--;
+            applyEditorSnapshot(state.history[state.historyIdx]);
+            updateHistoryButtons();
+            showToast('Undo');
+        }
+
+        function redo() {
+            if (state.historyIdx >= state.history.length - 1) return;
+            state.historyIdx++;
+            applyEditorSnapshot(state.history[state.historyIdx]);
+            updateHistoryButtons();
+            showToast('Redo');
+        }
+
+        function updateHistoryButtons() {
+            var u = document.getElementById('btn-undo');
+            var r = document.getElementById('btn-redo');
+            if (u) u.disabled = state.historyIdx <= 0;
+            if (r) r.disabled = state.historyIdx >= state.history.length - 1;
+        }
+
         /* ── Google Sign-In ──────────────────────────── */
         function initGoogleAuth() {
             if (!GOOGLE_CLIENT_ID || !window.google) return;
@@ -1177,12 +1331,14 @@
 
         function showAuthOverlay(msg) {
             var o = document.getElementById('ev-auth-overlay');
+            if (!o) return;
             if (msg) o.querySelector('.ev-auth-overlay__text').textContent = msg;
             o.classList.remove('ev-auth-overlay--hidden');
         }
 
         function hideAuthOverlay() {
-            document.getElementById('ev-auth-overlay').classList.add('ev-auth-overlay--hidden');
+            var o = document.getElementById('ev-auth-overlay');
+            if (o) o.classList.add('ev-auth-overlay--hidden');
         }
 
         async function handleGoogleCredential(response) {
@@ -1202,6 +1358,7 @@
             state.creatorToken = res.token;
             state.creator      = res.creator;
             localStorage.setItem('rnb_creator_token', res.token);
+            localStorage.setItem('rnb_creator', JSON.stringify(res.creator));
             showAuthOverlay('Setting up your workspace\u2026');
             goToEditor();
         }
