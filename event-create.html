@@ -164,9 +164,13 @@
                         <div class="ev-sidebar__thumb ev-sidebar__thumb--fx"></div>
                         <span>Effect</span>
                     </button>
-                    <button class="ev-sidebar__item" id="sb-btn-settings" onclick="toggleSidePanel('settings')">
+                    <button class="ev-sidebar__item" id="sb-btn-settings" onclick="openEventSettings()">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                         <span>Settings</span>
+                    </button>
+                    <button class="ev-sidebar__item" id="sb-btn-drafts" onclick="toggleSidePanel('drafts')">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                        <span>Drafts</span>
                     </button>
                 </div>
                 <div class="ev-sidebar__bottom">
@@ -228,28 +232,15 @@
                     </div>
                 </div>
 
-                <!-- SETTINGS section -->
-                <div class="ev-flyout__section hidden" id="sp-settings">
-                    <p class="ev-flyout__heading">RSVP Options</p>
-                    <label class="ev-editor__toggle-row">
-                        <span>Require phone verification</span>
-                        <input type="checkbox" id="ed-rsvp-verify" checked class="ev-editor__toggle">
-                    </label>
-                    <label class="ev-editor__toggle-row">
-                        <span>Show guest list publicly</span>
-                        <input type="checkbox" id="ed-rsvp-showguests" class="ev-editor__toggle">
-                    </label>
-                    <label class="ev-editor__toggle-row">
-                        <span>Enable playlist requests</span>
-                        <input type="checkbox" id="ed-rsvp-playlist" checked class="ev-editor__toggle">
-                    </label>
-
-                    <p class="ev-flyout__heading" style="margin-top:24px;display:flex;align-items:center;justify-content:space-between">
+                <!-- DRAFTS section -->
+                <div class="ev-flyout__section hidden" id="sp-drafts">
+                    <p class="ev-flyout__heading" style="display:flex;align-items:center;justify-content:space-between">
                         <span>My Drafts <span class="ev-drafts__counter" id="ev-drafts-counter">0 / 5</span></span>
                         <button class="ev-drafts__refresh" onclick="loadDrafts()" title="Refresh">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                         </button>
                     </p>
+                    <p class="ev-drafts__hint">Pick up where you left off. Drafts are private to you.</p>
                     <div class="ev-drafts__list" id="ev-drafts-list">
                         <p class="ev-drafts__empty">No drafts yet. Save one to see it here.</p>
                     </div>
@@ -556,8 +547,35 @@
             var btn = document.getElementById('sb-btn-' + name);
             if (btn) btn.classList.add('active');
             _activePanel = name;
-            // Refresh drafts each time Settings opens
-            if (name === 'settings') loadDrafts();
+            // Refresh drafts each time the Drafts panel opens
+            if (name === 'drafts') loadDrafts();
+        }
+
+        /* ── Event Settings popup modal ───────────── */
+        function openEventSettings() {
+            var m = document.getElementById('ev-settings-modal');
+            if (!m) return;
+            // Populate host avatar/name from current creator
+            var c = state.creator || {};
+            var name = c.firstName || (c.email ? c.email.split('@')[0] : 'You');
+            var nm = document.getElementById('es-host-name');
+            var av = document.getElementById('es-host-avatar');
+            if (nm) nm.textContent = name;
+            if (av) av.textContent = (name[0] || 'Y').toUpperCase();
+            m.classList.remove('ev-settings--hidden');
+            setSettingsTab('hosts');
+        }
+        function closeEventSettings() {
+            var m = document.getElementById('ev-settings-modal');
+            if (m) m.classList.add('ev-settings--hidden');
+        }
+        function setSettingsTab(tab) {
+            document.querySelectorAll('.ev-settings__tab').forEach(function(t) {
+                t.classList.toggle('is-active', t.dataset.tab === tab);
+            });
+            document.querySelectorAll('.ev-settings__section').forEach(function(s) {
+                s.classList.toggle('is-active', s.dataset.section === tab);
+            });
         }
 
         /* ── Font picker ─────────────────────────────── */
@@ -817,9 +835,14 @@
                 if (res.code === 'DRAFT_LIMIT') {
                     showModal(
                         'Draft limit reached',
-                        'You have ' + DRAFT_LIMIT + ' drafts saved. Please delete an existing draft from <strong>Settings → My Drafts</strong> to save a new one.',
-                        [{ label: 'Open Settings', primary: true, onClick: function() { closeModal(); toggleSidePanel('settings'); } }]
+                        'You have ' + DRAFT_LIMIT + ' drafts saved. Open the <strong>Drafts</strong> panel to delete one before saving a new draft.',
+                        [{ label: 'Open Drafts', primary: true, onClick: function() { closeModal(); toggleSidePanel('drafts'); } }]
                     );
+                } else if (/not found/i.test(res.error) && state.eventId) {
+                    // Underlying draft was deleted — reset and create fresh
+                    state.eventId = null;
+                    state.shareUrl = null;
+                    return await doCreateEvent(status);
                 } else {
                     showErr('ed-err', res.error);
                 }
@@ -1383,6 +1406,155 @@
             <p class="ev-modal__body" id="ev-modal-body">Message goes here.</p>
             <div class="ev-modal__actions" id="ev-modal-actions">
                 <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="closeModal()">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Settings modal (Hosts / RSVPs / Questionnaire / etc.) -->
+    <div id="ev-settings-modal" class="ev-settings ev-settings--hidden">
+        <div class="ev-settings__backdrop" onclick="closeEventSettings()"></div>
+        <div class="ev-settings__card">
+            <header class="ev-settings__header">
+                <button class="ev-settings__close" onclick="closeEventSettings()" aria-label="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                <h2 class="ev-settings__title">Event Settings</h2>
+                <button class="ev-settings__help" title="Help">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </button>
+            </header>
+            <div class="ev-settings__body">
+                <nav class="ev-settings__nav">
+                    <button class="ev-settings__tab is-active" data-tab="hosts" onclick="setSettingsTab('hosts')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16l2-8 5 5 5-5 2 8z"/></svg>
+                        <span>Hosts</span>
+                    </button>
+                    <button class="ev-settings__tab" data-tab="rsvps" onclick="setSettingsTab('rsvps')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <span>RSVPs</span>
+                    </button>
+                    <button class="ev-settings__tab" data-tab="questionnaire" onclick="setSettingsTab('questionnaire')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+                        <span>Questionnaire</span>
+                    </button>
+                    <button class="ev-settings__tab" data-tab="display" onclick="setSettingsTab('display')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>Display &amp; Privacy</span>
+                    </button>
+                    <button class="ev-settings__tab" data-tab="audience" onclick="setSettingsTab('audience')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        <span>Audience</span>
+                    </button>
+                    <button class="ev-settings__tab" data-tab="photos" onclick="setSettingsTab('photos')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        <span>Photo Album</span>
+                    </button>
+                    <button class="ev-settings__tab" data-tab="cost" onclick="setSettingsTab('cost')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="18"/><path d="M15 9.5a3 3 0 0 0-3-2.5h-1a2.5 2.5 0 0 0 0 5h1a2.5 2.5 0 0 1 0 5h-1a3 3 0 0 1-3-2.5"/></svg>
+                        <span>Cost Per Person</span>
+                    </button>
+                    <button class="ev-settings__tab" data-tab="reminders" onclick="setSettingsTab('reminders')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/></svg>
+                        <span>Auto-Reminders</span>
+                    </button>
+                </nav>
+                <main class="ev-settings__panel">
+                    <!-- HOSTS -->
+                    <section class="ev-settings__section is-active" data-section="hosts">
+                        <h3 class="ev-settings__h">Manage Hosts</h3>
+                        <p class="ev-settings__sub">Hosts can edit &amp; manage this event, including adding/removing other cohosts</p>
+                        <div class="ev-settings__host-row">
+                            <div class="ev-settings__avatar" id="es-host-avatar">Y</div>
+                            <div class="ev-settings__host-info">
+                                <div class="ev-settings__host-name" id="es-host-name">Yannick</div>
+                                <div class="ev-settings__host-meta">Creator · You</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;justify-content:center;margin:14px 0 22px">
+                            <button class="ev-settings__add">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span>Add cohost</span>
+                            </button>
+                        </div>
+                        <hr class="ev-settings__divider">
+                        <div class="ev-settings__toggle-row">
+                            <div>
+                                <div class="ev-settings__toggle-title">Add Cohost Via Link</div>
+                                <div class="ev-settings__toggle-sub">Anyone with the link can become a host</div>
+                            </div>
+                            <label class="ev-switch"><input type="checkbox" id="es-cohost-link"><span></span></label>
+                        </div>
+                    </section>
+
+                    <!-- RSVPs -->
+                    <section class="ev-settings__section" data-section="rsvps">
+                        <h3 class="ev-settings__h">RSVP Options</h3>
+                        <p class="ev-settings__sub">Control how guests respond to your event</p>
+                        <div class="ev-settings__toggle-row">
+                            <div>
+                                <div class="ev-settings__toggle-title">Require phone verification</div>
+                                <div class="ev-settings__toggle-sub">Guests verify via SMS before RSVP</div>
+                            </div>
+                            <label class="ev-switch"><input type="checkbox" id="ed-rsvp-verify" checked><span></span></label>
+                        </div>
+                        <div class="ev-settings__toggle-row">
+                            <div>
+                                <div class="ev-settings__toggle-title">Show guest list publicly</div>
+                                <div class="ev-settings__toggle-sub">Other guests can see who's coming</div>
+                            </div>
+                            <label class="ev-switch"><input type="checkbox" id="ed-rsvp-showguests"><span></span></label>
+                        </div>
+                        <div class="ev-settings__toggle-row">
+                            <div>
+                                <div class="ev-settings__toggle-title">Enable playlist requests</div>
+                                <div class="ev-settings__toggle-sub">Let guests suggest songs via urTheDJ</div>
+                            </div>
+                            <label class="ev-switch"><input type="checkbox" id="ed-rsvp-playlist" checked><span></span></label>
+                        </div>
+                    </section>
+
+                    <!-- QUESTIONNAIRE -->
+                    <section class="ev-settings__section" data-section="questionnaire">
+                        <h3 class="ev-settings__h">Questionnaire</h3>
+                        <p class="ev-settings__sub">Ask custom questions when guests RSVP</p>
+                        <p class="ev-settings__placeholder">Coming soon — add custom questions like dietary restrictions, +1 details, song requests &amp; more.</p>
+                    </section>
+
+                    <!-- DISPLAY & PRIVACY -->
+                    <section class="ev-settings__section" data-section="display">
+                        <h3 class="ev-settings__h">Display &amp; Privacy</h3>
+                        <p class="ev-settings__sub">Who can see what on your event page</p>
+                        <p class="ev-settings__placeholder">Coming soon — control whether the event is unlisted, password-protected, or fully public.</p>
+                    </section>
+
+                    <!-- AUDIENCE -->
+                    <section class="ev-settings__section" data-section="audience">
+                        <h3 class="ev-settings__h">Audience</h3>
+                        <p class="ev-settings__sub">Age and location restrictions</p>
+                        <p class="ev-settings__placeholder">Coming soon — set 21+ events, geofence access, or invitation-only audiences.</p>
+                    </section>
+
+                    <!-- PHOTO ALBUM -->
+                    <section class="ev-settings__section" data-section="photos">
+                        <h3 class="ev-settings__h">Photo Album</h3>
+                        <p class="ev-settings__sub">Shared gallery for your guests</p>
+                        <p class="ev-settings__placeholder">Coming soon — collect photos from every guest into one shared album.</p>
+                    </section>
+
+                    <!-- COST PER PERSON -->
+                    <section class="ev-settings__section" data-section="cost">
+                        <h3 class="ev-settings__h">Cost Per Person</h3>
+                        <p class="ev-settings__sub">Collect contributions toward the event</p>
+                        <p class="ev-settings__placeholder">Coming soon — request a per-guest contribution at RSVP time.</p>
+                    </section>
+
+                    <!-- AUTO-REMINDERS -->
+                    <section class="ev-settings__section" data-section="reminders">
+                        <h3 class="ev-settings__h">Auto-Reminders</h3>
+                        <p class="ev-settings__sub">Automated nudges before the event</p>
+                        <p class="ev-settings__placeholder">Coming soon — schedule SMS &amp; email reminders 1 week, 1 day, and 1 hour before.</p>
+                    </section>
+                </main>
             </div>
         </div>
     </div>
