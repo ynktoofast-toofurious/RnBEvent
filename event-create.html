@@ -119,19 +119,35 @@
                 </div>
             </div>
 
-            <!-- ── STEP 3: Event Details ── -->
-            <div id="panel-3" class="ev-step-panel hidden">
-                <p class="ev-step-panel__label">Step 3 of 5</p>
-                <h2 class="ev-step-panel__title">Event Details</h2>
-                <p class="ev-step-panel__sub">Tell your guests what, where, and when.</p>
+        </div><!-- /ev-container -->
+    </main>
 
-                <div class="ev-form-row">
-                    <label class="ev-form-label">Event Name</label>
-                    <input type="text" id="s3-name" class="ev-input" placeholder="e.g. Jasmine's 30th Birthday" maxlength="150">
-                </div>
-                <div class="ev-form-row">
-                    <label class="ev-form-label">Event Type</label>
-                    <select id="s3-type" class="ev-input">
+    <!-- ── PARTIFUL-STYLE EDITOR (shown after auth) ── -->
+    <div id="panel-editor" class="ev-editor hidden" data-theme="night">
+        <div class="ev-editor__bg" id="editor-bg"></div>
+
+        <!-- Theme selector bar -->
+        <div class="ev-editor__themes">
+            <span class="ev-editor__themes-label">THEME</span>
+            <button class="ev-theme-pill ev-theme-pill--active" data-theme="night" onclick="setTheme('night')">Night</button>
+            <button class="ev-theme-pill" data-theme="gold" onclick="setTheme('gold')">Gold</button>
+            <button class="ev-theme-pill" data-theme="velvet" onclick="setTheme('velvet')">Velvet</button>
+            <button class="ev-theme-pill" data-theme="neon" onclick="setTheme('neon')">Neon</button>
+            <button class="ev-theme-pill" data-theme="dawn" onclick="setTheme('dawn')">Dawn</button>
+            <div class="ev-editor__themes-spacer"></div>
+            <button class="ev-editor__preview-btn" onclick="previewEvent()">👁 Preview</button>
+        </div>
+
+        <!-- Two-column body -->
+        <div class="ev-editor__body">
+
+            <!-- LEFT: all event fields -->
+            <div class="ev-editor__left">
+                <h1 class="ev-editor__title" contenteditable="true" id="ed-title" data-placeholder="Your Event Name"></h1>
+
+                <!-- Event type pills -->
+                <div class="ev-editor__type-row" id="ed-type-row">
+                    <select id="ed-type" class="ev-editor__type-select">
                         <option value="">Select type…</option>
                         <option>Birthday Party</option>
                         <option>Wedding Reception</option>
@@ -146,111 +162,614 @@
                         <option>Other</option>
                     </select>
                 </div>
-                <div class="ev-input-row">
-                    <div class="ev-form-row">
-                        <label class="ev-form-label">Date</label>
-                        <input type="date" id="s3-date" class="ev-input">
+
+                <!-- Date & Time -->
+                <div class="ev-editor__field" onclick="document.getElementById('ed-date').showPicker && document.getElementById('ed-date').showPicker()">
+                    <span class="ev-editor__field-icon">📅</span>
+                    <div class="ev-editor__field-body">
+                        <div class="ev-editor__field-label">Date &amp; Time</div>
+                        <div class="ev-editor__field-row">
+                            <input type="date" id="ed-date" class="ev-editor__date-input" placeholder="Set a date…">
+                            <input type="time" id="ed-time" class="ev-editor__time-input" value="20:00">
+                        </div>
                     </div>
-                    <div class="ev-form-row">
-                        <label class="ev-form-label">Time</label>
-                        <input type="time" id="s3-time" class="ev-input">
-                    </div>
-                </div>
-                <div class="ev-form-row">
-                    <label class="ev-form-label">Venue</label>
-                    <input type="text" id="s3-venue" class="ev-input" placeholder="Venue name &amp; address" maxlength="200">
-                </div>
-                <div class="ev-form-row">
-                    <label class="ev-form-label">Description (optional)</label>
-                    <textarea id="s3-description" class="ev-input" placeholder="Share event details, dress code, special notes…" maxlength="1500"></textarea>
                 </div>
 
-                <p id="err-3" class="ev-error"></p>
-                <div class="ev-step-actions">
-                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToStep(2)">← Back</button>
-                    <button class="ev-btn ev-btn--primary" onclick="submitEventDetails()">Continue</button>
+                <!-- Host -->
+                <div class="ev-editor__field">
+                    <span class="ev-editor__field-icon">👑</span>
+                    <div class="ev-editor__field-body">
+                        <div class="ev-editor__field-label">Hosted by</div>
+                        <div class="ev-editor__field-val" id="ed-host-display">—</div>
+                    </div>
                 </div>
+
+                <!-- Location -->
+                <div class="ev-editor__field">
+                    <span class="ev-editor__field-icon">📍</span>
+                    <div class="ev-editor__field-body">
+                        <div class="ev-editor__field-label">Location</div>
+                        <div contenteditable="true" class="ev-editor__inline" id="ed-venue" data-placeholder="Add venue &amp; address"></div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="ev-editor__field ev-editor__field--desc">
+                    <span class="ev-editor__field-icon">✏️</span>
+                    <div class="ev-editor__field-body" style="width:100%">
+                        <div class="ev-editor__field-label">Details</div>
+                        <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expect…"></div>
+                    </div>
+                </div>
+
+                <!-- Guests section -->
+                <div class="ev-editor__guests">
+                    <div class="ev-editor__guests-header">
+                        <span>Guests</span>
+                        <button onclick="toggleGuestPanel()" class="ev-editor__guests-add">+ Invite</button>
+                    </div>
+                    <div id="ed-guest-pills" class="ev-guest-pills"></div>
+                    <p id="ed-share-hint" class="ev-editor__share-hint hidden">
+                        🔗 Share link: <span id="ed-share-url-text"></span>
+                        <button onclick="copyEditorUrl()" class="ev-editor__copy-btn">COPY</button>
+                    </p>
+                </div>
+
+                <p id="ed-err" class="ev-error" style="margin-top:8px"></p>
             </div>
 
-            <!-- ── STEP 4: Cover Photo ── -->
-            <div id="panel-4" class="ev-step-panel hidden">
-                <p class="ev-step-panel__label">Step 4 of 5</p>
-                <h2 class="ev-step-panel__title">Cover Photo</h2>
-                <p class="ev-step-panel__sub">Add a photo that sets the tone for your event (optional but recommended).</p>
-
-                <img id="photo-preview" class="ev-photo-preview hidden" alt="Cover preview">
-
-                <div class="ev-photo-zone" id="photo-zone"
-                     ondragover="photoDragOver(event)"
-                     ondragleave="photoDragLeave(event)"
-                     ondrop="photoDrop(event)">
-                    <input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp" onchange="photoSelected(event)">
-                    <div id="photo-zone-content">
-                        <div class="ev-photo-zone__icon">
+            <!-- RIGHT: cover image + RSVP options -->
+            <div class="ev-editor__right">
+                <div class="ev-editor__cover" id="ed-cover"
+                     ondragover="editorDragOver(event)" ondragleave="editorDragLeave(event)" ondrop="editorDrop(event)">
+                    <img id="ed-cover-img" class="hidden" alt="Cover">
+                    <div class="ev-editor__cover-placeholder" id="ed-cover-placeholder">
+                        <input type="file" id="ed-photo-input" accept="image/jpeg,image/png,image/webp" onchange="editorPhotoSelected(event)">
+                        <div class="ev-editor__cover-upload">
                             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
                                 <circle cx="8.5" cy="8.5" r="1.5"/>
                                 <polyline points="21 15 16 10 5 21"/>
                             </svg>
+                            <p>Add cover photo</p>
+                            <span>JPG, PNG or WebP · max 5MB</span>
                         </div>
-                        <p class="ev-photo-zone__text">Drag and drop or click to upload</p>
-                        <p class="ev-photo-zone__hint">JPG, PNG or WebP — max 5MB</p>
                     </div>
+                    <button class="ev-editor__cover-edit hidden" id="ed-cover-edit-btn"
+                            onclick="document.getElementById('ed-photo-input').click()">✏ Edit photo</button>
                 </div>
 
-                <p id="err-4" class="ev-error"></p>
-
-                <div class="ev-step-actions">
-                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToStep(3)">← Back</button>
-                    <button class="ev-btn ev-btn--outline" onclick="skipPhoto()">Skip for now</button>
-                    <button class="ev-btn ev-btn--primary" id="btn-create-event" onclick="createEvent()">Create Event</button>
+                <!-- RSVP options -->
+                <div class="ev-editor__rsvp-box">
+                    <div class="ev-editor__rsvp-header">⚙ RSVP Options</div>
+                    <label class="ev-editor__toggle-row">
+                        <span>Require phone verification</span>
+                        <input type="checkbox" id="ed-rsvp-verify" checked class="ev-editor__toggle">
+                    </label>
+                    <label class="ev-editor__toggle-row">
+                        <span>Show guest list publicly</span>
+                        <input type="checkbox" id="ed-rsvp-showguests" class="ev-editor__toggle">
+                    </label>
+                    <label class="ev-editor__toggle-row">
+                        <span>Enable playlist requests</span>
+                        <input type="checkbox" id="ed-rsvp-playlist" checked class="ev-editor__toggle">
+                    </label>
                 </div>
             </div>
-
-            <!-- ── STEP 5: Guest List + Share ── -->
-            <div id="panel-5" class="ev-step-panel hidden">
-                <p class="ev-step-panel__label">Step 5 of 5</p>
-                <h2 class="ev-step-panel__title">Invite Your Guests</h2>
-                <p class="ev-step-panel__sub">Add guests now or share your event link directly. Guests with emails will receive a personal invitation.</p>
-
-                <!-- Share link -->
-                <div>
-                    <label class="ev-form-label">Your Event Link</label>
-                    <div class="ev-share-url">
-                        <span class="ev-share-url__text" id="share-url-display"></span>
-                        <button class="ev-share-url__copy" id="copy-url-btn" onclick="copyEventUrl()">COPY LINK</button>
-                    </div>
-                </div>
-
-                <div class="ev-divider"></div>
-
-                <div class="ev-form-row">
-                    <label class="ev-form-label">Add Guests (optional)</label>
-                    <textarea id="bulk-guests"
-                              class="ev-bulk-area"
-                              placeholder="One guest per line. Formats accepted:&#10;  5551234567&#10;  Jane Smith | 5551234567&#10;  Jane Smith | 5551234567 | jane@email.com"></textarea>
-                    <p class="ev-bulk-hint">Include an email address to send each guest a personal invitation via email.</p>
-                </div>
-
-                <div id="guest-preview-pills" class="ev-guest-pills"></div>
-
-                <p id="err-5" class="ev-error"></p>
-                <p id="success-5" class="ev-success"></p>
-
-                <div class="ev-step-actions">
-                    <button class="ev-btn ev-btn--outline" onclick="addGuests()">Add Guests</button>
-                    <button class="ev-btn ev-btn--gold" onclick="goToDashboard()">Go to Dashboard →</button>
-                </div>
-            </div>
-
         </div>
-    </main>
+
+        <!-- Guest invite slide-in panel -->
+        <div class="ev-editor__guest-panel hidden" id="ed-guest-panel">
+            <div class="ev-editor__guest-panel-header">
+                <h3>Invite Guests</h3>
+                <button onclick="toggleGuestPanel()">✕</button>
+            </div>
+            <textarea id="ed-bulk-guests" class="ev-bulk-area"
+                placeholder="One guest per line:&#10;  5551234567&#10;  Jane Smith | 5551234567&#10;  Jane Smith | 5551234567 | jane@email.com"></textarea>
+            <p class="ev-bulk-hint">Include email to send personal invitations.</p>
+            <div id="ed-guest-preview-pills" class="ev-guest-pills" style="margin-top:8px"></div>
+            <p id="ed-err-guests" class="ev-error"></p>
+            <p id="ed-success-guests" class="ev-success"></p>
+            <div style="display:flex;gap:8px;margin-top:auto">
+                <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="parseGuestPreview()">Preview</button>
+                <button class="ev-btn ev-btn--primary" id="btn-add-guests" onclick="saveGuestsFromPanel()">Add Guests</button>
+            </div>
+        </div>
+
+        <!-- Bottom action bar -->
+        <div class="ev-editor__footer">
+            <span id="ed-save-status" class="ev-editor__save-status">Unsaved</span>
+            <div class="ev-editor__footer-right">
+                <button class="ev-btn ev-btn--outline ev-btn--sm" id="btn-save-draft" onclick="saveDraft()">Save Draft</button>
+                <button class="ev-btn ev-btn--gold" id="btn-publish" onclick="publishEvent()">Publish Event →</button>
+            </div>
+        </div>
+    </div><!-- /panel-editor -->
 
     <div id="ev-toast" class="ev-toast"></div>
 
     <script>
         // CONFIGURE: set this to your deployed API Gateway RSVP endpoint
         var RSVP_API = window.RNB_RSVP_API || 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/rsvp';
+
+        var state = {
+            step: 1,
+            creatorToken: localStorage.getItem('rnb_creator_token') || null,
+            creator: null,
+            pendingPhone: '',
+            eventId: null,
+            shareUrl: '',
+            coverImageUrl: '',
+            pendingPhotoFile: null,
+            editorTheme: 'night',
+            parsedGuests: []
+        };
+
+        /* ── Init ───────────────────────────────────── */
+        (function init() {
+            wireOtpInputs();
+            // Dev bypass: ?skip=3 jumps straight to editor
+            var skipStep = parseInt(new URLSearchParams(location.search).get('skip'));
+            if (skipStep >= 2 && skipStep <= 5) {
+                state.creatorToken = state.creatorToken || 'dev-bypass';
+                state.creator = { name: 'Dev User', phone: '+17160000000' };
+                if (skipStep >= 3) { goToEditor(); return; }
+                goToStep(skipStep);
+                return;
+            }
+            if (state.creatorToken) {
+                goToEditor();
+            }
+        })();
+
+        /* ── Step navigation (1-2 only) ─────────────── */
+        function goToStep(n) {
+            // Steps 1-2 live in .ev-container; 3+ → editor
+            if (n >= 3) { goToEditor(); return; }
+            ['panel-1','panel-2'].forEach(function(id, idx) {
+                document.getElementById(id).classList.toggle('hidden', idx + 1 !== n);
+            });
+            for (var i = 1; i <= 2; i++) {
+                var dot = document.getElementById('step-dot-' + i);
+                dot.classList.remove('ev-step-dot--active', 'ev-step-dot--done');
+                if (i < n) dot.classList.add('ev-step-dot--done');
+                else if (i === n) dot.classList.add('ev-step-dot--active');
+            }
+            // Also update the progress dots for 3-5 (mark as pending)
+            for (var j = 3; j <= 5; j++) {
+                var d = document.getElementById('step-dot-' + j);
+                if (d) d.classList.remove('ev-step-dot--active', 'ev-step-dot--done');
+            }
+            document.getElementById('panel-editor').classList.add('hidden');
+            state.step = n;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /* ── Editor ─────────────────────────────────── */
+        function goToEditor() {
+            // Hide wizard container, show full-screen editor
+            var container = document.querySelector('.ev-container');
+            if (container) container.classList.add('hidden');
+            var editor = document.getElementById('panel-editor');
+            editor.classList.remove('hidden');
+            // Populate host
+            if (state.creator && state.creator.name) {
+                document.getElementById('ed-host-display').textContent = state.creator.name;
+            }
+            // Set default date to today + 7 days
+            if (!document.getElementById('ed-date').value) {
+                var d = new Date();
+                d.setDate(d.getDate() + 7);
+                document.getElementById('ed-date').value = d.toISOString().split('T')[0];
+            }
+            state.step = 3;
+        }
+
+        function setTheme(name) {
+            state.editorTheme = name;
+            document.getElementById('panel-editor').dataset.theme = name;
+            document.querySelectorAll('.ev-theme-pill').forEach(function(btn) {
+                btn.classList.toggle('ev-theme-pill--active', btn.dataset.theme === name);
+            });
+        }
+
+        /* ── Cover photo ─────────────────────────────── */
+        function editorPhotoSelected(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) { showToast('Image must be under 5MB.'); return; }
+            state.pendingPhotoFile = file;
+            showEditorCoverPreview(file);
+        }
+
+        function editorDragOver(e) {
+            e.preventDefault();
+            document.getElementById('ed-cover').classList.add('dragover');
+        }
+
+        function editorDragLeave() {
+            document.getElementById('ed-cover').classList.remove('dragover');
+        }
+
+        function editorDrop(e) {
+            e.preventDefault();
+            document.getElementById('ed-cover').classList.remove('dragover');
+            var file = e.dataTransfer.files[0];
+            if (!file || !file.type.startsWith('image/')) { showToast('Please drop an image file.'); return; }
+            if (file.size > 5 * 1024 * 1024) { showToast('Image must be under 5MB.'); return; }
+            state.pendingPhotoFile = file;
+            showEditorCoverPreview(file);
+        }
+
+        function showEditorCoverPreview(file) {
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                var img = document.getElementById('ed-cover-img');
+                img.src = ev.target.result;
+                img.classList.remove('hidden');
+                document.getElementById('ed-cover-placeholder').classList.add('hidden');
+                document.getElementById('ed-cover-edit-btn').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /* ── Guest panel ─────────────────────────────── */
+        function toggleGuestPanel() {
+            document.getElementById('ed-guest-panel').classList.toggle('hidden');
+        }
+
+        function parseGuestPreview() {
+            var raw = document.getElementById('ed-bulk-guests').value.trim();
+            if (!raw) return;
+            var guests = raw.split('\n').map(function(l) { return l.trim(); }).filter(Boolean).map(parseGuestLine).filter(function(g) { return g.phone; });
+            state.parsedGuests = guests;
+            renderPills(guests, 'ed-guest-preview-pills');
+            document.getElementById('ed-err-guests').textContent = guests.length ? '' : 'No valid phone numbers found.';
+        }
+
+        async function saveGuestsFromPanel() {
+            clearErr('ed-err-guests');
+            document.getElementById('ed-success-guests').textContent = '';
+            var raw = document.getElementById('ed-bulk-guests').value.trim();
+            if (!raw) return showErr('ed-err-guests', 'Enter at least one guest.');
+            var guests = raw.split('\n').map(function(l) { return l.trim(); }).filter(Boolean).map(parseGuestLine).filter(function(g) { return g.phone; });
+            if (!guests.length) return showErr('ed-err-guests', 'No valid phone numbers found.');
+
+            // If no event yet, need to create it first
+            if (!state.eventId) {
+                var ok = await doCreateEvent('draft');
+                if (!ok) return;
+            }
+
+            setBtnLoading('#btn-add-guests', true, 'Adding…');
+            var res = await apiPost('/events/' + state.eventId + '/guests', { guests, method: 'bulk' }, state.creatorToken);
+            setBtnLoading('#btn-add-guests', false, 'Add Guests');
+
+            if (res.error) return showErr('ed-err-guests', res.error);
+
+            var added = res.added || guests.length;
+            document.getElementById('ed-success-guests').textContent = added + ' guest(s) added' + (res.skipped ? ', ' + res.skipped + ' skipped.' : '.');
+            renderPills(guests, 'ed-guest-pills');
+            document.getElementById('ed-bulk-guests').value = '';
+            document.getElementById('ed-guest-preview-pills').innerHTML = '';
+        }
+
+        function parseGuestLine(line) {
+            var parts = line.split('|').map(function(p) { return p.trim(); });
+            if (parts.length === 1) return { phone: parts[0], name: 'Guest', email: null };
+            if (parts.length === 2) return { name: parts[0], phone: parts[1], email: null };
+            return { name: parts[0], phone: parts[1], email: parts[2] || null };
+        }
+
+        function renderPills(guests, containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            guests.slice(0, 20).forEach(function(g) {
+                var pill = document.createElement('span');
+                pill.className = 'ev-guest-pill';
+                pill.textContent = g.name !== 'Guest' ? g.name : g.phone;
+                container.appendChild(pill);
+            });
+            if (guests.length > 20) {
+                var more = document.createElement('span');
+                more.className = 'ev-guest-pill';
+                more.textContent = '+' + (guests.length - 20) + ' more';
+                container.appendChild(more);
+            }
+        }
+
+        /* ── Save Draft / Publish ────────────────────── */
+        async function saveDraft() {
+            setEditorStatus('Saving…');
+            var ok = await doCreateEvent('draft');
+            setEditorStatus(ok ? 'Draft saved' : 'Save failed');
+            if (ok) {
+                var s = document.getElementById('ed-save-status');
+                s.classList.add('saved');
+                setTimeout(function() { s.classList.remove('saved'); }, 3000);
+            }
+        }
+
+        async function publishEvent() {
+            clearErr('ed-err');
+            var title = document.getElementById('ed-title').textContent.trim();
+            var date  = document.getElementById('ed-date').value;
+            if (!title || title === document.getElementById('ed-title').dataset.placeholder) return showErr('ed-err', 'Add an event name first.');
+            if (!date) return showErr('ed-err', 'Set an event date.');
+
+            setBtnLoading('#btn-publish', true, 'Publishing…');
+            var ok = await doCreateEvent('published');
+            setBtnLoading('#btn-publish', false, 'Publish Event →');
+
+            if (ok) {
+                setEditorStatus('Published!');
+                showShareHint();
+                showToast('🎉 Event published! Your link is ready.');
+            }
+        }
+
+        /* ── Core create/update ──────────────────────── */
+        async function doCreateEvent(status) {
+            // Upload cover photo if pending
+            if (state.pendingPhotoFile && !state.coverImageUrl) {
+                var ext = state.pendingPhotoFile.name.split('.').pop().toLowerCase();
+                var urlRes = await apiPost('/events/temp/upload-url', { ext });
+                if (!urlRes.error) {
+                    var uploadRes = await fetch(urlRes.uploadUrl, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': state.pendingPhotoFile.type },
+                        body: state.pendingPhotoFile
+                    });
+                    if (uploadRes.ok) {
+                        state.coverImageUrl = urlRes.publicUrl;
+                        state.pendingPhotoFile = null;
+                    }
+                }
+            }
+
+            var payload = {
+                eventName:    document.getElementById('ed-title').textContent.trim(),
+                eventType:    document.getElementById('ed-type').value,
+                eventDate:    document.getElementById('ed-date').value,
+                eventTime:    document.getElementById('ed-time').value,
+                venue:        document.getElementById('ed-venue').textContent.trim(),
+                description:  document.getElementById('ed-description').textContent.trim(),
+                coverImageUrl: state.coverImageUrl,
+                requireVerify: document.getElementById('ed-rsvp-verify').checked,
+                showGuests:    document.getElementById('ed-rsvp-showguests').checked,
+                playlist:      document.getElementById('ed-rsvp-playlist').checked,
+                theme:         state.editorTheme,
+                status:        status || 'draft'
+            };
+
+            var res;
+            if (state.eventId) {
+                // Update existing event
+                res = await apiPost('/events/' + state.eventId + '/update', payload, state.creatorToken);
+            } else {
+                res = await apiPost('/events', payload, state.creatorToken);
+            }
+
+            if (res.error) {
+                showErr('ed-err', res.error);
+                return false;
+            }
+
+            if (!state.eventId) {
+                state.eventId  = res.eventId;
+                state.shareUrl = res.shareUrl || (window.location.origin + '/event/' + res.eventId);
+            }
+            return true;
+        }
+
+        function setEditorStatus(msg) {
+            document.getElementById('ed-save-status').textContent = msg;
+        }
+
+        function showShareHint() {
+            if (!state.shareUrl) return;
+            var hint = document.getElementById('ed-share-hint');
+            document.getElementById('ed-share-url-text').textContent = state.shareUrl;
+            hint.classList.remove('hidden');
+        }
+
+        function copyEditorUrl() {
+            if (!state.shareUrl) return;
+            navigator.clipboard.writeText(state.shareUrl).then(function() {
+                var btn = document.querySelector('.ev-editor__copy-btn');
+                var orig = btn.textContent;
+                btn.textContent = '✓';
+                setTimeout(function() { btn.textContent = orig; }, 2000);
+            });
+        }
+
+        function previewEvent() {
+            if (state.eventId) {
+                window.open(state.shareUrl || '/event/' + state.eventId, '_blank');
+            } else {
+                showToast('Save a draft first to preview your event.');
+            }
+        }
+
+        /* ── Auth forms toggle ───────────────────────── */
+        function showLogin() {
+            document.getElementById('form-signup').classList.add('hidden');
+            document.getElementById('form-login').classList.remove('hidden');
+            document.getElementById('auth-panel-title').textContent = 'Sign In';
+            document.getElementById('auth-panel-sub').textContent = 'Welcome back. Sign in to manage your events.';
+        }
+
+        function showSignup() {
+            document.getElementById('form-login').classList.add('hidden');
+            document.getElementById('form-signup').classList.remove('hidden');
+            document.getElementById('auth-panel-title').textContent = 'Create Account';
+            document.getElementById('auth-panel-sub').textContent = "Enter your details to get started. We'll verify your phone number next.";
+        }
+
+        /* ── Step 1: Signup ──────────────────────────── */
+        async function submitSignup() {
+            clearErr('err-1-signup');
+            var name     = document.getElementById('s1-name').value.trim();
+            var email    = document.getElementById('s1-email').value.trim();
+            var phone    = document.getElementById('s1-phone').value.trim();
+            var password = document.getElementById('s1-password').value;
+
+            if (!name)           return showErr('err-1-signup', 'Name is required.');
+            if (!email)          return showErr('err-1-signup', 'Email is required.');
+            if (!phone)          return showErr('err-1-signup', 'Phone number is required.');
+            if (password.length < 8) return showErr('err-1-signup', 'Password must be at least 8 characters.');
+
+            setBtnLoading('.ev-step-panel:not(.hidden) .ev-btn--primary', true);
+            var res = await apiPost('/creator/signup', { name, email, phone, password });
+            setBtnLoading('.ev-step-panel:not(.hidden) .ev-btn--primary', false);
+
+            if (res.error) return showErr('err-1-signup', res.error);
+
+            state.pendingPhone = phone;
+            startResendTimer();
+            document.getElementById('otp-verify-sub').textContent = 'Enter the 6-digit code sent to ' + phone + '.';
+            goToStep(2);
+        }
+
+        /* ── Step 1: Login ───────────────────────────── */
+        async function submitLogin() {
+            clearErr('err-1-login');
+            var phone    = document.getElementById('l1-phone').value.trim();
+            var password = document.getElementById('l1-password').value;
+
+            if (!phone || !password) return showErr('err-1-login', 'Phone and password are required.');
+
+            setBtnLoading('#form-login .ev-btn--primary', true);
+            var res = await apiPost('/creator/login', { phone, password });
+            setBtnLoading('#form-login .ev-btn--primary', false);
+
+            if (res.error) return showErr('err-1-login', res.error);
+
+            state.creatorToken = res.token;
+            state.creator      = res.creator;
+            localStorage.setItem('rnb_creator_token', res.token);
+            goToEditor();
+        }
+
+        /* ── Step 2: Verify OTP ──────────────────────── */
+        async function verifyCreatorOtp() {
+            clearErr('err-2');
+            var code = getOtpValue();
+            if (code.length !== 6) return showErr('err-2', 'Enter all 6 digits.');
+
+            setBtnLoading('#btn-verify-otp', true);
+            var res = await apiPost('/creator/verify', { phone: state.pendingPhone, code });
+            setBtnLoading('#btn-verify-otp', false);
+
+            if (res.error) return showErr('err-2', res.error);
+
+            state.creatorToken = res.token;
+            state.creator      = res.creator;
+            localStorage.setItem('rnb_creator_token', res.token);
+            goToEditor();
+        }
+
+        async function resendOtp() {
+            if (!state.pendingPhone) return;
+            var btn = document.getElementById('resend-btn');
+            btn.disabled = true;
+            var res = await apiPost('/creator/signup', {
+                name:     document.getElementById('s1-name').value.trim(),
+                email:    document.getElementById('s1-email').value.trim(),
+                phone:    state.pendingPhone,
+                password: document.getElementById('s1-password').value
+            });
+            if (res.error) { showErr('err-2', res.error); return; }
+            startResendTimer();
+        }
+
+        /* ── OTP helpers ─────────────────────────────── */
+        function wireOtpInputs() {
+            var inputs = document.querySelectorAll('.ev-otp-digit');
+            inputs.forEach(function(input, i) {
+                input.addEventListener('input', function() {
+                    input.value = input.value.replace(/\D/g, '');
+                    if (input.value && i < inputs.length - 1) inputs[i + 1].focus();
+                    if (getOtpValue().length === 6) verifyCreatorOtp();
+                });
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !input.value && i > 0) inputs[i - 1].focus();
+                });
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+                    inputs.forEach(function(inp, j) { inp.value = text[j] || ''; });
+                    if (text.length === 6) verifyCreatorOtp();
+                });
+            });
+        }
+
+        function getOtpValue() {
+            return Array.from(document.querySelectorAll('.ev-otp-digit')).map(function(i) { return i.value; }).join('');
+        }
+
+        var resendInterval = null;
+        function startResendTimer() {
+            var btn = document.getElementById('resend-btn');
+            var counter = document.getElementById('resend-timer');
+            var seconds = 60;
+            btn.disabled = true;
+            clearInterval(resendInterval);
+            resendInterval = setInterval(function() {
+                seconds--;
+                counter.textContent = seconds;
+                if (seconds <= 0) {
+                    clearInterval(resendInterval);
+                    btn.disabled = false;
+                    btn.textContent = 'Resend code';
+                }
+            }, 1000);
+        }
+
+        /* ── API ─────────────────────────────────────── */
+        async function apiPost(path, data, token) {
+            try {
+                var headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+                var res = await fetch(RSVP_API + path, { method: 'POST', headers, body: JSON.stringify(data) });
+                return await res.json();
+            } catch (e) {
+                return { error: 'Network error. Please check your connection.' };
+            }
+        }
+
+        /* ── UI helpers ──────────────────────────────── */
+        function showErr(id, msg) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = msg;
+        }
+
+        function clearErr(id) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = '';
+        }
+
+        function setBtnLoading(selector, loading, label) {
+            var btn = document.querySelector(selector);
+            if (!btn) return;
+            if (loading) {
+                btn._origText = btn.textContent;
+                btn.innerHTML = '<span class="ev-spinner"></span>' + (label || 'Please wait…');
+                btn.disabled = true;
+            } else {
+                btn.innerHTML = label || btn._origText || 'Continue';
+                btn.disabled = false;
+            }
+        }
+
+        function showToast(msg) {
+            var t = document.getElementById('ev-toast');
+            t.textContent = msg;
+            t.classList.add('ev-toast--visible');
+            setTimeout(function() { t.classList.remove('ev-toast--visible'); }, 3000);
+        }
+    </script>
 
         var state = {
             step: 1,
