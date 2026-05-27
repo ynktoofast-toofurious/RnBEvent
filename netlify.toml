@@ -50,3 +50,8 @@
   from   = "/create-event"
   to     = "/event-create.html"
   status = 200
+
+[[redirects]]
+  from   = "/my-events"
+  to     = "/my-events.html"
+  status = 200

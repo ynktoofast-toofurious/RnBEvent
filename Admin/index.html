@@ -412,6 +412,7 @@
                     <button class="tool-tab" onclick="switchTool('content', this)">CONTENT EDITOR</button>
                     <button class="tool-tab" onclick="switchTool('clients', this)">CLIENT MANAGER</button>
                     <button class="tool-tab" onclick="switchTool('rsvp', this)">RSVP SIGNUPS</button>
+                    <button class="tool-tab" onclick="switchTool('events', this)">EVENTS &amp; RSVP</button>
                 </div>
             </div>
 
@@ -462,6 +463,70 @@
                     <button class="panel-btn" onclick="renderRsvpAdmin()">&#8635; REFRESH</button>
                 </div>
                 <div id="rsvp-admin-list"><!-- Populated by JS --></div>
+            </div>
+
+            <!-- Events & RSVP Manager -->
+            <div id="tool-events" class="tool-panel hidden">
+                <p class="tool-desc">Manage events created through the RSVP system. View confirmed guests, song requests, and assign seating.</p>
+
+                <!-- Event selector -->
+                <div class="events-toolbar">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                        <select id="ev-selector" class="form-input" style="max-width:320px" onchange="onEventSelect(this.value)">
+                            <option value="">— Select an event —</option>
+                        </select>
+                        <button class="panel-btn" onclick="loadEventsForAdmin()">&#8635; REFRESH</button>
+                        <a href="/event-create.html" target="_blank" class="panel-btn" style="text-decoration:none">+ CREATE EVENT</a>
+                    </div>
+                    <div id="ev-summary-badges" class="ev-admin-badges"></div>
+                </div>
+
+                <!-- Sub-tabs -->
+                <div class="ev-admin-tabs" id="ev-admin-tabs" style="display:none">
+                    <button class="ev-admin-tab ev-admin-tab--active" onclick="switchEvTab('guests', this)">GUEST LIST</button>
+                    <button class="ev-admin-tab" onclick="switchEvTab('confirmed', this)">CONFIRMED</button>
+                    <button class="ev-admin-tab" onclick="switchEvTab('songs', this)">SONG REQUESTS</button>
+                    <button class="ev-admin-tab" onclick="switchEvTab('seating', this)">SEATING CHART</button>
+                </div>
+
+                <!-- Tab: Guest List -->
+                <div id="ev-tab-guests" class="ev-admin-tab-panel">
+                    <div class="ev-admin-search-row">
+                        <input type="text" id="ev-guest-search" class="form-input" placeholder="Search guests…" oninput="filterEvGuests()" style="max-width:260px">
+                        <span id="ev-guest-count" style="font-size:11px;color:#527141;letter-spacing:1px"></span>
+                    </div>
+                    <div id="ev-guests-table"><!-- Populated by JS --></div>
+                </div>
+
+                <!-- Tab: Confirmed -->
+                <div id="ev-tab-confirmed" class="ev-admin-tab-panel hidden">
+                    <div class="ev-admin-search-row">
+                        <input type="text" id="ev-confirmed-search" class="form-input" placeholder="Search confirmed guests…" oninput="filterEvConfirmed()" style="max-width:260px">
+                    </div>
+                    <div id="ev-confirmed-table"><!-- Populated by JS --></div>
+                </div>
+
+                <!-- Tab: Songs -->
+                <div id="ev-tab-songs" class="ev-admin-tab-panel hidden">
+                    <div class="ev-admin-search-row">
+                        <input type="text" id="ev-songs-search" class="form-input" placeholder="Search songs or guests…" oninput="filterEvSongs()" style="max-width:260px">
+                        <span id="ev-songs-count" style="font-size:11px;color:#527141;letter-spacing:1px"></span>
+                    </div>
+                    <div id="ev-songs-table"><!-- Populated by JS --></div>
+                </div>
+
+                <!-- Tab: Seating -->
+                <div id="ev-tab-seating" class="ev-admin-tab-panel hidden">
+                    <p style="font-size:12px;color:#527141;margin-bottom:16px">Assign confirmed guests to tables and seats. Changes auto-save when you click <strong>Save Seating</strong>.</p>
+                    <div style="display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap">
+                        <button class="panel-btn" onclick="saveSeating()">SAVE SEATING</button>
+                        <button class="panel-btn" onclick="addSeatingTable()">+ ADD TABLE</button>
+                        <span id="seating-save-status" style="font-size:11px;color:#527141;letter-spacing:1px"></span>
+                    </div>
+                    <div id="ev-seating-board"><!-- Populated by JS --></div>
+                </div>
+
+                <p id="ev-admin-error" class="gate-error" style="margin-top:12px"></p>
             </div>
         </section>
 

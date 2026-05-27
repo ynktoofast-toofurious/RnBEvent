@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Event | RNB Events</title>
+    <meta name="description" id="page-desc" content="You're invited — RSVP now.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="event.css">
+</head>
+<body>
+
+    <!-- Top bar -->
+    <header class="ev-topbar">
+        <a href="/" class="ev-topbar__logo">
+            <img src="RNB Logo Olive.png" alt="RNB Events">
+            RNB EVENTS
+        </a>
+    </header>
+
+    <!-- Loading state -->
+    <div id="ev-loading" style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:16px;margin-top:56px">
+        <div class="ev-spinner" style="width:32px;height:32px;border-width:3px;margin:0"></div>
+        <p style="font-size:12px;letter-spacing:2px;color:#a4c195">LOADING EVENT…</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="ev-error-state" class="hidden" style="display:none;align-items:center;justify-content:center;min-height:80vh;flex-direction:column;gap:16px;margin-top:56px;text-align:center;padding:40px">
+        <h2 style="font-size:32px;color:#2c3e2c">Event Not Found</h2>
+        <p style="font-size:13px;color:#527141">This event link may be invalid or expired.</p>
+        <a href="/" style="font-size:11px;letter-spacing:2px;color:#77a361;text-decoration:underline">Return Home</a>
+    </div>
+
+    <!-- Main event content (shown after load) -->
+    <div id="ev-main" class="ev-page hidden">
+
+        <!-- Hero -->
+        <section class="ev-hero" id="ev-hero">
+            <img class="ev-hero__img" id="ev-cover-img" src="" alt="Event cover" onerror="this.style.display='none'">
+            <div class="ev-hero__overlay"></div>
+            <div class="ev-hero__content">
+                <p class="ev-hero__type" id="ev-type"></p>
+                <h1 class="ev-hero__title" id="ev-name">Event Name</h1>
+                <div class="ev-hero__meta">
+                    <span class="ev-hero__meta-item" id="ev-date-meta">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <span id="ev-date-text"></span>
+                    </span>
+                    <span class="ev-hero__meta-item" id="ev-venue-meta">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span id="ev-venue-text"></span>
+                    </span>
+                    <span class="ev-hero__meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Hosted by <strong id="ev-host" style="margin-left:4px"></strong>
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Default hero bg when no cover image -->
+        <style>
+            #ev-hero.no-cover { background: linear-gradient(135deg, #1e2e1e 0%, #2c3e2c 60%, #3d5c3d 100%); }
+        </style>
+
+        <main class="ev-body">
+            <div class="ev-container">
+
+                <!-- ── PRE-RSVP VIEW ── -->
+                <div id="view-pre-rsvp">
+                    <div class="ev-card ev-card--gold">
+                        <p class="ev-card__label">You're Invited</p>
+                        <h2 class="ev-card__title">Will you be joining us?</h2>
+                        <p style="font-size:13px;color:#527141;margin-bottom:24px;line-height:1.7">
+                            Accept your invitation to unlock the full event details and add your song requests to the night's playlist.
+                        </p>
+                        <div class="ev-rsvp-actions">
+                            <button class="ev-btn ev-btn--primary" onclick="startRsvp('confirmed')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:6px"><polyline points="20 6 9 17 4 12"/></svg>
+                                Going
+                            </button>
+                            <button class="ev-btn ev-btn--outline" onclick="startRsvp('declined')">Can't Make It</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── DECLINED VIEW ── -->
+                <div id="view-declined" class="hidden">
+                    <div class="ev-card" style="text-align:center;padding:48px 40px">
+                        <div style="font-size:40px;margin-bottom:16px">💐</div>
+                        <h2 style="font-size:28px;color:#2c3e2c;margin-bottom:8px">We'll miss you</h2>
+                        <p style="font-size:13px;color:#527141;line-height:1.7;max-width:320px;margin:0 auto 24px">
+                            Your RSVP has been noted. We hope to see you at the next one.
+                        </p>
+                        <button class="ev-btn ev-btn--outline ev-btn--sm" style="display:inline-block" onclick="changeRsvp()">
+                            Changed your mind?
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ── POST-RSVP CONFIRMED VIEW ── -->
+                <div id="view-confirmed" class="hidden">
+
+                    <!-- Status banner -->
+                    <div class="ev-status-banner ev-status-banner--confirmed">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span>You're confirmed — see you there!</span>
+                    </div>
+
+                    <!-- Full event details (revealed after RSVP) -->
+                    <div class="ev-card">
+                        <p class="ev-card__label">Event Details</p>
+                        <div class="ev-detail-grid" id="ev-full-details">
+                            <div class="ev-detail-item">
+                                <p class="ev-detail-label">Date &amp; Time</p>
+                                <p class="ev-detail-value" id="detail-datetime"></p>
+                            </div>
+                            <div class="ev-detail-item">
+                                <p class="ev-detail-label">Venue</p>
+                                <p class="ev-detail-value" id="detail-venue"></p>
+                            </div>
+                            <div class="ev-detail-item">
+                                <p class="ev-detail-label">Host</p>
+                                <p class="ev-detail-value" id="detail-host"></p>
+                            </div>
+                            <div class="ev-detail-item">
+                                <p class="ev-detail-label">Event Type</p>
+                                <p class="ev-detail-value" id="detail-type"></p>
+                            </div>
+                        </div>
+                        <p class="ev-description" id="detail-description"></p>
+                    </div>
+
+                    <!-- Song requests card -->
+                    <div class="ev-card ev-card--green" id="song-card">
+                        <p class="ev-card__label">Optional</p>
+                        <h3 class="ev-card__title" style="font-size:22px">Add Songs to the Playlist</h3>
+                        <p style="font-size:13px;color:#527141;margin-bottom:20px;line-height:1.6">
+                            The DJ will see your picks. Add up to <strong>5 songs</strong> you'd love to hear during the event.
+                        </p>
+
+                        <!-- Song counter -->
+                        <div class="ev-songs__counter">
+                            <span class="ev-songs__counter-label">MY PLAYLIST (<span id="song-count">0</span>/5)</span>
+                            <div class="ev-songs__dots" id="song-dots">
+                                <div class="ev-songs__dot" id="dot-1"></div>
+                                <div class="ev-songs__dot" id="dot-2"></div>
+                                <div class="ev-songs__dot" id="dot-3"></div>
+                                <div class="ev-songs__dot" id="dot-4"></div>
+                                <div class="ev-songs__dot" id="dot-5"></div>
+                            </div>
+                        </div>
+
+                        <!-- Search bar -->
+                        <div class="ev-search-bar">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="text" id="song-search-input"
+                                   class="ev-search-input"
+                                   placeholder="Search for a song or artist…"
+                                   oninput="onSongSearch(this.value)"
+                                   autocomplete="off">
+                        </div>
+
+                        <!-- Search results -->
+                        <div id="song-search-results" class="ev-search-results"></div>
+
+                        <!-- My playlist -->
+                        <div class="ev-playlist" id="my-playlist" style="display:none">
+                            <p class="ev-playlist__title">My Picks</p>
+                            <div id="playlist-items"></div>
+                        </div>
+
+                        <p id="song-error" class="ev-error"></p>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Phone auth modal -->
+    <div id="auth-modal" class="ev-modal-backdrop hidden">
+        <div class="ev-modal">
+            <button class="ev-modal__close" onclick="closeAuthModal()" aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+
+            <!-- Phone entry step -->
+            <div id="auth-step-phone">
+                <p class="ev-modal__label">RSVP Verification</p>
+                <h3 class="ev-modal__title" id="auth-modal-title">You're going!</h3>
+                <p class="ev-modal__sub" id="auth-modal-sub">Enter your mobile number. We'll send a quick verification code.</p>
+
+                <div class="ev-form-row">
+                    <label class="ev-form-label">Your Name</label>
+                    <input type="text" id="guest-name" class="ev-input" placeholder="First name" maxlength="100" autocomplete="given-name">
+                </div>
+                <div class="ev-form-row">
+                    <label class="ev-form-label">Mobile Phone</label>
+                    <input type="tel" id="guest-phone" class="ev-input" placeholder="(716) 555-0000" maxlength="20" autocomplete="tel">
+                </div>
+
+                <p id="auth-err-phone" class="ev-error"></p>
+
+                <div class="ev-step-actions" style="margin-top:20px">
+                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="closeAuthModal()">Cancel</button>
+                    <button class="ev-btn ev-btn--primary" id="btn-send-otp" onclick="sendGuestOtp()">Send Code</button>
+                </div>
+            </div>
+
+            <!-- OTP verification step -->
+            <div id="auth-step-otp" class="hidden">
+                <p class="ev-modal__label">Verification</p>
+                <h3 class="ev-modal__title">Enter the Code</h3>
+                <p class="ev-modal__sub" id="otp-sent-to">Code sent to your phone.</p>
+
+                <div class="ev-otp-wrap" id="guest-otp-inputs">
+                    <input class="ev-otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" autocomplete="one-time-code">
+                    <input class="ev-otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]">
+                    <input class="ev-otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]">
+                    <input class="ev-otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]">
+                    <input class="ev-otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]">
+                    <input class="ev-otp-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]">
+                </div>
+
+                <p id="auth-err-otp" class="ev-error" style="text-align:center"></p>
+
+                <div class="ev-step-actions">
+                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="backToPhone()">← Back</button>
+                    <button class="ev-btn ev-btn--primary" id="btn-confirm-otp" onclick="confirmGuestOtp()">Confirm RSVP</button>
+                </div>
+
+                <div class="ev-resend-row">
+                    <button class="ev-resend-btn" id="guest-resend-btn" onclick="resendGuestOtp()" disabled>
+                        Resend code (<span id="guest-resend-timer">60</span>s)
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="ev-toast" class="ev-toast"></div>
+
+    <script src="event.js"></script>
+    <script>
+        // CONFIGURE: set this to your deployed API Gateway RSVP endpoint
+        var RSVP_API    = window.RNB_RSVP_API    || 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/rsvp';
+        var URTHEDJ_URL = window.RNB_URTHEDJ_URL || 'https://urthedj.com/api';
+
+        var state = {
+            eventId:      null,
+            event:        null,
+            guestToken:   sessionStorage.getItem('rnb_guest_token') || null,
+            guestEventId: sessionStorage.getItem('rnb_guest_event') || null,
+            pendingStatus: null,   // 'confirmed' | 'declined'
+            mySongs:      [],
+            searchTimer:  null
+        };
+
+        /* ── Init ───────────────────────────────────── */
+        (function init() {
+            var params  = new URLSearchParams(window.location.search);
+            state.eventId = params.get('id') || window.location.pathname.split('/').filter(Boolean).pop();
+
+            if (!state.eventId) return showErrorState();
+            loadEvent();
+            wireGuestOtpInputs();
+        })();
+
+        /* ── Load event ──────────────────────────────── */
+        async function loadEvent() {
+            var res = await apiGet('/events/' + state.eventId);
+            document.getElementById('ev-loading').style.display = 'none';
+
+            if (res.error) return showErrorState();
+
+            state.event = res;
+            renderEventTeaser(res);
+            document.getElementById('ev-main').classList.remove('hidden');
+
+            // Check if guest already RSVPed in this session
+            if (state.guestToken && state.guestEventId === state.eventId) {
+                var fullRes = await apiFull(state.eventId, state.guestToken);
+                if (!fullRes.error) {
+                    state.event = { ...res, ...fullRes };
+                    showConfirmedView(fullRes);
+                    loadMySongs();
+                    return;
+                }
+            }
+        }
+
+        function renderEventTeaser(ev) {
+            document.title = ev.eventName + ' | RNB Events';
+            document.getElementById('page-title').textContent = ev.eventName + ' | RNB Events';
+
+            // Hero
+            if (ev.coverImageUrl) {
+                document.getElementById('ev-cover-img').src = ev.coverImageUrl;
+            } else {
+                document.getElementById('ev-hero').classList.add('no-cover');
+            }
+
+            document.getElementById('ev-type').textContent    = ev.eventType || '';
+            document.getElementById('ev-name').textContent    = ev.eventName;
+            document.getElementById('ev-host').textContent    = ev.creatorName;
+            document.getElementById('ev-date-text').textContent = formatDate(ev.eventDate, ev.eventTime);
+            document.getElementById('ev-venue-text').textContent = ev.venue;
+        }
+
+        /* ── RSVP flow ───────────────────────────────── */
+        function startRsvp(status) {
+            state.pendingStatus = status;
+            var title = status === 'confirmed' ? "You're going!" : "Can't make it?";
+            var sub   = status === 'confirmed'
+                ? 'Enter your number to confirm your spot and unlock the full event details.'
+                : 'Let the host know by verifying your number.';
+            document.getElementById('auth-modal-title').textContent = title;
+            document.getElementById('auth-modal-sub').textContent   = sub;
+            document.getElementById('auth-modal').classList.remove('hidden');
+            document.getElementById('guest-name').focus();
+        }
+
+        function changeRsvp() {
+            state.pendingStatus = 'confirmed';
+            document.getElementById('auth-modal-title').textContent = "Changed your mind?";
+            document.getElementById('auth-modal-sub').textContent   = "Verify your number again to confirm your RSVP.";
+            document.getElementById('auth-modal').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            resetAuthModal();
+        }
+
+        function resetAuthModal() {
+            document.getElementById('auth-step-phone').classList.remove('hidden');
+            document.getElementById('auth-step-otp').classList.add('hidden');
+            document.getElementById('auth-err-phone').textContent = '';
+            document.getElementById('auth-err-otp').textContent   = '';
+            Array.from(document.querySelectorAll('#guest-otp-inputs .ev-otp-digit')).forEach(function(i) { i.value = ''; });
+        }
+
+        /* ── Send guest OTP ──────────────────────────── */
+        async function sendGuestOtp() {
+            document.getElementById('auth-err-phone').textContent = '';
+            var name  = document.getElementById('guest-name').value.trim();
+            var phone = document.getElementById('guest-phone').value.trim();
+
+            if (!name)  return showAuthErr('phone', 'Please enter your name.');
+            if (!phone) return showAuthErr('phone', 'Please enter your phone number.');
+
+            setBtnLoading('#btn-send-otp', true);
+            var res = await apiPost('/otp/send', { phone, eventId: state.eventId });
+            setBtnLoading('#btn-send-otp', false);
+
+            if (res.error) return showAuthErr('phone', res.error);
+
+            document.getElementById('otp-sent-to').textContent = 'Code sent to ' + phone + '. Valid for 10 minutes.';
+            document.getElementById('auth-step-phone').classList.add('hidden');
+            document.getElementById('auth-step-otp').classList.remove('hidden');
+            document.getElementById('guest-otp-inputs').querySelector('.ev-otp-digit').focus();
+            startGuestResendTimer();
+        }
+
+        async function resendGuestOtp() {
+            var phone = document.getElementById('guest-phone').value.trim();
+            var name  = document.getElementById('guest-name').value.trim();
+            document.getElementById('guest-resend-btn').disabled = true;
+            var res = await apiPost('/otp/send', { phone, eventId: state.eventId });
+            if (res.error) { showAuthErr('otp', res.error); return; }
+            startGuestResendTimer();
+        }
+
+        /* ── Confirm guest OTP ───────────────────────── */
+        async function confirmGuestOtp() {
+            document.getElementById('auth-err-otp').textContent = '';
+            var code  = getGuestOtpValue();
+            var phone = document.getElementById('guest-phone').value.trim();
+            var name  = document.getElementById('guest-name').value.trim();
+
+            if (code.length !== 6) return showAuthErr('otp', 'Enter all 6 digits.');
+
+            setBtnLoading('#btn-confirm-otp', true);
+            var res = await apiPost('/otp/verify', {
+                phone,
+                code,
+                eventId: state.eventId,
+                name,
+                status: state.pendingStatus
+            });
+            setBtnLoading('#btn-confirm-otp', false);
+
+            if (res.error) return showAuthErr('otp', res.error);
+
+            // Save guest token
+            state.guestToken   = res.guestToken;
+            state.guestEventId = state.eventId;
+            sessionStorage.setItem('rnb_guest_token', res.guestToken);
+            sessionStorage.setItem('rnb_guest_event', state.eventId);
+
+            // Persist this RSVP to localStorage for the My Events dashboard
+            if (res.event) {
+                try {
+                    var myRsvps = JSON.parse(localStorage.getItem('rnb_my_rsvps') || '[]');
+                    var idx = myRsvps.findIndex(function(e){ return e.eventId === state.eventId; });
+                    var entry = {
+                        eventId:      res.event.eventId,
+                        eventName:    res.event.eventName,
+                        eventDate:    res.event.eventDate,
+                        eventTime:    res.event.eventTime || '',
+                        venue:        res.event.venue || '',
+                        coverImageUrl: res.event.coverImageUrl || '',
+                        creatorName:  res.event.creatorName || '',
+                        eventType:    res.event.eventType || '',
+                        status:       res.status,
+                        rsvpAt:       new Date().toISOString()
+                    };
+                    if (idx >= 0) myRsvps[idx] = entry;
+                    else myRsvps.push(entry);
+                    localStorage.setItem('rnb_my_rsvps', JSON.stringify(myRsvps));
+                } catch(ex) { /* non-fatal */ }
+            }
+
+            closeAuthModal();
+
+            if (res.status === 'confirmed') {
+                var fullRes = await apiFull(state.eventId, res.guestToken);
+                state.event = fullRes.error ? state.event : { ...state.event, ...fullRes };
+                showConfirmedView(state.event);
+            } else {
+                showDeclinedView();
+            }
+        }
+
+        /* ── View transitions ────────────────────────── */
+        function showConfirmedView(ev) {
+            document.getElementById('view-pre-rsvp').classList.add('hidden');
+            document.getElementById('view-declined').classList.add('hidden');
+            document.getElementById('view-confirmed').classList.remove('hidden');
+
+            var dt = formatDate(ev.eventDate, ev.eventTime);
+            document.getElementById('detail-datetime').textContent = dt;
+            document.getElementById('detail-venue').textContent    = ev.venue || '';
+            document.getElementById('detail-host').textContent     = ev.creatorName || '';
+            document.getElementById('detail-type').textContent     = ev.eventType || '';
+
+            var desc = document.getElementById('detail-description');
+            if (ev.description) {
+                desc.textContent = ev.description;
+                desc.style.display = '';
+            } else {
+                desc.style.display = 'none';
+            }
+        }
+
+        function showDeclinedView() {
+            document.getElementById('view-pre-rsvp').classList.add('hidden');
+            document.getElementById('view-confirmed').classList.add('hidden');
+            document.getElementById('view-declined').classList.remove('hidden');
+        }
+
+        /* ── Song search ─────────────────────────────── */
+        function onSongSearch(query) {
+            clearTimeout(state.searchTimer);
+            var results = document.getElementById('song-search-results');
+
+            if (!query.trim() || query.length < 2) {
+                results.innerHTML = '';
+                return;
+            }
+
+            results.innerHTML = '<p style="font-size:12px;color:#a4c195;padding:12px 0;letter-spacing:1px">Searching…</p>';
+
+            state.searchTimer = setTimeout(async function() {
+                var res = await apiSearchSongs(query.trim());
+                renderSearchResults(res, results);
+            }, 320);
+        }
+
+        async function apiSearchSongs(query) {
+            try {
+                var res = await fetch(URTHEDJ_URL + '/search-song?q=' + encodeURIComponent(query));
+                if (!res.ok) return [];
+                var data = await res.json();
+                return Array.isArray(data) ? data : (data.results || []);
+            } catch { return []; }
+        }
+
+        function renderSearchResults(songs, container) {
+            if (!songs.length) {
+                container.innerHTML = '<p style="font-size:12px;color:#a4c195;padding:12px 0">No results found.</p>';
+                return;
+            }
+
+            var limit = Math.min(songs.length, 10);
+            var html  = '';
+            for (var i = 0; i < limit; i++) {
+                var s         = songs[i];
+                var isAdded   = state.mySongs.some(function(ms) { return ms.appleMusicId && ms.appleMusicId === s.appleMusicId; });
+                var artHtml   = s.artworkUrl
+                    ? '<img class="ev-song-art" src="' + escHtml(s.artworkUrl) + '" alt="' + escHtml(s.songTitle) + '" onerror="this.style.display=\'none\'">'
+                    : '<div class="ev-song-art ev-song-art--placeholder"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>';
+
+                var badges = '';
+                if (s.bpm)         badges += '<span class="ev-badge">' + s.bpm + ' BPM</span>';
+                if (s.genre)       badges += '<span class="ev-badge ev-badge--green">' + escHtml(s.genre) + '</span>';
+                if (s.sourceProvider === 'apple-music') badges += '<span class="ev-badge ev-badge--gold">Apple Music</span>';
+
+                html += '<div class="ev-song-card" data-idx="' + i + '">' +
+                    artHtml +
+                    '<div class="ev-song-info">' +
+                    '<div class="ev-song-title">' + escHtml(s.songTitle) + '</div>' +
+                    '<div class="ev-song-artist">' + escHtml(s.artistName) + '</div>' +
+                    (badges ? '<div class="ev-song-badges">' + badges + '</div>' : '') +
+                    '</div>' +
+                    '<button class="ev-song-add-btn' + (isAdded ? ' ev-song-add-btn--added' : '') + '" ' +
+                    (isAdded ? 'disabled title="Already added"' : 'onclick="addSong(' + i + ')" title="Add to playlist"') + '>' +
+                    (isAdded
+                        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+                        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>') +
+                    '</button>' +
+                    '</div>';
+            }
+
+            container.innerHTML = html;
+            // Store results for add handler
+            container._results = songs;
+        }
+
+        async function addSong(idx) {
+            var container = document.getElementById('song-search-results');
+            var song      = container._results && container._results[idx];
+            if (!song) return;
+
+            if (state.mySongs.length >= 5) {
+                document.getElementById('song-error').textContent = 'You\'ve reached the 5-song limit.';
+                return;
+            }
+
+            var res = await apiPost('/events/' + state.eventId + '/songs', {
+                songTitle:      song.songTitle,
+                artistName:     song.artistName,
+                albumName:      song.albumName || '',
+                artworkUrl:     song.artworkUrl || '',
+                appleMusicId:   song.appleMusicId || '',
+                sourceProvider: song.sourceProvider || 'catalog'
+            }, null, state.guestToken);
+
+            if (res.error) {
+                document.getElementById('song-error').textContent = res.error;
+                return;
+            }
+
+            state.mySongs.push(song);
+            updateSongCounter();
+            renderPlaylist();
+            // Refresh search to mark as added
+            onSongSearch(document.getElementById('song-search-input').value);
+            document.getElementById('song-error').textContent = '';
+            showToast('Song added to your playlist!');
+        }
+
+        async function removeSong(idx) {
+            var song = state.mySongs[idx];
+            if (!song) return;
+
+            var res = await apiDel('/events/' + state.eventId + '/songs/' + (idx + 1), state.guestToken);
+            if (res.error) { showToast('Could not remove song.'); return; }
+
+            state.mySongs.splice(idx, 1);
+            updateSongCounter();
+            renderPlaylist();
+            // Refresh search results to unmark added state
+            onSongSearch(document.getElementById('song-search-input').value);
+        }
+
+        async function loadMySongs() {
+            var res = await apiGetGuest('/events/' + state.eventId + '/my-songs', state.guestToken);
+            if (!res.error && res.songs) {
+                state.mySongs = res.songs;
+                updateSongCounter();
+                renderPlaylist();
+            }
+        }
+
+        function updateSongCounter() {
+            var count = state.mySongs.length;
+            document.getElementById('song-count').textContent = count;
+            for (var i = 1; i <= 5; i++) {
+                var dot = document.getElementById('dot-' + i);
+                if (dot) dot.classList.toggle('ev-songs__dot--filled', i <= count);
+            }
+        }
+
+        function renderPlaylist() {
+            var wrap = document.getElementById('my-playlist');
+            var list = document.getElementById('playlist-items');
+
+            if (!state.mySongs.length) {
+                wrap.style.display = 'none';
+                return;
+            }
+
+            wrap.style.display = '';
+            list.innerHTML = state.mySongs.map(function(s, i) {
+                return '<div class="ev-playlist-item">' +
+                    '<div class="ev-playlist-num">' + (i + 1) + '</div>' +
+                    '<span class="ev-playlist-item__title">' + escHtml(s.songTitle) + '</span>' +
+                    '<span class="ev-playlist-item__artist">' + escHtml(s.artistName) + '</span>' +
+                    '<button class="ev-playlist-remove" onclick="removeSong(' + i + ')" title="Remove">' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                    '</button>' +
+                    '</div>';
+            }).join('');
+        }
+
+        /* ── OTP helpers (guest modal) ───────────────── */
+        function wireGuestOtpInputs() {
+            var inputs = document.querySelectorAll('#guest-otp-inputs .ev-otp-digit');
+            inputs.forEach(function(input, i) {
+                input.addEventListener('input', function() {
+                    input.value = input.value.replace(/\D/g, '');
+                    if (input.value && i < inputs.length - 1) inputs[i + 1].focus();
+                    if (getGuestOtpValue().length === 6) confirmGuestOtp();
+                });
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !input.value && i > 0) inputs[i - 1].focus();
+                });
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+                    inputs.forEach(function(inp, j) { inp.value = text[j] || ''; });
+                    if (text.length === 6) confirmGuestOtp();
+                });
+            });
+        }
+
+        function getGuestOtpValue() {
+            return Array.from(document.querySelectorAll('#guest-otp-inputs .ev-otp-digit')).map(function(i) { return i.value; }).join('');
+        }
+
+        function backToPhone() {
+            document.getElementById('auth-step-otp').classList.add('hidden');
+            document.getElementById('auth-step-phone').classList.remove('hidden');
+        }
+
+        var guestResendInterval = null;
+        function startGuestResendTimer() {
+            var btn     = document.getElementById('guest-resend-btn');
+            var counter = document.getElementById('guest-resend-timer');
+            var seconds = 60;
+            btn.disabled = true;
+            btn.textContent = 'Resend code (' + seconds + 's)';
+            clearInterval(guestResendInterval);
+            guestResendInterval = setInterval(function() {
+                seconds--;
+                btn.textContent = seconds > 0
+                    ? 'Resend code (' + seconds + 's)'
+                    : 'Resend code';
+                if (seconds <= 0) {
+                    clearInterval(guestResendInterval);
+                    btn.disabled = false;
+                }
+            }, 1000);
+        }
+
+        /* ── API ─────────────────────────────────────── */
+        async function apiGet(path) {
+            try {
+                var res = await fetch(RSVP_API + path);
+                return await res.json();
+            } catch { return { error: 'Network error' }; }
+        }
+
+        async function apiFull(eventId, guestToken) {
+            try {
+                var res = await fetch(RSVP_API + '/events/' + eventId + '/full', {
+                    headers: { 'X-Guest-Token': guestToken }
+                });
+                return await res.json();
+            } catch { return { error: 'Network error' }; }
+        }
+
+        async function apiGetGuest(path, guestToken) {
+            try {
+                var res = await fetch(RSVP_API + path, {
+                    headers: { 'X-Guest-Token': guestToken }
+                });
+                return await res.json();
+            } catch { return { error: 'Network error' }; }
+        }
+
+        async function apiPost(path, data, creatorToken, guestToken) {
+            try {
+                var headers = { 'Content-Type': 'application/json' };
+                if (creatorToken) headers['Authorization']  = 'Bearer ' + creatorToken;
+                if (guestToken)   headers['X-Guest-Token']  = guestToken;
+                var res = await fetch(RSVP_API + path, { method: 'POST', headers, body: JSON.stringify(data) });
+                return await res.json();
+            } catch { return { error: 'Network error' }; }
+        }
+
+        async function apiDel(path, guestToken) {
+            try {
+                var res = await fetch(RSVP_API + path, {
+                    method:  'DELETE',
+                    headers: { 'X-Guest-Token': guestToken }
+                });
+                return await res.json();
+            } catch { return { error: 'Network error' }; }
+        }
+
+        /* ── Utils ───────────────────────────────────── */
+        function showErrorState() {
+            document.getElementById('ev-loading').style.display = 'none';
+            var el = document.getElementById('ev-error-state');
+            el.classList.remove('hidden');
+            el.style.display = 'flex';
+        }
+
+        function showAuthErr(step, msg) {
+            document.getElementById('auth-err-' + step).textContent = msg;
+        }
+
+        function setBtnLoading(selector, loading) {
+            var btn = document.querySelector(selector);
+            if (!btn) return;
+            if (loading) {
+                btn._orig    = btn.innerHTML;
+                btn.innerHTML = '<span class="ev-spinner"></span>Please wait…';
+                btn.disabled  = true;
+            } else {
+                btn.innerHTML = btn._orig || 'Continue';
+                btn.disabled  = false;
+            }
+        }
+
+        function formatDate(dateStr, timeStr) {
+            if (!dateStr) return '';
+            try {
+                var date = new Date(dateStr + 'T12:00:00');
+                var formatted = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                return timeStr ? formatted + ' at ' + formatTime(timeStr) : formatted;
+            } catch { return dateStr + (timeStr ? ' at ' + timeStr : ''); }
+        }
+
+        function formatTime(t) {
+            if (!t) return '';
+            var parts = t.split(':');
+            var h = parseInt(parts[0], 10), m = parts[1];
+            var ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return h + ':' + m + ' ' + ampm;
+        }
+
+        function escHtml(str) {
+            return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function showToast(msg) {
+            var t = document.getElementById('ev-toast');
+            t.textContent = msg;
+            t.classList.add('ev-toast--visible');
+            setTimeout(function() { t.classList.remove('ev-toast--visible'); }, 3000);
+        }
+    </script>
+
+</body>
+</html>

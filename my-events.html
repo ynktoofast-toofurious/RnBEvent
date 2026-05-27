@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Events | RNB Events</title>
+    <meta name="description" content="Your personal RNB Events hub — upcoming events, hosting, and past gatherings.">
+    <meta name="robots" content="noindex">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="event.css">
+</head>
+<body class="mem-body">
+
+<!-- ── Top Bar ─────────────────────────────────── -->
+<header class="mem-topbar">
+    <a href="/" class="mem-topbar__logo">
+        <img src="RNB Logo Olive.png" alt="RNB Events">
+        RNB EVENTS
+    </a>
+    <div class="mem-topbar__actions">
+        <a href="/event-create.html" class="mem-btn mem-btn--outline" id="btn-create-event">+ Create</a>
+        <button class="mem-topbar__logout" id="btn-logout" onclick="doLogout()" style="display:none">Sign out</button>
+    </div>
+</header>
+
+<!-- ══════════ AUTH GATE ══════════ -->
+<div id="mem-gate" class="mem-gate hidden">
+    <div class="mem-gate__inner">
+
+        <div class="mem-gate__logo">
+            <img src="RNB Logo Olive.png" alt="RNB Events">
+            <span>RNB EVENTS</span>
+        </div>
+
+        <h2 class="mem-gate__title">My Events</h2>
+        <p class="mem-gate__sub">Enter your phone number to see your upcoming events, RSVPs, and everything you've attended.</p>
+
+        <!-- Step 1: Phone -->
+        <div id="gate-step-phone" class="mem-gate__step">
+            <div class="mem-gate__field">
+                <input type="tel" id="gate-phone" class="mem-gate__input"
+                       placeholder="+1 (716) 555-0000"
+                       autocomplete="tel"
+                       onkeydown="if(event.key==='Enter') gateSendOtp()">
+            </div>
+            <p id="gate-phone-err" class="mem-gate__err"></p>
+            <button id="btn-gate-send" class="mem-btn mem-btn--gold" onclick="gateSendOtp()">SEND CODE</button>
+            <p style="margin-top:20px;font-size:11px;color:#3a5a3a;letter-spacing:1px">
+                Don't have an account?
+                <a href="/event-create.html" style="color:#77a361;text-decoration:underline">Create an event</a>
+            </p>
+        </div>
+
+        <!-- Step 2: OTP -->
+        <div id="gate-step-otp" class="mem-gate__step hidden">
+            <p class="mem-gate__step-hint">6-digit code sent to <strong id="gate-phone-display"></strong></p>
+            <div class="ev-otp-row" id="gate-otp-boxes" style="justify-content:center;margin-bottom:8px">
+                <input class="ev-otp-digit" maxlength="1" type="tel" inputmode="numeric" autocomplete="one-time-code">
+                <input class="ev-otp-digit" maxlength="1" type="tel" inputmode="numeric">
+                <input class="ev-otp-digit" maxlength="1" type="tel" inputmode="numeric">
+                <input class="ev-otp-digit" maxlength="1" type="tel" inputmode="numeric">
+                <input class="ev-otp-digit" maxlength="1" type="tel" inputmode="numeric">
+                <input class="ev-otp-digit" maxlength="1" type="tel" inputmode="numeric">
+            </div>
+            <p id="gate-otp-err" class="mem-gate__err"></p>
+            <button id="btn-gate-verify" class="mem-btn mem-btn--gold" onclick="gateVerifyOtp()">VIEW MY EVENTS</button>
+            <button class="mem-gate__back" onclick="gateBack()">← Change number</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══════════ MEMBER DASHBOARD ══════════ -->
+<div id="mem-main" class="hidden">
+
+    <!-- Hero -->
+    <section class="mem-hero">
+        <div class="mem-hero__content ev-container--wide">
+            <p class="mem-hero__eyebrow">WELCOME BACK</p>
+            <h1 class="mem-hero__name" id="mem-name-display">—</h1>
+            <p class="mem-hero__count" id="mem-count-text">Loading your events…</p>
+        </div>
+    </section>
+
+    <!-- Dashboard -->
+    <section class="mem-dashboard ev-container--wide">
+
+        <!-- Filter tabs -->
+        <div class="mem-tabs" role="tablist" id="mem-tabs">
+            <button class="mem-tab mem-tab--active" data-tab="upcoming" role="tab">
+                Upcoming <span class="mem-tab__badge" id="badge-upcoming">0</span>
+            </button>
+            <button class="mem-tab" data-tab="hosting" role="tab">
+                Hosting <span class="mem-tab__badge" id="badge-hosting">0</span>
+            </button>
+            <button class="mem-tab" data-tab="attended" role="tab">
+                Attended <span class="mem-tab__badge" id="badge-attended">0</span>
+            </button>
+            <button class="mem-tab" data-tab="all" role="tab">
+                All past events <span class="mem-tab__badge" id="badge-all">0</span>
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div id="mem-loading" class="mem-loading hidden">
+            <div class="ev-spinner" style="width:28px;height:28px;border-width:3px;margin:0"></div>
+        </div>
+
+        <!-- Card grid -->
+        <div id="mem-grid" class="mem-grid hidden"></div>
+
+    </section>
+
+</div>
+
+<script src="event.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    var API    = window.RNB_RSVP_API;
+    var today  = new Date().toISOString().slice(0, 10);
+
+    var mem = {
+        name:      null,
+        phone:     null,
+        token:     null,
+        hosting:   [],   // events created by this user
+        attending: []    // events this phone RSVPd to (from rnb-member-rsvps)
+    };
+
+    var activeTab = 'upcoming';
+
+    /* ── Helpers ──────────────────────────────────── */
+
+    function esc(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function formatCardDate(dateStr, timeStr) {
+        if (!dateStr) return '';
+        var d   = new Date(dateStr + 'T12:00:00');
+        var days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var s = days[d.getDay()] + ' ' + months[d.getMonth()] + ' ' + d.getDate();
+        if (timeStr) s += ' at ' + timeStr;
+        return s;
+    }
+
+    /* ── Categorize events ────────────────────────── */
+
+    function getUpcoming() {
+        var hostUp   = mem.hosting.filter(function(e)  { return e.eventDate >= today; });
+        var guestUp  = mem.attending.filter(function(e){ return e.status === 'confirmed' && e.eventDate >= today; });
+        return [].concat(hostUp, guestUp).sort(function(a,b){ return a.eventDate < b.eventDate ? -1 : 1; });
+    }
+
+    function getHosting() {
+        return [].concat(mem.hosting).sort(function(a,b){ return a.eventDate < b.eventDate ? 1 : -1; });
+    }
+
+    function getAttended() {
+        var hostPast  = mem.hosting.filter(function(e)   { return e.eventDate < today; });
+        var guestPast = mem.attending.filter(function(e) { return e.status === 'confirmed' && e.eventDate < today; });
+        return [].concat(hostPast, guestPast).sort(function(a,b){ return a.eventDate < b.eventDate ? 1 : -1; });
+    }
+
+    function getAll() {
+        var seen = {};
+        var all  = [];
+        [].concat(mem.hosting, mem.attending).forEach(function(e) {
+            if (!seen[e.eventId]) { seen[e.eventId] = true; all.push(e); }
+        });
+        return all.sort(function(a,b){ return a.eventDate < b.eventDate ? 1 : -1; });
+    }
+
+    function countForTab(tab) {
+        if (tab === 'upcoming')  return getUpcoming().length;
+        if (tab === 'hosting')   return getHosting().length;
+        if (tab === 'attended')  return getAttended().length;
+        return getAll().length;
+    }
+
+    /* ── Update badges + hero text ────────────────── */
+
+    function updateBadges() {
+        document.getElementById('badge-upcoming').textContent  = getUpcoming().length;
+        document.getElementById('badge-hosting').textContent   = getHosting().length;
+        document.getElementById('badge-attended').textContent  = getAttended().length;
+        document.getElementById('badge-all').textContent       = getAll().length;
+
+        var n = getUpcoming().length;
+        var el = document.getElementById('mem-count-text');
+        if (n === 0)      el.textContent = 'No upcoming events.';
+        else if (n === 1) el.innerHTML   = 'You have <strong>1</strong> upcoming event.';
+        else              el.innerHTML   = 'You have <strong>' + n + '</strong> upcoming events.';
+    }
+
+    /* ── Build a card element ─────────────────────── */
+
+    function buildCard(ev) {
+        var isPast    = ev.eventDate < today;
+        var isHosting = ev.role === 'hosting';
+        var label     = isHosting ? 'HOSTING' : isPast ? 'ATTENDED' : '🔥 GOING';
+        var labelCls  = isHosting ? 'hosting' : isPast ? 'past' : 'going';
+        var dateStr   = formatCardDate(ev.eventDate, ev.eventTime);
+        var link      = isHosting ? '/Admin/' : ('/event/' + ev.eventId);
+
+        var a = document.createElement('a');
+        a.href      = link;
+        a.className = 'mem-card';
+
+        var imgHtml = ev.coverImageUrl
+            ? '<img class="mem-card__img" src="' + esc(ev.coverImageUrl) + '" alt="" loading="lazy">'
+            : '<div class="mem-card__img-placeholder"></div>';
+
+        a.innerHTML =
+            '<div class="mem-card__img-wrap">' +
+                imgHtml +
+                '<div class="mem-card__img-overlay"></div>' +
+                '<div class="mem-card__date-badge">' + esc(dateStr) + '</div>' +
+                '<div class="mem-card__status mem-card__status--' + labelCls + '">' + label + '</div>' +
+            '</div>' +
+            '<div class="mem-card__info">' +
+                '<p class="mem-card__title">' + esc(ev.eventName) + '</p>' +
+                '<p class="mem-card__host">' + esc(ev.creatorName || '') +
+                    (isHosting ? '' : (ev.venue ? ' · ' + esc(ev.venue) : '')) + '</p>' +
+            '</div>';
+
+        return a;
+    }
+
+    /* ── Render the grid ──────────────────────────── */
+
+    function renderGrid(tab) {
+        activeTab = tab;
+
+        // highlight active tab
+        document.querySelectorAll('.mem-tab').forEach(function(btn) {
+            btn.classList.toggle('mem-tab--active', btn.dataset.tab === tab);
+        });
+
+        var events;
+        if (tab === 'upcoming')  events = getUpcoming();
+        else if (tab === 'hosting')  events = getHosting();
+        else if (tab === 'attended') events = getAttended();
+        else                         events = getAll();
+
+        var grid = document.getElementById('mem-grid');
+        grid.innerHTML = '';
+
+        // "+ New event" card — shown on relevant tabs
+        if (tab === 'upcoming' || tab === 'hosting' || tab === 'all') {
+            var newCard = document.createElement('a');
+            newCard.href      = '/event-create.html';
+            newCard.className = 'mem-card mem-card--new';
+            newCard.innerHTML =
+                '<span class="mem-card-new__icon">+</span>' +
+                '<span class="mem-card-new__text">New event</span>';
+            grid.appendChild(newCard);
+        }
+
+        if (!events.length) {
+            var empty = document.createElement('div');
+            empty.className   = 'mem-empty-inline';
+            empty.textContent = 'Nothing here yet.';
+            grid.appendChild(empty);
+        } else {
+            events.forEach(function(ev) {
+                grid.appendChild(buildCard(ev));
+            });
+        }
+
+        grid.classList.remove('hidden');
+        document.getElementById('mem-loading').classList.add('hidden');
+    }
+
+    /* ── Tab click ────────────────────────────────── */
+
+    document.getElementById('mem-tabs').addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-tab]');
+        if (btn) renderGrid(btn.dataset.tab);
+    });
+
+    /* ── Show dashboard ───────────────────────────── */
+
+    function showDashboard() {
+        document.getElementById('mem-gate').classList.add('hidden');
+        document.getElementById('mem-main').classList.remove('hidden');
+        document.getElementById('btn-logout').style.display = '';
+        document.getElementById('mem-name-display').textContent = mem.name || 'there';
+        document.getElementById('mem-loading').classList.remove('hidden');
+        document.getElementById('mem-grid').classList.add('hidden');
+        updateBadges();
+        renderGrid('upcoming');
+    }
+
+    /* ── Show auth gate ───────────────────────────── */
+
+    function showGate() {
+        document.getElementById('mem-gate').classList.remove('hidden');
+        document.getElementById('mem-main').classList.add('hidden');
+        document.getElementById('btn-logout').style.display = 'none';
+    }
+
+    /* ── Fetch dashboard from API ─────────────────── */
+
+    async function fetchDashboard(token) {
+        var res = await fetch(API + '/member/dashboard', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) return null;
+        return res.json();
+    }
+
+    /* ── Merge localStorage RSVPs (offline fallback) ─ */
+
+    function mergeLocalRsvps() {
+        try {
+            var stored = JSON.parse(localStorage.getItem('rnb_my_rsvps') || '[]');
+            var seen   = {};
+            mem.attending.forEach(function(e) { seen[e.eventId] = true; });
+            stored.forEach(function(e) {
+                if (!seen[e.eventId]) {
+                    mem.attending.push({ role: 'guest', status: e.status || 'confirmed', ...e });
+                }
+            });
+        } catch (ex) { /* ignore */ }
+    }
+
+    /* ── Init ─────────────────────────────────────── */
+
+    async function init() {
+        var creatorToken = localStorage.getItem('rnb_creator_token');
+        var memberToken  = localStorage.getItem('rnb_member_token');
+        var token        = creatorToken || memberToken;
+
+        if (token) {
+            mem.token = token;
+            try {
+                var data = await fetchDashboard(token);
+                if (data && !data.error) {
+                    mem.name      = data.name;
+                    mem.phone     = data.phone;
+                    mem.hosting   = (data.hosting   || []).map(function(e){ return Object.assign({ role: 'hosting' }, e); });
+                    mem.attending = (data.attending || []).map(function(e){ return Object.assign({ role: 'guest' }, e); });
+                    mergeLocalRsvps();
+                    showDashboard();
+                    return;
+                }
+            } catch (ex) { /* fall through */ }
+
+            // Token expired or API error — try local data only
+            mergeLocalRsvps();
+            if (mem.attending.length > 0) {
+                showDashboard();
+                return;
+            }
+
+            // Token stale — clear and ask to re-auth
+            localStorage.removeItem('rnb_creator_token');
+            localStorage.removeItem('rnb_member_token');
+        }
+
+        showGate();
+    }
+
+    /* ══════════ AUTH GATE LOGIC ══════════ */
+
+    var _gatePhone = '';
+
+    /* Send OTP */
+    window.gateSendOtp = async function() {
+        var phoneInput = document.getElementById('gate-phone');
+        var phone      = phoneInput.value.trim();
+        var errEl      = document.getElementById('gate-phone-err');
+        errEl.textContent = '';
+
+        if (!phone) { errEl.textContent = 'Please enter your phone number.'; return; }
+
+        var btn = document.getElementById('btn-gate-send');
+        btn.disabled    = true;
+        btn.textContent = 'Sending…';
+
+        try {
+            var res  = await fetch(API + '/member/auth', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ phone: phone })
+            });
+            var data = await res.json();
+
+            if (data.error) {
+                errEl.textContent = data.error;
+                btn.disabled    = false;
+                btn.textContent = 'SEND CODE';
+                return;
+            }
+
+            _gatePhone = phone;
+            document.getElementById('gate-phone-display').textContent = phone;
+            document.getElementById('gate-step-phone').classList.add('hidden');
+            document.getElementById('gate-step-otp').classList.remove('hidden');
+            setTimeout(function() {
+                var first = document.querySelector('#gate-otp-boxes .ev-otp-digit');
+                if (first) first.focus();
+            }, 80);
+
+        } catch (ex) {
+            errEl.textContent = 'Network error. Please try again.';
+        }
+
+        btn.disabled    = false;
+        btn.textContent = 'SEND CODE';
+    };
+
+    /* Back to phone step */
+    window.gateBack = function() {
+        document.getElementById('gate-step-otp').classList.add('hidden');
+        document.getElementById('gate-step-phone').classList.remove('hidden');
+        document.getElementById('gate-otp-err').textContent = '';
+        document.querySelectorAll('#gate-otp-boxes .ev-otp-digit').forEach(function(inp){ inp.value = ''; });
+    };
+
+    /* Verify OTP */
+    window.gateVerifyOtp = async function() {
+        var digits = Array.from(document.querySelectorAll('#gate-otp-boxes .ev-otp-digit')).map(function(i){ return i.value.trim(); });
+        var code   = digits.join('');
+        var errEl  = document.getElementById('gate-otp-err');
+        errEl.textContent = '';
+
+        if (code.length !== 6) { errEl.textContent = 'Please enter all 6 digits.'; return; }
+
+        var btn = document.getElementById('btn-gate-verify');
+        btn.disabled    = true;
+        btn.textContent = 'Verifying…';
+
+        try {
+            var res  = await fetch(API + '/member/verify', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ phone: _gatePhone, code: code })
+            });
+            var data = await res.json();
+
+            if (data.error) {
+                errEl.textContent = data.error;
+                btn.disabled    = false;
+                btn.textContent = 'VIEW MY EVENTS';
+                return;
+            }
+
+            // Persist token
+            localStorage.setItem('rnb_member_token', data.token);
+            mem.token = data.token;
+
+            // Fetch dashboard
+            var dashData = await fetchDashboard(data.token);
+            if (dashData && !dashData.error) {
+                mem.name      = dashData.name || data.member && data.member.name;
+                mem.phone     = dashData.phone || _gatePhone;
+                mem.hosting   = (dashData.hosting   || []).map(function(e){ return Object.assign({ role: 'hosting' }, e); });
+                mem.attending = (dashData.attending || []).map(function(e){ return Object.assign({ role: 'guest' }, e); });
+            } else {
+                mem.name  = data.member && data.member.name;
+                mem.phone = _gatePhone;
+            }
+
+            mergeLocalRsvps();
+            showDashboard();
+
+        } catch (ex) {
+            errEl.textContent = 'Network error. Please try again.';
+        }
+
+        btn.disabled    = false;
+        btn.textContent = 'VIEW MY EVENTS';
+    };
+
+    /* OTP digit auto-advance */
+    (function() {
+        var boxes = document.querySelectorAll('#gate-otp-boxes .ev-otp-digit');
+        boxes.forEach(function(inp, i) {
+            inp.addEventListener('input', function() {
+                var v = inp.value.replace(/\D/g, '');
+                inp.value = v.slice(-1);
+                if (v && i < boxes.length - 1) boxes[i + 1].focus();
+            });
+            inp.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !inp.value && i > 0) boxes[i - 1].focus();
+                if (e.key === 'Enter') window.gateVerifyOtp();
+            });
+            inp.addEventListener('paste', function(e) {
+                e.preventDefault();
+                var pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+                boxes.forEach(function(b, j){ b.value = pasted[j] || ''; });
+                if (pasted.length === 6) window.gateVerifyOtp();
+            });
+        });
+    })();
+
+    /* Logout */
+    window.doLogout = function() {
+        localStorage.removeItem('rnb_creator_token');
+        localStorage.removeItem('rnb_member_token');
+        location.reload();
+    };
+
+    /* Boot */
+    init();
+
+})();
+</script>
+
+</body>
+</html>
