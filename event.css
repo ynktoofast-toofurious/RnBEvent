@@ -104,6 +104,59 @@ a { text-decoration: none; color: inherit; }
 
 .ev-topbar__link:hover { color: var(--secondary); }
 
+/* ── Topbar right cluster (greeting + signout + back) ──── */
+.ev-topbar__right {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.ev-user-greeting {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+    background: rgba(184,154,94,0.08);
+    border: 1px solid rgba(184,154,94,0.25);
+    border-radius: 999px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--secondary);
+}
+
+.ev-user-greeting.hidden { display: none; }
+
+.ev-user-greeting__hi {
+    color: rgba(255,255,255,0.55);
+    font-weight: 300;
+}
+
+.ev-user-greeting__name {
+    color: var(--gold);
+    font-weight: 500;
+}
+
+.ev-signout-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    padding: 4px;
+    margin-left: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.ev-signout-btn:hover {
+    color: var(--gold);
+    background: rgba(184,154,94,0.12);
+    transform: translateX(1px);
+}
+
 /* ── Hero (event.html) ───────────────────────────── */
 
 .ev-hero {
@@ -2520,4 +2573,153 @@ textarea.ev-input {
     .mem-card__title    { font-size: 15px; }
     .mem-card__date-badge { font-size: 9px; padding: 4px 8px; }
     .mem-card__status   { font-size: 9px; padding: 4px 9px; }
+}
+
+/* ── My Drafts list (settings flyout) ──────────────── */
+.ev-drafts__counter {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    background: rgba(184,154,94,0.12);
+    border: 1px solid rgba(184,154,94,0.25);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 8px;
+}
+.ev-drafts__counter--full { color: #e9836a; border-color: rgba(233,131,106,0.4); background: rgba(233,131,106,0.1); }
+
+.ev-drafts__refresh {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: rgba(255,255,255,0.55);
+    border-radius: 6px;
+    padding: 4px 6px;
+    cursor: pointer;
+    display: inline-flex;
+    transition: var(--transition);
+}
+.ev-drafts__refresh:hover { color: var(--gold); border-color: rgba(184,154,94,0.4); }
+
+.ev-drafts__list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+.ev-drafts__empty {
+    margin: 0;
+    padding: 14px;
+    text-align: center;
+    color: rgba(255,255,255,0.45);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+}
+
+.ev-draft-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: var(--transition);
+}
+.ev-draft-card:hover { border-color: rgba(184,154,94,0.4); background: rgba(184,154,94,0.05); }
+
+.ev-draft-card__info { flex: 1; min-width: 0; overflow: hidden; }
+.ev-draft-card__name {
+    margin: 0 0 2px;
+    color: var(--secondary);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ev-draft-card__meta {
+    margin: 0;
+    color: rgba(255,255,255,0.45);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+}
+
+.ev-draft-card__actions { display: flex; gap: 4px; flex-shrink: 0; }
+.ev-draft-card__btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: rgba(255,255,255,0.55);
+    border-radius: 6px;
+    padding: 5px 7px;
+    cursor: pointer;
+    display: inline-flex;
+    transition: var(--transition);
+}
+.ev-draft-card__btn:hover { color: var(--gold); border-color: rgba(184,154,94,0.4); background: rgba(184,154,94,0.08); }
+.ev-draft-card__btn--danger:hover { color: #e9836a; border-color: rgba(233,131,106,0.4); background: rgba(233,131,106,0.08); }
+
+/* ── Modal (generic) ──────────────────────────────── */
+.ev-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.25s ease;
+}
+.ev-modal--hidden { opacity: 0; pointer-events: none; }
+
+.ev-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,16,10,0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.ev-modal__card {
+    position: relative;
+    width: min(92vw, 440px);
+    background: linear-gradient(145deg, rgba(34,46,34,0.96), rgba(20,28,20,0.96));
+    border: 1px solid rgba(184,154,94,0.3);
+    border-radius: 14px;
+    padding: 28px 28px 22px;
+    box-shadow: 0 28px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(184,154,94,0.08) inset;
+    animation: modalIn 0.32s cubic-bezier(0.2, 0.8, 0.2, 1.05) both;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ev-modal__title {
+    margin: 0 0 10px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--gold);
+    letter-spacing: 0.01em;
+}
+
+.ev-modal__body {
+    margin: 0 0 22px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.78);
+}
+.ev-modal__body strong { color: var(--secondary); font-weight: 600; }
+
+.ev-modal__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
 }

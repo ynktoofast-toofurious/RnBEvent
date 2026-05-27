@@ -386,12 +386,28 @@ async function createEvent(body, event) {
     if (!eventDate || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return respond(400, { error: 'Valid date required (YYYY-MM-DD)' });
     if (!venue)      return respond(400, { error: 'Venue required' });
 
+    const status = body.status === 'draft' ? 'draft' : 'published';
+
+    // Enforce 5-draft limit per creator
+    if (status === 'draft') {
+        const existing = await ddb.send(new QueryCommand({
+            TableName:                 T.EVENTS,
+            IndexName:                 'creatorId-index',
+            KeyConditionExpression:    'creatorId = :cid',
+            ExpressionAttributeValues: { ':cid': creator.creatorId }
+        })).catch(() => ({ Items: [] }));
+        const draftCount = (existing.Items || []).filter(e => e.status === 'draft').length;
+        if (draftCount >= 5) {
+            return respond(400, { error: 'You have reached the 5 draft limit. Delete a draft to save a new one.', code: 'DRAFT_LIMIT' });
+        }
+    }
+
     const creatorRec = await ddb.send(new GetCommand({ TableName: T.CREATORS, Key: { phone: creator.phone } })).catch(() => null);
     const creatorEmail = creatorRec?.Item?.email || '';
 
-    // Create linked urTheDJ PartySession (non-fatal)
+    // Create linked urTheDJ PartySession (non-fatal, skip for drafts)
     let urthedj_sessionId = null;
-    if (URTHEDJ_API) {
+    if (URTHEDJ_API && status === 'published') {
         try {
             const pr = await fetch(`${URTHEDJ_API}/party/create`, {
                 method:  'POST',
@@ -420,13 +436,63 @@ async function createEvent(body, event) {
             venue,
             description,
             coverImageUrl,
-            status:            'published',
+            status,
             urthedj_sessionId,
             createdAt:         new Date().toISOString()
         }
     }));
 
-    return respond(200, { eventId, shareUrl: `${SITE_URL}/event/${eventId}` });
+    return respond(200, { eventId, status, shareUrl: `${SITE_URL}/event/${eventId}` });
+}
+
+/* POST /events/:id/update ── update event fields */
+async function updateEvent(eventId, body, event) {
+    const creator = await getCreatorFromToken(event);
+    if (!creator) return respond(401, { error: 'Authentication required' });
+
+    const existing = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
+    if (!existing?.Item) return respond(404, { error: 'Event not found' });
+    if (existing.Item.creatorId !== creator.creatorId) return respond(403, { error: 'Not authorized to edit this event' });
+
+    const eventName   = sanitizeText(body.eventName, 150);
+    const eventType   = sanitizeText(body.eventType, 60);
+    const venue       = sanitizeText(body.venue, 200);
+    const description = sanitizeText(body.description, 1500);
+    const eventDate   = String(body.eventDate || '').slice(0, 10);
+    const eventTime   = sanitizeText(body.eventTime, 10);
+    const coverImageUrl = sanitizeUrl(body.coverImageUrl);
+    const newStatus   = body.status === 'draft' ? 'draft' : 'published';
+
+    if (!eventName || eventName.length < 2) return respond(400, { error: 'Event name required' });
+    if (!eventDate || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return respond(400, { error: 'Valid date required' });
+    if (!venue) return respond(400, { error: 'Venue required' });
+
+    await ddb.send(new UpdateCommand({
+        TableName: T.EVENTS,
+        Key: { eventId },
+        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u',
+        ExpressionAttributeNames:  { '#st': 'status' },
+        ExpressionAttributeValues: {
+            ':n': eventName, ':t': eventType, ':d': eventDate, ':tm': eventTime,
+            ':v': venue, ':desc': description, ':img': coverImageUrl || null,
+            ':s': newStatus, ':u': new Date().toISOString()
+        }
+    }));
+
+    return respond(200, { eventId, status: newStatus, shareUrl: `${SITE_URL}/event/${eventId}` });
+}
+
+/* DELETE /events/:id ── delete an event (creator only) */
+async function deleteEvent(eventId, event) {
+    const creator = await getCreatorFromToken(event);
+    if (!creator) return respond(401, { error: 'Authentication required' });
+
+    const existing = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
+    if (!existing?.Item) return respond(404, { error: 'Event not found' });
+    if (existing.Item.creatorId !== creator.creatorId) return respond(403, { error: 'Not authorized to delete this event' });
+
+    await ddb.send(new DeleteCommand({ TableName: T.EVENTS, Key: { eventId } }));
+    return respond(200, { ok: true });
 }
 
 /* GET /events/:id ── public teaser */
@@ -999,6 +1065,8 @@ async function sendInviteEmail(toEmail, guestName, ev) {
 async function notifyCreatorOfRsvp(ev, guestName, status) {
     if (!ev.creatorEmail) return;
     const html = emailBase(`
+        if (method === 'POST' && parts[0] === 'events' && parts[2] === 'update')     return await updateEvent(parts[1], body, event);
+        if (method === 'DELETE' && parts[0] === 'events' && parts.length === 2)      return await deleteEvent(parts[1], event);
       <h2>New RSVP</h2>
       <p><strong>${guestName}</strong> just ${status === 'confirmed' ? 'confirmed their attendance' : 'declined'} for <strong>${ev.eventName}</strong>.</p>
       <div class="detail">
