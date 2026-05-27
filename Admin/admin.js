@@ -1684,10 +1684,12 @@
         document.getElementById('tool-content').classList.toggle('hidden', name !== 'content');
         document.getElementById('tool-clients').classList.toggle('hidden', name !== 'clients');
         document.getElementById('tool-rsvp').classList.toggle('hidden', name !== 'rsvp');
+        document.getElementById('tool-events').classList.toggle('hidden', name !== 'events');
         if (name === 'kanban')  renderKanban();
         if (name === 'content') renderContentFields(activeContentPage);
         if (name === 'clients') renderClientManager();
         if (name === 'rsvp')    renderRsvpAdmin();
+        if (name === 'events')  loadEventsForAdmin();
     }
 
     function renderKanban() {
@@ -3219,4 +3221,361 @@
     window.saveSecuritySetting = saveSecuritySetting;
     window.copyDeployCommand = copyDeployCommand;
 
+    /* ══════════════════════════════════════════════════
+       EVENTS & RSVP ADMIN SECTION
+    ══════════════════════════════════════════════════ */
+
+    var RSVP_API = window.RNB_RSVP_API || 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/rsvp';
+    var evAdminData   = null;  // { event, guests, songs, summary }
+    var evActiveTab   = 'guests';
+    var evSeatingMap  = {};    // { guestPhone: { tableName, seatNumber } }
+    var evTableList   = [];    // ['Table 1', 'Table 2', ...]
+
+    function rsvpAdminToken() {
+        return localStorage.getItem('rnb_creator_token') || '';
+    }
+
+    async function rsvpFetch(path, opts) {
+        var token = rsvpAdminToken();
+        var headers = Object.assign({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, (opts && opts.headers) || {});
+        try {
+            var res = await fetch(RSVP_API + path, Object.assign({}, opts, { headers: headers }));
+            return await res.json();
+        } catch (e) {
+            return { error: 'Network error' };
+        }
+    }
+
+    async function loadEventsForAdmin() {
+        var sel = document.getElementById('ev-selector');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">Loading…</option>';
+
+        var res = await rsvpFetch('/creator/events');
+        if (res.error || !res.events) {
+            sel.innerHTML = '<option value="">— No events found (check login) —</option>';
+            return;
+        }
+
+        var events = res.events;
+        if (!events.length) {
+            sel.innerHTML = '<option value="">— No events yet. Create one! —</option>';
+            return;
+        }
+
+        sel.innerHTML = '<option value="">— Select an event —</option>';
+        events.forEach(function(ev) {
+            var opt = document.createElement('option');
+            opt.value       = ev.eventId;
+            opt.textContent = ev.eventName + ' — ' + (ev.eventDate || '');
+            sel.appendChild(opt);
+        });
+    }
+
+    async function onEventSelect(eventId) {
+        var badges    = document.getElementById('ev-summary-badges');
+        var tabs      = document.getElementById('ev-admin-tabs');
+        var errEl     = document.getElementById('ev-admin-error');
+        errEl.textContent = '';
+
+        if (!eventId) {
+            if (badges) badges.innerHTML = '';
+            if (tabs)   tabs.style.display = 'none';
+            evAdminData = null;
+            return;
+        }
+
+        if (badges) badges.innerHTML = '<span style="font-size:11px;color:#a4c195;letter-spacing:1px">Loading…</span>';
+
+        var res = await rsvpFetch('/events/' + eventId + '/admin');
+        if (res.error) {
+            if (badges) badges.innerHTML = '';
+            errEl.textContent = res.error;
+            return;
+        }
+
+        evAdminData = res;
+        if (tabs) tabs.style.display = 'flex';
+
+        // Build seating map from existing data
+        evSeatingMap = {};
+        (res.guests || []).forEach(function(g) {
+            if (g.tableAssignment || g.seatNumber) {
+                evSeatingMap[g.guestPhone] = { tableName: g.tableAssignment || '', seatNumber: g.seatNumber || 0 };
+            }
+        });
+
+        renderEvSummaryBadges(res.summary);
+        switchEvTab(evActiveTab);
+    }
+
+    function renderEvSummaryBadges(s) {
+        var el = document.getElementById('ev-summary-badges');
+        if (!el || !s) return;
+        el.innerHTML =
+            '<span class="ev-admin-badge ev-badge-total">' + (s.total || 0) + ' Invited</span>' +
+            '<span class="ev-admin-badge ev-badge-confirmed">' + (s.confirmed || 0) + ' Confirmed</span>' +
+            '<span class="ev-admin-badge ev-badge-declined">' + (s.declined || 0) + ' Declined</span>' +
+            '<span class="ev-admin-badge ev-badge-songs">' + (s.songs || 0) + ' Songs</span>';
+    }
+
+    function switchEvTab(name, btn) {
+        evActiveTab = name;
+        document.querySelectorAll('.ev-admin-tab').forEach(function(b) { b.classList.remove('ev-admin-tab--active'); });
+        if (btn) btn.classList.add('ev-admin-tab--active');
+        ['guests','confirmed','songs','seating'].forEach(function(t) {
+            var el = document.getElementById('ev-tab-' + t);
+            if (el) el.classList.toggle('hidden', t !== name);
+        });
+        if (!evAdminData) return;
+        if (name === 'guests')    renderEvGuests();
+        if (name === 'confirmed') renderEvConfirmed();
+        if (name === 'songs')     renderEvSongs();
+        if (name === 'seating')   renderEvSeating();
+    }
+
+    function renderEvGuests() {
+        var el    = document.getElementById('ev-guests-table');
+        var count = document.getElementById('ev-guest-count');
+        if (!el || !evAdminData) return;
+        var guests = evAdminData.guests || [];
+        if (count) count.textContent = guests.length + ' TOTAL';
+        if (!guests.length) { el.innerHTML = '<p class="ev-admin-empty">No RSVPs yet.</p>'; return; }
+        el.innerHTML = buildGuestTable(guests);
+    }
+
+    function filterEvGuests() {
+        var q = (document.getElementById('ev-guest-search').value || '').toLowerCase();
+        var guests = (evAdminData && evAdminData.guests || []).filter(function(g) {
+            return !q || (g.guestName || '').toLowerCase().includes(q) || (g.guestPhone || '').includes(q);
+        });
+        document.getElementById('ev-guests-table').innerHTML = buildGuestTable(guests);
+    }
+
+    function renderEvConfirmed() {
+        var el = document.getElementById('ev-confirmed-table');
+        if (!el || !evAdminData) return;
+        var confirmed = (evAdminData.guests || []).filter(function(g) { return g.status === 'confirmed'; });
+        el.innerHTML = buildGuestTable(confirmed, true);
+    }
+
+    function filterEvConfirmed() {
+        var q = (document.getElementById('ev-confirmed-search').value || '').toLowerCase();
+        var confirmed = (evAdminData && evAdminData.guests || []).filter(function(g) {
+            return g.status === 'confirmed' && (!q || (g.guestName || '').toLowerCase().includes(q));
+        });
+        document.getElementById('ev-confirmed-table').innerHTML = buildGuestTable(confirmed, true);
+    }
+
+    function buildGuestTable(guests, showSeating) {
+        if (!guests.length) return '<p class="ev-admin-empty">No guests match.</p>';
+        var html = '<div class="ev-admin-table">' +
+            '<div class="ev-admin-row ev-admin-head">' +
+            '<span>Guest</span><span>Phone</span><span>Status</span>' +
+            (showSeating ? '<span>Table</span><span>Seat</span>' : '<span>RSVP\'d</span>') +
+            '<span>Songs</span></div>';
+        guests.forEach(function(g) {
+            var statusClass = g.status === 'confirmed' ? 'ev-status-confirmed' : (g.status === 'declined' ? 'ev-status-declined' : 'ev-status-pending');
+            var tableVal = (evSeatingMap[g.guestPhone] && evSeatingMap[g.guestPhone].tableName) || g.tableAssignment || '';
+            var seatVal  = (evSeatingMap[g.guestPhone] && evSeatingMap[g.guestPhone].seatNumber) || g.seatNumber || '';
+            html += '<div class="ev-admin-row">' +
+                '<span class="ev-admin-name">' + esc(g.guestName || '–') + '</span>' +
+                '<span>' + esc(maskPhone(g.guestPhone)) + '</span>' +
+                '<span><span class="ev-status-badge ' + statusClass + '">' + (g.status || 'pending') + '</span></span>';
+            if (showSeating) {
+                html += '<span>' + esc(tableVal || '–') + '</span>' +
+                    '<span>' + (seatVal || '–') + '</span>';
+            } else {
+                html += '<span>' + esc(g.confirmedAt ? g.confirmedAt.slice(0,10) : '–') + '</span>';
+            }
+            html += '<span>' + (g.songCount || 0) + '</span></div>';
+        });
+        return html + '</div>';
+    }
+
+    function renderEvSongs() {
+        var el    = document.getElementById('ev-songs-table');
+        var count = document.getElementById('ev-songs-count');
+        if (!el || !evAdminData) return;
+        var songs = evAdminData.songs || [];
+        if (count) count.textContent = songs.length + ' SONGS';
+        if (!songs.length) { el.innerHTML = '<p class="ev-admin-empty">No song requests yet.</p>'; return; }
+        el.innerHTML = buildSongsTable(songs);
+    }
+
+    function filterEvSongs() {
+        var q = (document.getElementById('ev-songs-search').value || '').toLowerCase();
+        var songs = (evAdminData && evAdminData.songs || []).filter(function(s) {
+            return !q || (s.songTitle || '').toLowerCase().includes(q) ||
+                   (s.artistName || '').toLowerCase().includes(q) ||
+                   (s.guestName  || '').toLowerCase().includes(q);
+        });
+        document.getElementById('ev-songs-table').innerHTML = buildSongsTable(songs);
+    }
+
+    function buildSongsTable(songs) {
+        if (!songs.length) return '<p class="ev-admin-empty">No songs match.</p>';
+        var html = '<div class="ev-admin-table">' +
+            '<div class="ev-admin-row ev-admin-head"><span>Song</span><span>Artist</span><span>Guest</span><span>Source</span></div>';
+        songs.forEach(function(s) {
+            var artHtml = s.artworkUrl
+                ? '<img src="' + esc(s.artworkUrl) + '" style="width:36px;height:36px;object-fit:cover;border-radius:2px;flex-shrink:0" onerror="this.style.display=\'none\'">'
+                : '';
+            var srcBadge = s.sourceProvider === 'apple-music'
+                ? '<span class="ev-admin-badge-sm" style="background:#f5eddd;color:#b89a5e">Apple Music</span>'
+                : '<span class="ev-admin-badge-sm">Catalog</span>';
+            html += '<div class="ev-admin-row" style="gap:10px">' +
+                '<span style="display:flex;align-items:center;gap:10px">' + artHtml + '<span>' + esc(s.songTitle) + '</span></span>' +
+                '<span>' + esc(s.artistName) + '</span>' +
+                '<span>' + esc(s.guestName || '–') + '</span>' +
+                '<span>' + srcBadge + '</span></div>';
+        });
+        return html + '</div>';
+    }
+
+    function renderEvSeating() {
+        var board = document.getElementById('ev-seating-board');
+        if (!board || !evAdminData) return;
+
+        var confirmed = (evAdminData.guests || []).filter(function(g) { return g.status === 'confirmed'; });
+        if (!confirmed.length) {
+            board.innerHTML = '<p class="ev-admin-empty">No confirmed guests to seat.</p>';
+            return;
+        }
+
+        // Build table groups
+        var tableGroups = {};
+        var unassigned  = [];
+
+        confirmed.forEach(function(g) {
+            var sm   = evSeatingMap[g.guestPhone] || {};
+            var tbl  = sm.tableName || g.tableAssignment || '';
+            if (tbl) {
+                if (!tableGroups[tbl]) tableGroups[tbl] = [];
+                tableGroups[tbl].push(g);
+            } else {
+                unassigned.push(g);
+            }
+        });
+
+        var html = '';
+
+        // Unassigned pool
+        if (unassigned.length) {
+            html += '<div class="ev-seating-section">' +
+                '<h4 class="ev-seating-table-name">Unassigned (' + unassigned.length + ')</h4>' +
+                '<div class="ev-seating-guests">';
+            unassigned.forEach(function(g) {
+                html += buildSeatingRow(g, '', 0);
+            });
+            html += '</div></div>';
+        }
+
+        // Tables
+        Object.keys(tableGroups).sort().forEach(function(tbl) {
+            var group = tableGroups[tbl];
+            html += '<div class="ev-seating-section">' +
+                '<h4 class="ev-seating-table-name">' + esc(tbl) + ' (' + group.length + ')</h4>' +
+                '<div class="ev-seating-guests">';
+            group.sort(function(a, b) {
+                var sa = (evSeatingMap[a.guestPhone] || {}).seatNumber || 0;
+                var sb = (evSeatingMap[b.guestPhone] || {}).seatNumber || 0;
+                return sa - sb;
+            }).forEach(function(g) {
+                var sm = evSeatingMap[g.guestPhone] || {};
+                html += buildSeatingRow(g, sm.tableName || tbl, sm.seatNumber || 0);
+            });
+            html += '</div></div>';
+        });
+
+        board.innerHTML = html;
+    }
+
+    function buildSeatingRow(g, tableName, seatNumber) {
+        var phone = esc(g.guestPhone || '');
+        return '<div class="ev-seating-row" data-phone="' + phone + '">' +
+            '<span class="ev-seating-guest-name">' + esc(g.guestName || 'Guest') + '</span>' +
+            '<input type="text" class="form-input ev-seating-table-input" placeholder="Table name" ' +
+            'value="' + esc(tableName) + '" ' +
+            'onchange="updateSeatingLocal(\'' + phone + '\', this.value, null)" ' +
+            'style="flex:1;min-width:120px;font-size:11px">' +
+            '<input type="number" class="form-input ev-seating-seat-input" placeholder="Seat #" ' +
+            'value="' + (seatNumber || '') + '" min="1" max="999" ' +
+            'onchange="updateSeatingLocal(\'' + phone + '\', null, this.value)" ' +
+            'style="width:80px;font-size:11px">' +
+            '</div>';
+    }
+
+    function updateSeatingLocal(phone, tableName, seatNumber) {
+        if (!evSeatingMap[phone]) evSeatingMap[phone] = { tableName: '', seatNumber: 0 };
+        if (tableName !== null)  evSeatingMap[phone].tableName  = tableName;
+        if (seatNumber !== null) evSeatingMap[phone].seatNumber = parseInt(seatNumber, 10) || 0;
+    }
+
+    function addSeatingTable() {
+        var name = prompt('New table name (e.g. "Table 3" or "VIP Table"):');
+        if (!name || !name.trim()) return;
+        // Add all unassigned confirmed guests? No — just ensure the table appears after next render
+        // Actually just pre-populate evSeatingMap with a blank slot for one new row
+        showToast('Table "' + name + '" will appear after assigning a guest to it.');
+    }
+
+    async function saveSeating() {
+        if (!evAdminData) return;
+        var eventId = evAdminData.event && evAdminData.event.eventId;
+        if (!eventId) return;
+
+        var assignments = Object.keys(evSeatingMap).map(function(phone) {
+            return { guestPhone: phone, tableName: evSeatingMap[phone].tableName, seatNumber: evSeatingMap[phone].seatNumber };
+        }).filter(function(a) { return a.guestPhone; });
+
+        if (!assignments.length) { showToast('No seating changes to save.'); return; }
+
+        var status = document.getElementById('seating-save-status');
+        if (status) status.textContent = 'Saving…';
+
+        var res = await rsvpFetch('/events/' + eventId + '/seating', {
+            method: 'PUT',
+            body: JSON.stringify({ assignments: assignments })
+        });
+
+        if (res.error) {
+            if (status) status.textContent = 'Error: ' + res.error;
+            showToast('Seating save failed: ' + res.error);
+            return;
+        }
+
+        if (status) { status.textContent = 'Saved ✓'; setTimeout(function() { status.textContent = ''; }, 3000); }
+        showToast('Seating chart saved for ' + res.updated + ' guest(s).');
+        // Refresh admin data
+        onEventSelect(eventId);
+    }
+
+    function maskPhone(phone) {
+        if (!phone || phone.length < 6) return phone || '–';
+        return phone.slice(0, 3) + '••••' + phone.slice(-3);
+    }
+
+    // Expose events admin
+    window.loadEventsForAdmin = loadEventsForAdmin;
+    window.onEventSelect      = onEventSelect;
+    window.switchEvTab        = switchEvTab;
+    window.filterEvGuests     = filterEvGuests;
+    window.filterEvConfirmed  = filterEvConfirmed;
+    window.filterEvSongs      = filterEvSongs;
+    window.saveSeating        = saveSeating;
+    window.addSeatingTable    = addSeatingTable;
+    window.updateSeatingLocal = updateSeatingLocal;
+
 })()
+
+// After IIFE — async wrappers for events admin (need top-level async)
+async function rsvpFetchWrap(path, opts) {
+    var token = localStorage.getItem('rnb_creator_token') || '';
+    var headers = Object.assign({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, (opts && opts.headers) || {});
+    var RSVP_API = window.RNB_RSVP_API || 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/rsvp';
+    try {
+        var res = await fetch(RSVP_API + path, Object.assign({}, opts, { headers: headers }));
+        return await res.json();
+    } catch { return { error: 'Network error' }; }
+}

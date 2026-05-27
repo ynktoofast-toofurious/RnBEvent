@@ -1678,3 +1678,171 @@ input:focus + .toggle-slider {
         box-sizing: border-box;
     }
 }
+
+/* ============================================================
+   EVENTS & RSVP ADMIN SECTION STYLES
+   ============================================================ */
+
+.events-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ev-admin-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ev-admin-badge {
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+}
+
+.ev-badge-total     { background: var(--secondary-bg); color: var(--primary); }
+.ev-badge-confirmed { background: #e8f2e4; color: #527141; }
+.ev-badge-declined  { background: #f9eeec; color: #944040; }
+.ev-badge-songs     { background: #f5eddd; color: #8a6b2c; }
+
+.ev-admin-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--panel-border);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.ev-admin-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    padding: 10px 20px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-mid);
+    cursor: pointer;
+    transition: all 0.25s;
+}
+
+.ev-admin-tab:hover { color: var(--primary); }
+
+.ev-admin-tab--active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.ev-admin-tab-panel { min-height: 120px; }
+
+.ev-admin-search-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.ev-admin-empty {
+    font-size: 12px;
+    color: var(--text-mid);
+    padding: 24px 0;
+    letter-spacing: 0.5px;
+}
+
+/* Guest / Song tables */
+.ev-admin-table { width: 100%; }
+
+.ev-admin-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr 1fr 0.5fr;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--panel-border);
+    font-size: 12px;
+}
+
+.ev-admin-head {
+    background: var(--cream);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-mid);
+    text-transform: uppercase;
+    border-radius: var(--radius) var(--radius) 0 0;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+}
+
+.ev-admin-row:hover:not(.ev-admin-head) { background: var(--cream); }
+
+.ev-admin-name {
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.ev-status-badge {
+    display: inline-block;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.ev-status-confirmed { background: #e8f2e4; color: #527141; }
+.ev-status-declined  { background: #f9eeec; color: #944040; }
+.ev-status-pending   { background: var(--secondary-bg); color: var(--text-mid); }
+
+.ev-admin-badge-sm {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: var(--secondary-bg);
+    color: var(--text-mid);
+}
+
+/* Seating board */
+.ev-seating-section {
+    margin-bottom: 28px;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.ev-seating-table-name {
+    background: var(--primary);
+    color: var(--secondary-bg);
+    padding: 10px 16px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+}
+
+.ev-seating-guests { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.ev-seating-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--panel-border);
+}
+
+.ev-seating-row:last-child { border-bottom: none; }
+
+.ev-seating-guest-name {
+    font-size: 12px;
+    color: var(--primary);
+    min-width: 140px;
+    flex-shrink: 0;
+}

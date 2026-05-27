@@ -39,3 +39,14 @@
   from   = "/gs/*"
   to     = "/gs.html"
   status = 200
+
+# RSVP event pages
+[[redirects]]
+  from   = "/event/:id"
+  to     = "/event.html?id=:id"
+  status = 200
+
+[[redirects]]
+  from   = "/create-event"
+  to     = "/event-create.html"
+  status = 200
