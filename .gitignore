@@ -10,6 +10,9 @@ build/
 .env
 .env.local
 
+# Google OAuth client secrets (never commit)
+client_secret*.json
+
 # OS files
 .DS_Store
 Thumbs.db
