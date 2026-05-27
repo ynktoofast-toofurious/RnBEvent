@@ -1058,6 +1058,48 @@ textarea.ev-input {
 .ev-auth-switch a:hover,
 .ev-auth-switch button:hover { color: var(--primary); }
 
+/* ── Google Sign-In button ──────────────────────── */
+.ev-or-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 16px;
+    color: var(--text-soft);
+    font-size: 11px;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.ev-or-divider::before,
+.ev-or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.ev-google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 20px;
+    background: #fff;
+    border: 1.5px solid #dadce0;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #3c4043;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.1px;
+    margin-bottom: 4px;
+}
+.ev-google-btn:hover { background: #f8f9fa; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+.ev-google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* ── Loading spinner ─────────────────────────────── */
 
 .ev-spinner {

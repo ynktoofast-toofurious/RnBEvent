@@ -273,6 +273,87 @@ async function creatorLogin(body) {
     return respond(200, { token, creator: { creatorId: res.Item.creatorId, name: res.Item.name, email: res.Item.email, phone } });
 }
 
+/* POST /creator/google-auth ── Google ID token → session */
+async function creatorGoogleAuth(body) {
+    const idToken = String(body.idToken || '').trim();
+    if (!idToken || idToken.length > 4096) return respond(400, { error: 'Google ID token required' });
+
+    // Verify with Google tokeninfo endpoint (server-side verification)
+    let googleUser;
+    try {
+        const r = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken));
+        if (!r.ok) return respond(401, { error: 'Invalid Google token' });
+        googleUser = await r.json();
+    } catch {
+        return respond(401, { error: 'Could not verify Google token' });
+    }
+
+    // Validate token claims
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (clientId && googleUser.aud !== clientId) {
+        return respond(401, { error: 'Token audience mismatch' });
+    }
+    if (googleUser.email_verified !== 'true') {
+        return respond(401, { error: 'Google email not verified' });
+    }
+    const now = Math.floor(Date.now() / 1000);
+    if (!googleUser.exp || parseInt(googleUser.exp) < now) {
+        return respond(401, { error: 'Google token expired' });
+    }
+
+    const googleId  = String(googleUser.sub || '').slice(0, 64);
+    const email     = String(googleUser.email || '').slice(0, 200).toLowerCase();
+    const name      = String(googleUser.name || googleUser.given_name || 'Creator').slice(0, 100);
+    if (!googleId || !email) return respond(401, { error: 'Incomplete Google profile' });
+
+    // Use "google:{sub}" as the creator PK (avoids collisions with phone-based PKs)
+    const creatorKey = 'google:' + googleId;
+
+    let existing = await ddb.send(new GetCommand({ TableName: T.CREATORS, Key: { phone: creatorKey } })).catch(() => null);
+
+    if (!existing?.Item) {
+        // First-time Google sign-in — create creator account
+        const creatorId = generateId(16);
+        await ddb.send(new PutCommand({
+            TableName: T.CREATORS,
+            Item: {
+                phone:        creatorKey,
+                creatorId,
+                name,
+                email,
+                googleId,
+                authMethod:   'google',
+                passwordHash: null,
+                verified:     true,
+                createdAt:    new Date().toISOString()
+            }
+        }));
+        existing = { Item: { phone: creatorKey, creatorId, name, email } };
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await ddb.send(new PutCommand({
+        TableName: T.SESSIONS,
+        Item: {
+            token,
+            phone:     creatorKey,
+            creatorId: existing.Item.creatorId,
+            name:      existing.Item.name,
+            type:      'creator',
+            expiresAt: Math.floor(Date.now() / 1000) + 604800
+        }
+    }));
+
+    return respond(200, {
+        token,
+        creator: {
+            creatorId: existing.Item.creatorId,
+            name:      existing.Item.name,
+            email:     existing.Item.email
+        }
+    });
+}
+
 /* GET /creator/events ── list creator's events */
 async function getCreatorEvents(event) {
     const creator = await getCreatorFromToken(event);
@@ -960,6 +1041,7 @@ exports.handler = async (event) => {
         if (method === 'POST' && path === '/creator/signup')    return await creatorSignup(body);
         if (method === 'POST' && path === '/creator/verify')    return await creatorVerify(body);
         if (method === 'POST' && path === '/creator/login')     return await creatorLogin(body);
+        if (method === 'POST' && path === '/creator/google-auth') return await creatorGoogleAuth(body);
         if (method === 'GET'  && path === '/creator/events')    return await getCreatorEvents(event);
 
         // Events
