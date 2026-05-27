@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -19,7 +19,7 @@
             <img src="RNB Logo Olive.png" alt="RNB Events">
             RNB EVENTS
         </a>
-        <a href="/" class="ev-topbar__link">â† Back to site</a>
+        <a href="/" class="ev-topbar__link">← Back to site</a>
     </header>
 
     <main class="ev-wizard">
@@ -44,7 +44,7 @@
                 <div class="ev-step-dot" id="step-dot-5">5</div>
             </div>
 
-            <!-- â”€â”€ STEP 1: Account â”€â”€ -->
+            <!-- ── STEP 1: Account ── -->
             <div id="panel-1" class="ev-step-panel">
                 <p class="ev-step-panel__label">Step 1 of 5</p>
                 <h2 class="ev-step-panel__title" id="auth-panel-title">Create Account</h2>
@@ -103,7 +103,7 @@
                 </div>
             </div>
 
-            <!-- â”€â”€ STEP 2: OTP Verify â”€â”€ -->
+            <!-- ── STEP 2: OTP Verify ── -->
             <div id="panel-2" class="ev-step-panel hidden">
                 <p class="ev-step-panel__label">Step 2 of 5</p>
                 <h2 class="ev-step-panel__title">Verify Your Phone</h2>
@@ -121,7 +121,7 @@
                 <p id="err-2" class="ev-error" style="text-align:center"></p>
 
                 <div class="ev-step-actions">
-                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToStep(1)">â† Back</button>
+                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToStep(1)">← Back</button>
                     <button class="ev-btn ev-btn--primary" id="btn-verify-otp" onclick="verifyCreatorOtp()">Verify &amp; Continue</button>
                 </div>
 
@@ -133,7 +133,7 @@
         </div><!-- /ev-container -->
     </main>
 
-    <!-- â”€â”€ PARTIFUL-STYLE EDITOR (shown after auth) â”€â”€ -->
+    <!-- ── PARTIFUL-STYLE EDITOR (shown after auth) ── -->
     <div id="panel-editor" class="ev-editor hidden" data-theme="night" data-font="classic">
         <div class="ev-editor__bg" id="editor-bg"></div>
 
@@ -209,9 +209,9 @@
                     <p class="ev-flyout__heading">Visual Effect</p>
                     <div class="ev-flyout__font-list">
                         <button class="ev-font-pill ev-font-pill--active" data-effect="none" onclick="setEffect('none')">None</button>
-                        <button class="ev-font-pill" data-effect="sparkle" onclick="setEffect('sparkle')">âœ¨ Sparkle</button>
-                        <button class="ev-font-pill" data-effect="confetti" onclick="setEffect('confetti')">ðŸŽŠ Confetti</button>
-                        <button class="ev-font-pill" data-effect="petals" onclick="setEffect('petals')">ðŸŒ¸ Petals</button>
+                        <button class="ev-font-pill" data-effect="sparkle" onclick="setEffect('sparkle')">✨ Sparkle</button>
+                        <button class="ev-font-pill" data-effect="confetti" onclick="setEffect('confetti')">🎊 Confetti</button>
+                        <button class="ev-font-pill" data-effect="petals" onclick="setEffect('petals')">🌸 Petals</button>
                     </div>
                 </div>
 
@@ -243,7 +243,7 @@
 
                         <div class="ev-editor__type-row">
                             <select id="ed-type" class="ev-editor__type-select">
-                                <option value="">Select typeâ€¦</option>
+                                <option value="">Select type…</option>
                                 <option>Birthday Party</option>
                                 <option>Wedding Reception</option>
                                 <option>Anniversary</option>
@@ -260,36 +260,36 @@
 
                         <!-- Date & Time -->
                         <div class="ev-editor__field">
-                            <span class="ev-editor__field-icon">ðŸ“…</span>
+                            <span class="ev-editor__field-icon">📅</span>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Date &amp; Time</div>
                                 <div class="ev-editor__field-row">
                                     <input type="date" id="ed-date" class="ev-editor__date-input">
                                     <input type="time" id="ed-time" class="ev-editor__time-input" value="20:00">
                                 </div>
-                                <button class="ev-poll-date-btn" onclick="toggleDatePoll()">Can't decide when? Poll your guests â†’</button>
+                                <button class="ev-poll-date-btn" onclick="toggleDatePoll()">Can't decide when? Poll your guests →</button>
                             </div>
                         </div>
 
                         <!-- Date poll options (hidden by default) -->
                         <div class="ev-date-poll hidden" id="ed-date-poll">
-                            <div class="ev-flyout__heading" style="font-size:9px;margin-bottom:8px">DATE OPTIONS â€” GUESTS WILL VOTE</div>
+                            <div class="ev-flyout__heading" style="font-size:9px;margin-bottom:8px">DATE OPTIONS — GUESTS WILL VOTE</div>
                             <div id="ed-poll-dates"></div>
                             <button class="ev-addon-pill" onclick="addPollDate()" style="margin-top:6px">+ Add date option</button>
                         </div>
 
                         <!-- Host -->
                         <div class="ev-editor__field">
-                            <span class="ev-editor__field-icon">ðŸ‘‘</span>
+                            <span class="ev-editor__field-icon">👑</span>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Hosted by</div>
-                                <div class="ev-editor__field-val" id="ed-host-display">â€”</div>
+                                <div class="ev-editor__field-val" id="ed-host-display">—</div>
                             </div>
                         </div>
 
                         <!-- Location -->
                         <div class="ev-editor__field">
-                            <span class="ev-editor__field-icon">ðŸ“</span>
+                            <span class="ev-editor__field-icon">📍</span>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Location</div>
                                 <div contenteditable="true" class="ev-editor__inline" id="ed-venue" data-placeholder="Add venue &amp; address"></div>
@@ -298,10 +298,10 @@
 
                         <!-- Description -->
                         <div class="ev-editor__field ev-editor__field--desc">
-                            <span class="ev-editor__field-icon">âœï¸</span>
+                            <span class="ev-editor__field-icon">✏️</span>
                             <div class="ev-editor__field-body" style="width:100%">
                                 <div class="ev-editor__field-label">Details</div>
-                                <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expectâ€¦"></div>
+                                <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expect…"></div>
                             </div>
                         </div>
 
@@ -329,7 +329,7 @@
                             </div>
                             <div id="ed-guest-pills" class="ev-guest-pills"></div>
                             <p id="ed-share-hint" class="ev-editor__share-hint hidden">
-                                ðŸ”— Share link: <span id="ed-share-url-text"></span>
+                                🔗 Share link: <span id="ed-share-url-text"></span>
                                 <button onclick="copyEditorUrl()" class="ev-editor__copy-btn">COPY</button>
                             </p>
                         </div>
@@ -347,10 +347,10 @@
                                 <div class="ev-editor__cover-upload">
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                                     <p>Add cover photo</p>
-                                    <span>JPG, PNG or WebP Â· max 5MB</span>
+                                    <span>JPG, PNG or WebP · max 5MB</span>
                                 </div>
                             </div>
-                            <button class="ev-editor__cover-edit hidden" id="ed-cover-edit-btn" onclick="document.getElementById('ed-photo-input').click()">âœ Edit photo</button>
+                            <button class="ev-editor__cover-edit hidden" id="ed-cover-edit-btn" onclick="document.getElementById('ed-photo-input').click()">✏ Edit photo</button>
                         </div>
                     </div>
 
@@ -363,7 +363,7 @@
         <div class="ev-editor__guest-panel hidden" id="ed-guest-panel">
             <div class="ev-editor__guest-panel-header">
                 <h3>Invite Guests</h3>
-                <button onclick="toggleGuestPanel()">âœ•</button>
+                <button onclick="toggleGuestPanel()">✕</button>
             </div>
             <textarea id="ed-bulk-guests" class="ev-bulk-area"
                 placeholder="One guest per line:&#10;  5551234567&#10;  Jane Smith | 5551234567&#10;  Jane Smith | 5551234567 | jane@email.com"></textarea>
@@ -382,7 +382,7 @@
             <span id="ed-save-status" class="ev-editor__save-status">Unsaved</span>
             <div class="ev-editor__footer-right">
                 <button class="ev-btn ev-btn--outline ev-btn--sm" id="btn-save-draft" onclick="saveDraft()">Save Draft</button>
-                <button class="ev-btn ev-btn--gold" id="btn-publish" onclick="publishEvent()">Publish Event â†’</button>
+                <button class="ev-btn ev-btn--gold" id="btn-publish" onclick="publishEvent()">Publish Event →</button>
             </div>
         </div>
     </div><!-- /panel-editor -->
@@ -409,7 +409,7 @@
             parsedGuests: []
         };
 
-        /* â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Init ───────────────────────────────────── */
         (function init() {
             wireOtpInputs();
             // Dev bypass: ?skip=3 jumps straight to editor
@@ -426,9 +426,9 @@
             }
         })();
 
-        /* â”€â”€ Step navigation (1-2 only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Step navigation (1-2 only) ─────────────── */
         function goToStep(n) {
-            // Steps 1-2 live in .ev-container; 3+ â†’ editor
+            // Steps 1-2 live in .ev-container; 3+ → editor
             if (n >= 3) { goToEditor(); return; }
             ['panel-1','panel-2'].forEach(function(id, idx) {
                 document.getElementById(id).classList.toggle('hidden', idx + 1 !== n);
@@ -449,7 +449,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        /* â”€â”€ Editor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Editor ─────────────────────────────────── */
         function goToEditor() {
             // Hide wizard container, show full-screen editor
             var container = document.querySelector('.ev-container');
@@ -467,6 +467,7 @@
                 document.getElementById('ed-date').value = d.toISOString().split('T')[0];
             }
             state.step = 3;
+            if (typeof hideAuthOverlay === 'function') hideAuthOverlay();
         }
 
         function setTheme(name) {
@@ -481,7 +482,7 @@
             });
         }
 
-        /* â”€â”€ Sidebar flyout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Sidebar flyout ──────────────────────────── */
         var _activePanel = null;
         function toggleSidePanel(name) {
             var flyout = document.getElementById('ev-side-flyout');
@@ -505,7 +506,7 @@
             _activePanel = name;
         }
 
-        /* â”€â”€ Font picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Font picker ─────────────────────────────── */
         function setFont(name) {
             state.editorFont = name;
             document.getElementById('panel-editor').dataset.font = name;
@@ -514,7 +515,7 @@
             });
         }
 
-        /* â”€â”€ Effect picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Effect picker ───────────────────────────── */
         function setEffect(name) {
             state.editorEffect = name;
             document.querySelectorAll('.ev-font-pill[data-effect]').forEach(function(btn) {
@@ -522,7 +523,7 @@
             });
         }
 
-        /* â”€â”€ Add-ons / links section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Add-ons / links section ─────────────────── */
         var _addonsExpanded = false;
         function toggleMoreAddons() {
             _addonsExpanded = !_addonsExpanded;
@@ -547,8 +548,8 @@
             row.innerHTML =
                 '<span class="ev-addon-item__label">' + (_addonLabels[type] || type) + '</span>' +
                 '<input class="ev-addon-item__input" type="' + (type === 'link' || type === 'playlist' || type === 'registry' ? 'url' : 'text') + '"' +
-                ' placeholder="' + (type === 'link' ? 'https://' : type === 'playlist' ? 'Spotify / Apple Music URL' : 'Enter detailsâ€¦') + '">' +
-                '<button class="ev-addon-item__remove" onclick="document.getElementById(\'' + id + '\').remove()">âœ•</button>';
+                ' placeholder="' + (type === 'link' ? 'https://' : type === 'playlist' ? 'Spotify / Apple Music URL' : 'Enter details…') + '">' +
+                '<button class="ev-addon-item__remove" onclick="document.getElementById(\'' + id + '\').remove()">✕</button>';
             container.appendChild(row);
             row.querySelector('input').focus();
             // Hide the button that was clicked
@@ -556,7 +557,7 @@
             // For the always-visible ones (link, playlist, registry, dresscode) hide after adding
         }
 
-        /* â”€â”€ Date poll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Date poll ───────────────────────────────── */
         var _datePollVisible = false;
         function toggleDatePoll() {
             _datePollVisible = !_datePollVisible;
@@ -575,11 +576,11 @@
             row.id = id;
             row.innerHTML =
                 '<input type="date" id="' + id + '-input">' +
-                '<button class="ev-date-poll__remove" onclick="document.getElementById(\'' + id + '\').remove()" title="Remove">âœ•</button>';
+                '<button class="ev-date-poll__remove" onclick="document.getElementById(\'' + id + '\').remove()" title="Remove">✕</button>';
             container.appendChild(row);
         }
 
-        /* â”€â”€ Cover photo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Cover photo ─────────────────────────────── */
         function editorPhotoSelected(e) {
             var file = e.target.files[0];
             if (!file) return;
@@ -619,7 +620,7 @@
             reader.readAsDataURL(file);
         }
 
-        /* â”€â”€ Guest panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Guest panel ─────────────────────────────── */
         function toggleGuestPanel() {
             document.getElementById('ed-guest-panel').classList.toggle('hidden');
         }
@@ -647,7 +648,7 @@
                 if (!ok) return;
             }
 
-            setBtnLoading('#btn-add-guests', true, 'Addingâ€¦');
+            setBtnLoading('#btn-add-guests', true, 'Adding…');
             var res = await apiPost('/events/' + state.eventId + '/guests', { guests, method: 'bulk' }, state.creatorToken);
             setBtnLoading('#btn-add-guests', false, 'Add Guests');
 
@@ -685,9 +686,9 @@
             }
         }
 
-        /* â”€â”€ Save Draft / Publish â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Save Draft / Publish ────────────────────── */
         async function saveDraft() {
-            setEditorStatus('Savingâ€¦');
+            setEditorStatus('Saving…');
             var ok = await doCreateEvent('draft');
             setEditorStatus(ok ? 'Draft saved' : 'Save failed');
             if (ok) {
@@ -704,18 +705,18 @@
             if (!title || title === document.getElementById('ed-title').dataset.placeholder) return showErr('ed-err', 'Add an event name first.');
             if (!date) return showErr('ed-err', 'Set an event date.');
 
-            setBtnLoading('#btn-publish', true, 'Publishingâ€¦');
+            setBtnLoading('#btn-publish', true, 'Publishing…');
             var ok = await doCreateEvent('published');
-            setBtnLoading('#btn-publish', false, 'Publish Event â†’');
+            setBtnLoading('#btn-publish', false, 'Publish Event →');
 
             if (ok) {
                 setEditorStatus('Published!');
                 showShareHint();
-                showToast('ðŸŽ‰ Event published! Your link is ready.');
+                showToast('🎉 Event published! Your link is ready.');
             }
         }
 
-        /* â”€â”€ Core create/update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Core create/update ──────────────────────── */
         async function doCreateEvent(status) {
             // Upload cover photo if pending
             if (state.pendingPhotoFile && !state.coverImageUrl) {
@@ -785,7 +786,7 @@
             navigator.clipboard.writeText(state.shareUrl).then(function() {
                 var btn = document.querySelector('.ev-editor__copy-btn');
                 var orig = btn.textContent;
-                btn.textContent = 'âœ“';
+                btn.textContent = '✓';
                 setTimeout(function() { btn.textContent = orig; }, 2000);
             });
         }
@@ -798,7 +799,7 @@
             }
         }
 
-        /* â”€â”€ Auth forms toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Auth forms toggle ───────────────────────── */
         function showLogin() {
             document.getElementById('form-signup').classList.add('hidden');
             document.getElementById('form-login').classList.remove('hidden');
@@ -813,7 +814,7 @@
             document.getElementById('auth-panel-sub').textContent = "Enter your details to get started. We'll verify your phone number next.";
         }
 
-        /* â”€â”€ Step 1: Signup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Step 1: Signup ──────────────────────────── */
         async function submitSignup() {
             clearErr('err-1-signup');
             var name     = document.getElementById('s1-name').value.trim();
@@ -838,7 +839,7 @@
             goToStep(2);
         }
 
-        /* â”€â”€ Step 1: Login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Step 1: Login ───────────────────────────── */
         async function submitLogin() {
             clearErr('err-1-login');
             var phone    = document.getElementById('l1-phone').value.trim();
@@ -858,7 +859,7 @@
             goToEditor();
         }
 
-        /* â”€â”€ Step 2: Verify OTP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Step 2: Verify OTP ──────────────────────── */
         async function verifyCreatorOtp() {
             clearErr('err-2');
             var code = getOtpValue();
@@ -890,7 +891,7 @@
             startResendTimer();
         }
 
-        /* â”€â”€ OTP helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── OTP helpers ─────────────────────────────── */
         function wireOtpInputs() {
             var inputs = document.querySelectorAll('.ev-otp-digit');
             inputs.forEach(function(input, i) {
@@ -933,7 +934,7 @@
             }, 1000);
         }
 
-        /* â”€â”€ API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── API ─────────────────────────────────────── */
         async function apiPost(path, data, token) {
             try {
                 var headers = { 'Content-Type': 'application/json' };
@@ -945,7 +946,7 @@
             }
         }
 
-        /* â”€â”€ UI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── UI helpers ──────────────────────────────── */
         function showErr(id, msg) {
             var el = document.getElementById(id);
             if (el) el.textContent = msg;
@@ -961,7 +962,7 @@
             if (!btn) return;
             if (loading) {
                 btn._origText = btn.textContent;
-                btn.innerHTML = '<span class="ev-spinner"></span>' + (label || 'Please waitâ€¦');
+                btn.innerHTML = '<span class="ev-spinner"></span>' + (label || 'Please wait…');
                 btn.disabled = true;
             } else {
                 btn.innerHTML = label || btn._origText || 'Continue';
@@ -976,7 +977,7 @@
             setTimeout(function() { t.classList.remove('ev-toast--visible'); }, 3000);
         }
 
-        /* â”€â”€ Google Sign-In â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Google Sign-In ──────────────────────────── */
         function initGoogleAuth() {
             if (!GOOGLE_CLIENT_ID || !window.google) return;
             google.accounts.id.initialize({
