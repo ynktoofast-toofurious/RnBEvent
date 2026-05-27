@@ -504,9 +504,6 @@
                         <div class="dash-chat__sub">Themes · captions · auto-fill — powered by Gemini</div>
                     </div>
                 </div>
-                <button class="dash-chat__gear" onclick="setupGeminiKey(true)" title="API settings">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </button>
             </header>
 
             <div class="dash-chat__messages" id="chat-messages">
@@ -813,24 +810,12 @@
         }
 
         /* ─────────────────────────────────────────────── */
-        /* GEMINI CHAT (RNB Co-Pilot)                      */
+        /* RNB Co-Pilot chat (proxied through Lambda)       */
+        /* API key lives server-side as Lambda env var      */
         /* ─────────────────────────────────────────────── */
-        var GEMINI_MODEL = 'gemini-1.5-flash-latest';
-        var GEMINI_SYSTEM = 'You are RNB Co-Pilot, the in-house creative AI for RNB Events RSVP — an elegant, upscale event-hosting platform. Help the host brainstorm event themes, write tasteful invite captions, draft event descriptions, suggest dress codes, music playlists, menu ideas, and copy. Keep replies warm, concise (under 220 words unless asked), and stylish — Cormorant Garamond meets modern celebration. Never use crude language. Use short markdown when helpful (lists, bold). If asked to "auto-fill", give labeled fields (Title, Type, Date, Venue, Description) the user can paste into the event editor.';
-
-        function getGeminiKey() { return localStorage.getItem('rnb_gemini_key') || ''; }
-        function saveGeminiKey(k) { localStorage.setItem('rnb_gemini_key', k.trim()); }
-        function setupGeminiKey(force) {
-            var cur = getGeminiKey();
-            if (cur && !force) return cur;
-            var k = prompt('Paste your Gemini API key to enable the RNB Co-Pilot.\n\nGet a free key at: https://aistudio.google.com/app/apikey', cur || '');
-            if (k && k.trim()) { saveGeminiKey(k.trim()); return k.trim(); }
-            return cur;
-        }
 
         function appendChat(role, text) {
             var box = document.getElementById('chat-messages');
-            // Remove welcome on first real message
             var welcome = box.querySelector('.dash-chat__welcome');
             if (welcome) welcome.remove();
             var div = document.createElement('div');
@@ -870,43 +855,30 @@
         }
 
         async function doSendPrompt(text) {
-            var key = getGeminiKey() || setupGeminiKey();
-            if (!key) {
-                appendChat('user', text);
-                appendChat('ai', 'Add your Gemini API key (gear icon) to start chatting. Get one free at https://aistudio.google.com/app/apikey');
-                return;
-            }
             appendChat('user', text);
             chatHistory.push({ role: 'user', text: text });
             showTyping();
             document.getElementById('chat-send').disabled = true;
             try {
-                var contents = chatHistory.map(function(m) {
-                    return { role: m.role, parts: [{ text: m.text }] };
-                });
-                var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_MODEL + ':generateContent?key=' + encodeURIComponent(key);
-                var res = await fetch(url, {
+                var res = await fetch(RSVP_API + '/ai/chat', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        systemInstruction: { parts: [{ text: GEMINI_SYSTEM }] },
-                        contents: contents,
-                        generationConfig: { temperature: 0.85, topP: 0.95, maxOutputTokens: 800 }
-                    })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ messages: chatHistory })
                 });
                 var data = await res.json();
                 hideTyping();
-                if (data.error) {
-                    appendChat('ai', '⚠ ' + (data.error.message || 'Gemini error.') + (data.error.status === 'INVALID_ARGUMENT' || /API key/i.test(data.error.message || '') ? '\n\nClick the gear icon to update your API key.' : ''));
+                if (!res.ok || data.error) {
+                    appendChat('ai', '⚠ ' + (data.error || 'AI service error. Please try again.'));
                     return;
                 }
-                var reply = (((data.candidates || [])[0] || {}).content || {}).parts || [];
-                var replyText = reply.map(function(p) { return p.text || ''; }).join('').trim() || '(empty response)';
-                chatHistory.push({ role: 'model', text: replyText });
-                appendChat('ai', replyText);
+                chatHistory.push({ role: 'model', text: data.reply });
+                appendChat('ai', data.reply);
             } catch (e) {
                 hideTyping();
-                appendChat('ai', '⚠ Network error reaching Gemini. Check your connection or API key.');
+                appendChat('ai', '⚠ Network error. Please try again.');
             } finally {
                 document.getElementById('chat-send').disabled = false;
             }

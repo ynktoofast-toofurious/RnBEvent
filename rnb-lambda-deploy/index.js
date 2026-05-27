@@ -495,6 +495,52 @@ async function deleteEvent(eventId, event) {
     return respond(200, { ok: true });
 }
 
+/* POST /ai/chat ── Gemini proxy (key stays server-side) */
+async function aiChat(body, event) {
+    const creator = await getCreatorFromToken(event);
+    if (!creator) return respond(401, { error: 'Authentication required' });
+
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) return respond(500, { error: 'AI is not configured on the server.' });
+
+    const messages = Array.isArray(body.messages) ? body.messages : [];
+    if (!messages.length) return respond(400, { error: 'No messages provided' });
+
+    // Cap history length & message size to control cost / abuse
+    const trimmed = messages.slice(-20).map(m => ({
+        role: m.role === 'model' ? 'model' : 'user',
+        parts: [{ text: String(m.text || '').slice(0, 4000) }]
+    }));
+
+    const systemText = 'You are RNB Co-Pilot, the in-house creative AI for RNB Events RSVP \u2014 an elegant, upscale event-hosting platform. Help the host brainstorm event themes, write tasteful invite captions, draft event descriptions, suggest dress codes, music playlists, menu ideas, and copy. Keep replies warm, concise (under 220 words unless asked), and stylish. Never use crude language. Use short markdown when helpful (lists, bold). If asked to "auto-fill", give labeled fields (Title, Type, Date, Venue, Description) the user can paste into the event editor.';
+
+    const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                systemInstruction: { parts: [{ text: systemText }] },
+                contents: trimmed,
+                generationConfig: { temperature: 0.85, topP: 0.95, maxOutputTokens: 800 }
+            })
+        });
+        const data = await res.json();
+        if (data.error) {
+            console.error('[ai/chat] Gemini error:', data.error);
+            return respond(502, { error: 'AI service error. Please try again.' });
+        }
+        const parts = (((data.candidates || [])[0] || {}).content || {}).parts || [];
+        const reply = parts.map(p => p.text || '').join('').trim() || '(empty response)';
+        return respond(200, { reply });
+    } catch (e) {
+        console.error('[ai/chat] Network error:', e);
+        return respond(502, { error: 'AI service unreachable.' });
+    }
+}
+
 /* GET /events/:id ── public teaser */
 async function getEvent(eventId) {
     if (!eventId || eventId.length > 30) return respond(400, { error: 'Invalid event ID' });
@@ -1132,6 +1178,9 @@ exports.handler = async (event) => {
         if (method === 'POST' && path === '/member/auth')      return await memberAuthSend(body);
         if (method === 'POST' && path === '/member/verify')    return await memberAuthVerify(body);
         if (method === 'GET'  && path === '/member/dashboard') return await getMemberDashboard(event);
+
+        // AI (server-side Gemini proxy)
+        if (method === 'POST' && path === '/ai/chat')          return await aiChat(body, event);
 
         return respond(404, { error: 'Route not found' });
     } catch (err) {
