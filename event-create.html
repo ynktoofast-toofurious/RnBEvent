@@ -266,6 +266,14 @@
         /* ── Init ───────────────────────────────────── */
         (function init() {
             wireOtpInputs();
+            // Dev bypass: ?skip=3 (or any step number) jumps straight to that step
+            var skipStep = parseInt(new URLSearchParams(location.search).get('skip'));
+            if (skipStep >= 2 && skipStep <= 5) {
+                state.creatorToken = state.creatorToken || 'dev-bypass';
+                state.creator = { name: 'Dev User', phone: '+17160000000' };
+                goToStep(skipStep);
+                return;
+            }
             if (state.creatorToken) {
                 // Already logged in — skip to step 3
                 goToStep(3);
