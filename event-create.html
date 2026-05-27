@@ -31,7 +31,7 @@
                     </svg>
                 </button>
             </div>
-            <a href="/" class="ev-topbar__link">← Back to site</a>
+            <a href="events.html" class="ev-topbar__link">← My events</a>
         </div>
     </header>
 
@@ -439,8 +439,9 @@
         /* ── Init ───────────────────────────────────── */
         function _runInit() {
             wireOtpInputs();
+            var params = new URLSearchParams(location.search);
             // Dev bypass: ?skip=3 jumps straight to editor
-            var skipStep = parseInt(new URLSearchParams(location.search).get('skip'));
+            var skipStep = parseInt(params.get('skip'));
             if (skipStep >= 2 && skipStep <= 5) {
                 state.creatorToken = state.creatorToken || 'dev-bypass';
                 state.creator = state.creator || { name: 'Dev User', phone: '+17160000000' };
@@ -448,8 +449,22 @@
                 goToStep(skipStep);
                 return;
             }
-            if (state.creatorToken) {
+            // Edit an existing draft (from dashboard)
+            var draftId = params.get('draft');
+            if (state.creatorToken && draftId) {
                 goToEditor();
+                setTimeout(function() { loadDraftIntoEditor(draftId); }, 120);
+                return;
+            }
+            // Explicit "new" intent (from dashboard “+ Create”)
+            if (state.creatorToken && params.get('new') === '1') {
+                goToEditor();
+                return;
+            }
+            // Already signed in — send them to the dashboard
+            if (state.creatorToken && state.creator) {
+                window.location.replace('events.html');
+                return;
             }
         }
         if (document.readyState === 'loading') {
@@ -976,7 +991,7 @@
             state.creator      = res.creator;
             localStorage.setItem('rnb_creator_token', res.token);
             localStorage.setItem('rnb_creator', JSON.stringify(res.creator));
-            goToEditor();
+            window.location.href = 'events.html';
         }
 
         async function resendOtp() {
@@ -1175,11 +1190,33 @@
             }).join('');
         }
 
-        function loadDraftIntoEditor(eventId) {
+        async function loadDraftIntoEditor(eventId) {
+            // Fetch the creator's events and find this draft
+            var list = await apiGet('/creator/events', state.creatorToken);
+            var ev = (list.events || []).find(function(e) { return e.eventId === eventId; });
+            if (!ev) { showToast('Draft not found.'); return; }
             state.eventId  = eventId;
-            state.shareUrl = window.location.origin + '/event/' + eventId;
-            showToast('Draft loaded. Edits will save to this draft.');
-            toggleSidePanel('settings');
+            state.shareUrl = ev.shareUrl || (window.location.origin + '/event/' + eventId);
+            // Populate fields
+            if (ev.eventName)   document.getElementById('ed-title').textContent = ev.eventName;
+            if (ev.eventType)   document.getElementById('ed-type').value = ev.eventType;
+            if (ev.eventDate)   document.getElementById('ed-date').value = ev.eventDate;
+            if (ev.eventTime)   document.getElementById('ed-time').value = ev.eventTime;
+            if (ev.venue)       document.getElementById('ed-venue').textContent = ev.venue;
+            if (ev.description) document.getElementById('ed-description').textContent = ev.description;
+            if (ev.theme)       setTheme(ev.theme);
+            if (ev.coverImageUrl) state.coverImageUrl = ev.coverImageUrl;
+            // Reset history with this loaded state
+            state.history = [];
+            state.historyIdx = -1;
+            if (typeof pushHistory === 'function') pushHistory(true);
+            if (typeof updateHistoryButtons === 'function') updateHistoryButtons();
+            showToast('Draft loaded \u2014 edits will save here.');
+            setEditorStatus('Loaded draft');
+            // Close any open flyout
+            var flyout = document.getElementById('ev-side-flyout');
+            if (flyout) flyout.classList.add('hidden');
+            document.querySelectorAll('.ev-sidebar__item').forEach(function(b) { b.classList.remove('active'); });
         }
 
         function confirmDeleteDraft(eventId, name) {
@@ -1383,7 +1420,7 @@
             localStorage.setItem('rnb_creator_token', res.token);
             localStorage.setItem('rnb_creator', JSON.stringify(res.creator));
             showAuthOverlay('Setting up your workspace\u2026');
-            goToEditor();
+            window.location.href = 'events.html';
         }
 
     </script>
