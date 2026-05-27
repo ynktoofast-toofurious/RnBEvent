@@ -7,7 +7,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500;700;800&family=Dancing+Script:wght@400;600&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="event.css">
 </head>
 <body>
@@ -123,125 +123,90 @@
     </main>
 
     <!-- ── PARTIFUL-STYLE EDITOR (shown after auth) ── -->
-    <div id="panel-editor" class="ev-editor hidden" data-theme="night">
+    <div id="panel-editor" class="ev-editor hidden" data-theme="night" data-font="classic">
         <div class="ev-editor__bg" id="editor-bg"></div>
 
-        <!-- Theme selector bar -->
-        <div class="ev-editor__themes">
-            <span class="ev-editor__themes-label">THEME</span>
-            <button class="ev-theme-pill ev-theme-pill--active" data-theme="night" onclick="setTheme('night')">Night</button>
-            <button class="ev-theme-pill" data-theme="gold" onclick="setTheme('gold')">Gold</button>
-            <button class="ev-theme-pill" data-theme="velvet" onclick="setTheme('velvet')">Velvet</button>
-            <button class="ev-theme-pill" data-theme="neon" onclick="setTheme('neon')">Neon</button>
-            <button class="ev-theme-pill" data-theme="dawn" onclick="setTheme('dawn')">Dawn</button>
-            <div class="ev-editor__themes-spacer"></div>
-            <button class="ev-editor__preview-btn" onclick="previewEvent()">👁 Preview</button>
-        </div>
+        <!-- Row: sidebar + flyout + main -->
+        <div class="ev-editor__content-row">
 
-        <!-- Two-column body -->
-        <div class="ev-editor__body">
-
-            <!-- LEFT: all event fields -->
-            <div class="ev-editor__left">
-                <h1 class="ev-editor__title" contenteditable="true" id="ed-title" data-placeholder="Your Event Name"></h1>
-
-                <!-- Event type pills -->
-                <div class="ev-editor__type-row" id="ed-type-row">
-                    <select id="ed-type" class="ev-editor__type-select">
-                        <option value="">Select type…</option>
-                        <option>Birthday Party</option>
-                        <option>Wedding Reception</option>
-                        <option>Anniversary</option>
-                        <option>Sweet 16</option>
-                        <option>Bridal Shower</option>
-                        <option>Baby Shower</option>
-                        <option>Graduation Party</option>
-                        <option>Holiday Party</option>
-                        <option>Corporate Event</option>
-                        <option>Private Dinner</option>
-                        <option>Other</option>
-                    </select>
+            <!-- LEFT SIDEBAR -->
+            <div class="ev-editor__sidebar">
+                <div class="ev-sidebar__top">
+                    <button class="ev-sidebar__item" id="sb-btn-theme" onclick="toggleSidePanel('theme')">
+                        <div class="ev-sidebar__thumb" id="sb-theme-thumb" data-theme="night"></div>
+                        <span>Theme</span>
+                    </button>
+                    <button class="ev-sidebar__item" id="sb-btn-effect" onclick="toggleSidePanel('effect')">
+                        <div class="ev-sidebar__thumb ev-sidebar__thumb--fx"></div>
+                        <span>Effect</span>
+                    </button>
+                    <button class="ev-sidebar__item" id="sb-btn-settings" onclick="toggleSidePanel('settings')">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <span>Settings</span>
+                    </button>
                 </div>
-
-                <!-- Date & Time -->
-                <div class="ev-editor__field" onclick="document.getElementById('ed-date').showPicker && document.getElementById('ed-date').showPicker()">
-                    <span class="ev-editor__field-icon">📅</span>
-                    <div class="ev-editor__field-body">
-                        <div class="ev-editor__field-label">Date &amp; Time</div>
-                        <div class="ev-editor__field-row">
-                            <input type="date" id="ed-date" class="ev-editor__date-input" placeholder="Set a date…">
-                            <input type="time" id="ed-time" class="ev-editor__time-input" value="20:00">
-                        </div>
-                    </div>
+                <div class="ev-sidebar__bottom">
+                    <button class="ev-sidebar__item" onclick="previewEvent()">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>Preview</span>
+                    </button>
                 </div>
-
-                <!-- Host -->
-                <div class="ev-editor__field">
-                    <span class="ev-editor__field-icon">👑</span>
-                    <div class="ev-editor__field-body">
-                        <div class="ev-editor__field-label">Hosted by</div>
-                        <div class="ev-editor__field-val" id="ed-host-display">—</div>
-                    </div>
-                </div>
-
-                <!-- Location -->
-                <div class="ev-editor__field">
-                    <span class="ev-editor__field-icon">📍</span>
-                    <div class="ev-editor__field-body">
-                        <div class="ev-editor__field-label">Location</div>
-                        <div contenteditable="true" class="ev-editor__inline" id="ed-venue" data-placeholder="Add venue &amp; address"></div>
-                    </div>
-                </div>
-
-                <!-- Description -->
-                <div class="ev-editor__field ev-editor__field--desc">
-                    <span class="ev-editor__field-icon">✏️</span>
-                    <div class="ev-editor__field-body" style="width:100%">
-                        <div class="ev-editor__field-label">Details</div>
-                        <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expect…"></div>
-                    </div>
-                </div>
-
-                <!-- Guests section -->
-                <div class="ev-editor__guests">
-                    <div class="ev-editor__guests-header">
-                        <span>Guests</span>
-                        <button onclick="toggleGuestPanel()" class="ev-editor__guests-add">+ Invite</button>
-                    </div>
-                    <div id="ed-guest-pills" class="ev-guest-pills"></div>
-                    <p id="ed-share-hint" class="ev-editor__share-hint hidden">
-                        🔗 Share link: <span id="ed-share-url-text"></span>
-                        <button onclick="copyEditorUrl()" class="ev-editor__copy-btn">COPY</button>
-                    </p>
-                </div>
-
-                <p id="ed-err" class="ev-error" style="margin-top:8px"></p>
             </div>
 
-            <!-- RIGHT: cover image + RSVP options -->
-            <div class="ev-editor__right">
-                <div class="ev-editor__cover" id="ed-cover"
-                     ondragover="editorDragOver(event)" ondragleave="editorDragLeave(event)" ondrop="editorDrop(event)">
-                    <img id="ed-cover-img" class="hidden" alt="Cover">
-                    <div class="ev-editor__cover-placeholder" id="ed-cover-placeholder">
-                        <input type="file" id="ed-photo-input" accept="image/jpeg,image/png,image/webp" onchange="editorPhotoSelected(event)">
-                        <div class="ev-editor__cover-upload">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                <circle cx="8.5" cy="8.5" r="1.5"/>
-                                <polyline points="21 15 16 10 5 21"/>
-                            </svg>
-                            <p>Add cover photo</p>
-                            <span>JPG, PNG or WebP · max 5MB</span>
-                        </div>
+            <!-- FLYOUT PANEL (expands from left) -->
+            <div class="ev-side-flyout hidden" id="ev-side-flyout">
+
+                <!-- THEME section -->
+                <div class="ev-flyout__section" id="sp-theme">
+                    <p class="ev-flyout__heading">Background</p>
+                    <div class="ev-flyout__theme-grid">
+                        <button class="ev-flyout__theme-card ev-flyout__theme-card--active" data-theme="night" onclick="setTheme('night')">
+                            <div class="ev-flyout__theme-prev ev-tprev--night"></div>
+                            <span>Night</span>
+                        </button>
+                        <button class="ev-flyout__theme-card" data-theme="gold" onclick="setTheme('gold')">
+                            <div class="ev-flyout__theme-prev ev-tprev--gold"></div>
+                            <span>Gold</span>
+                        </button>
+                        <button class="ev-flyout__theme-card" data-theme="velvet" onclick="setTheme('velvet')">
+                            <div class="ev-flyout__theme-prev ev-tprev--velvet"></div>
+                            <span>Velvet</span>
+                        </button>
+                        <button class="ev-flyout__theme-card" data-theme="neon" onclick="setTheme('neon')">
+                            <div class="ev-flyout__theme-prev ev-tprev--neon"></div>
+                            <span>Neon</span>
+                        </button>
+                        <button class="ev-flyout__theme-card" data-theme="dawn" onclick="setTheme('dawn')">
+                            <div class="ev-flyout__theme-prev ev-tprev--dawn"></div>
+                            <span>Dawn</span>
+                        </button>
                     </div>
-                    <button class="ev-editor__cover-edit hidden" id="ed-cover-edit-btn"
-                            onclick="document.getElementById('ed-photo-input').click()">✏ Edit photo</button>
+
+                    <p class="ev-flyout__heading" style="margin-top:22px">Font</p>
+                    <div class="ev-flyout__font-list">
+                        <button class="ev-font-pill ev-font-pill--active" data-font="classic" onclick="setFont('classic')"><span style="font-family:'Cormorant Garamond',serif;font-size:17px">Classic</span></button>
+                        <button class="ev-font-pill" data-font="modern" onclick="setFont('modern')"><span style="font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2.5px;text-transform:uppercase">Modern</span></button>
+                        <button class="ev-font-pill" data-font="script" onclick="setFont('script')"><span style="font-family:'Dancing Script',cursive;font-size:19px">Script</span></button>
+                        <button class="ev-font-pill" data-font="elegant" onclick="setFont('elegant')"><span style="font-family:'Playfair Display',serif;font-size:16px;font-style:italic">Elegant</span></button>
+                        <button class="ev-font-pill" data-font="bold" onclick="setFont('bold')"><span style="font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase">Bold</span></button>
+                        <button class="ev-font-pill" data-font="minimal" onclick="setFont('minimal')"><span style="font-family:Georgia,serif;font-size:15px;font-weight:300;font-style:italic">Minimal</span></button>
+                    </div>
                 </div>
 
-                <!-- RSVP options -->
-                <div class="ev-editor__rsvp-box">
-                    <div class="ev-editor__rsvp-header">⚙ RSVP Options</div>
+                <!-- EFFECT section -->
+                <div class="ev-flyout__section hidden" id="sp-effect">
+                    <p class="ev-flyout__heading">Visual Effect</p>
+                    <div class="ev-flyout__font-list">
+                        <button class="ev-font-pill ev-font-pill--active" data-effect="none" onclick="setEffect('none')">None</button>
+                        <button class="ev-font-pill" data-effect="sparkle" onclick="setEffect('sparkle')">✨ Sparkle</button>
+                        <button class="ev-font-pill" data-effect="confetti" onclick="setEffect('confetti')">🎊 Confetti</button>
+                        <button class="ev-font-pill" data-effect="petals" onclick="setEffect('petals')">🌸 Petals</button>
+                    </div>
+                </div>
+
+                <!-- SETTINGS section -->
+                <div class="ev-flyout__section hidden" id="sp-settings">
+                    <p class="ev-flyout__heading">RSVP Options</p>
                     <label class="ev-editor__toggle-row">
                         <span>Require phone verification</span>
                         <input type="checkbox" id="ed-rsvp-verify" checked class="ev-editor__toggle">
@@ -256,7 +221,132 @@
                     </label>
                 </div>
             </div>
-        </div>
+
+            <!-- MAIN EDITOR AREA -->
+            <div class="ev-editor__main">
+                <div class="ev-editor__body">
+
+                    <!-- LEFT: all event fields -->
+                    <div class="ev-editor__left">
+                        <h1 class="ev-editor__title" contenteditable="true" id="ed-title" data-placeholder="Your Event Name"></h1>
+
+                        <div class="ev-editor__type-row">
+                            <select id="ed-type" class="ev-editor__type-select">
+                                <option value="">Select type…</option>
+                                <option>Birthday Party</option>
+                                <option>Wedding Reception</option>
+                                <option>Anniversary</option>
+                                <option>Sweet 16</option>
+                                <option>Bridal Shower</option>
+                                <option>Baby Shower</option>
+                                <option>Graduation Party</option>
+                                <option>Holiday Party</option>
+                                <option>Corporate Event</option>
+                                <option>Private Dinner</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+
+                        <!-- Date & Time -->
+                        <div class="ev-editor__field">
+                            <span class="ev-editor__field-icon">📅</span>
+                            <div class="ev-editor__field-body">
+                                <div class="ev-editor__field-label">Date &amp; Time</div>
+                                <div class="ev-editor__field-row">
+                                    <input type="date" id="ed-date" class="ev-editor__date-input">
+                                    <input type="time" id="ed-time" class="ev-editor__time-input" value="20:00">
+                                </div>
+                                <button class="ev-poll-date-btn" onclick="toggleDatePoll()">Can't decide when? Poll your guests →</button>
+                            </div>
+                        </div>
+
+                        <!-- Date poll options (hidden by default) -->
+                        <div class="ev-date-poll hidden" id="ed-date-poll">
+                            <div class="ev-flyout__heading" style="font-size:9px;margin-bottom:8px">DATE OPTIONS — GUESTS WILL VOTE</div>
+                            <div id="ed-poll-dates"></div>
+                            <button class="ev-addon-pill" onclick="addPollDate()" style="margin-top:6px">+ Add date option</button>
+                        </div>
+
+                        <!-- Host -->
+                        <div class="ev-editor__field">
+                            <span class="ev-editor__field-icon">👑</span>
+                            <div class="ev-editor__field-body">
+                                <div class="ev-editor__field-label">Hosted by</div>
+                                <div class="ev-editor__field-val" id="ed-host-display">—</div>
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="ev-editor__field">
+                            <span class="ev-editor__field-icon">📍</span>
+                            <div class="ev-editor__field-body">
+                                <div class="ev-editor__field-label">Location</div>
+                                <div contenteditable="true" class="ev-editor__inline" id="ed-venue" data-placeholder="Add venue &amp; address"></div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="ev-editor__field ev-editor__field--desc">
+                            <span class="ev-editor__field-icon">✏️</span>
+                            <div class="ev-editor__field-body" style="width:100%">
+                                <div class="ev-editor__field-label">Details</div>
+                                <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expect…"></div>
+                            </div>
+                        </div>
+
+                        <!-- Add-ons / links -->
+                        <div class="ev-editor__addons">
+                            <div class="ev-addons__pills">
+                                <button class="ev-addon-pill" onclick="addAddon('link')">+ Link</button>
+                                <button class="ev-addon-pill" onclick="addAddon('playlist')">+ Playlist</button>
+                                <button class="ev-addon-pill" onclick="addAddon('registry')">+ Registry</button>
+                                <button class="ev-addon-pill" onclick="addAddon('dresscode')">+ Dress code</button>
+                                <button class="ev-addon-pill ev-addon-pill--secondary hidden" id="ap-food" onclick="addAddon('food')">+ Food situation</button>
+                                <button class="ev-addon-pill ev-addon-pill--secondary hidden" id="ap-parking" onclick="addAddon('parking')">+ Parking</button>
+                                <button class="ev-addon-pill ev-addon-pill--secondary hidden" id="ap-accom" onclick="addAddon('accommodations')">+ Accommodations</button>
+                                <button class="ev-addon-pill ev-addon-pill--secondary hidden" id="ap-info" onclick="addAddon('info')">+ Additional info</button>
+                                <button class="ev-addon-pill ev-addon-pill--toggle" id="ap-toggle-btn" onclick="toggleMoreAddons()">Show more</button>
+                            </div>
+                            <div id="ed-addon-items"></div>
+                        </div>
+
+                        <!-- Guests -->
+                        <div class="ev-editor__guests">
+                            <div class="ev-editor__guests-header">
+                                <span>Guests</span>
+                                <button onclick="toggleGuestPanel()" class="ev-editor__guests-add">+ Invite</button>
+                            </div>
+                            <div id="ed-guest-pills" class="ev-guest-pills"></div>
+                            <p id="ed-share-hint" class="ev-editor__share-hint hidden">
+                                🔗 Share link: <span id="ed-share-url-text"></span>
+                                <button onclick="copyEditorUrl()" class="ev-editor__copy-btn">COPY</button>
+                            </p>
+                        </div>
+
+                        <p id="ed-err" class="ev-error" style="margin-top:8px"></p>
+                    </div>
+
+                    <!-- RIGHT: cover image -->
+                    <div class="ev-editor__right">
+                        <div class="ev-editor__cover" id="ed-cover"
+                             ondragover="editorDragOver(event)" ondragleave="editorDragLeave(event)" ondrop="editorDrop(event)">
+                            <img id="ed-cover-img" class="hidden" alt="Cover">
+                            <div class="ev-editor__cover-placeholder" id="ed-cover-placeholder">
+                                <input type="file" id="ed-photo-input" accept="image/jpeg,image/png,image/webp" onchange="editorPhotoSelected(event)">
+                                <div class="ev-editor__cover-upload">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    <p>Add cover photo</p>
+                                    <span>JPG, PNG or WebP · max 5MB</span>
+                                </div>
+                            </div>
+                            <button class="ev-editor__cover-edit hidden" id="ed-cover-edit-btn" onclick="document.getElementById('ed-photo-input').click()">✏ Edit photo</button>
+                        </div>
+                    </div>
+
+                </div><!-- /ev-editor__body -->
+            </div><!-- /ev-editor__main -->
+
+        </div><!-- /ev-editor__content-row -->
 
         <!-- Guest invite slide-in panel -->
         <div class="ev-editor__guest-panel hidden" id="ed-guest-panel">
@@ -302,6 +392,8 @@
             coverImageUrl: '',
             pendingPhotoFile: null,
             editorTheme: 'night',
+            editorFont: 'classic',
+            editorEffect: 'none',
             parsedGuests: []
         };
 
@@ -368,9 +460,111 @@
         function setTheme(name) {
             state.editorTheme = name;
             document.getElementById('panel-editor').dataset.theme = name;
-            document.querySelectorAll('.ev-theme-pill').forEach(function(btn) {
-                btn.classList.toggle('ev-theme-pill--active', btn.dataset.theme === name);
+            // Update sidebar thumb
+            var thumb = document.getElementById('sb-theme-thumb');
+            if (thumb) thumb.dataset.theme = name;
+            // Update flyout cards
+            document.querySelectorAll('.ev-flyout__theme-card').forEach(function(btn) {
+                btn.classList.toggle('ev-flyout__theme-card--active', btn.dataset.theme === name);
             });
+        }
+
+        /* ── Sidebar flyout ──────────────────────────── */
+        var _activePanel = null;
+        function toggleSidePanel(name) {
+            var flyout = document.getElementById('ev-side-flyout');
+            // Deactivate all sidebar items
+            document.querySelectorAll('.ev-sidebar__item').forEach(function(btn) { btn.classList.remove('active'); });
+
+            if (_activePanel === name) {
+                // Close flyout
+                flyout.classList.add('hidden');
+                _activePanel = null;
+                return;
+            }
+            // Show flyout + correct section
+            flyout.classList.remove('hidden');
+            document.querySelectorAll('.ev-flyout__section').forEach(function(s) { s.classList.remove('active'); });
+            var section = document.getElementById('sp-' + name);
+            if (section) section.classList.add('active');
+            // Activate sidebar button
+            var btn = document.getElementById('sb-btn-' + name);
+            if (btn) btn.classList.add('active');
+            _activePanel = name;
+        }
+
+        /* ── Font picker ─────────────────────────────── */
+        function setFont(name) {
+            state.editorFont = name;
+            document.getElementById('panel-editor').dataset.font = name;
+            document.querySelectorAll('.ev-font-pill[data-font]').forEach(function(btn) {
+                btn.classList.toggle('ev-font-pill--active', btn.dataset.font === name);
+            });
+        }
+
+        /* ── Effect picker ───────────────────────────── */
+        function setEffect(name) {
+            state.editorEffect = name;
+            document.querySelectorAll('.ev-font-pill[data-effect]').forEach(function(btn) {
+                btn.classList.toggle('ev-font-pill--active', btn.dataset.effect === name);
+            });
+        }
+
+        /* ── Add-ons / links section ─────────────────── */
+        var _addonsExpanded = false;
+        function toggleMoreAddons() {
+            _addonsExpanded = !_addonsExpanded;
+            ['ap-food','ap-parking','ap-accom','ap-info'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.classList.toggle('hidden', !_addonsExpanded);
+            });
+            var btn = document.getElementById('ap-toggle-btn');
+            if (btn) btn.textContent = _addonsExpanded ? 'Show less' : 'Show more';
+        }
+
+        var _addonLabels = {
+            link: 'Link', playlist: 'Playlist URL', registry: 'Registry', dresscode: 'Dress code',
+            food: 'Food situation', parking: 'Parking info', accommodations: 'Accommodations', info: 'Additional info'
+        };
+        function addAddon(type) {
+            var container = document.getElementById('ed-addon-items');
+            var id = 'addon-' + type + '-' + Date.now();
+            var row = document.createElement('div');
+            row.className = 'ev-addon-item';
+            row.id = id;
+            row.innerHTML =
+                '<span class="ev-addon-item__label">' + (_addonLabels[type] || type) + '</span>' +
+                '<input class="ev-addon-item__input" type="' + (type === 'link' || type === 'playlist' || type === 'registry' ? 'url' : 'text') + '"' +
+                ' placeholder="' + (type === 'link' ? 'https://' : type === 'playlist' ? 'Spotify / Apple Music URL' : 'Enter details…') + '">' +
+                '<button class="ev-addon-item__remove" onclick="document.getElementById(\'' + id + '\').remove()">✕</button>';
+            container.appendChild(row);
+            row.querySelector('input').focus();
+            // Hide the button that was clicked
+            var map = { dresscode:'ap-dresscode', food:'ap-food', parking:'ap-parking', accommodations:'ap-accom', info:'ap-info' };
+            // For the always-visible ones (link, playlist, registry, dresscode) hide after adding
+        }
+
+        /* ── Date poll ───────────────────────────────── */
+        var _datePollVisible = false;
+        function toggleDatePoll() {
+            _datePollVisible = !_datePollVisible;
+            var poll = document.getElementById('ed-date-poll');
+            poll.classList.toggle('hidden', !_datePollVisible);
+            if (_datePollVisible && document.getElementById('ed-poll-dates').children.length === 0) {
+                addPollDate(); addPollDate(); // start with 2 options
+            }
+        }
+
+        function addPollDate() {
+            var container = document.getElementById('ed-poll-dates');
+            var row = document.createElement('div');
+            row.className = 'ev-date-poll__row';
+            var id = 'poll-d-' + Date.now();
+            row.id = id;
+            row.innerHTML =
+                '<input type="date" id="' + id + '-input">' +
+                '<button class="ev-date-poll__remove" onclick="document.getElementById(\'' + id + '\').remove()" title="Remove">✕</button>';
+            container.appendChild(row);
         }
 
         /* ── Cover photo ─────────────────────────────── */
