@@ -940,11 +940,17 @@ async function notifyCreatorOfRsvp(ev, guestName, status) {
 /* ── Router ──────────────────────────────────────── */
 
 exports.handler = async (event) => {
-    if (event.httpMethod === 'OPTIONS') return respond(200, {});
+    // Support both API Gateway v1 (REST) and v2 (HTTP API) event formats
+    const isV2   = event.version === '2.0' || !!event.requestContext?.http;
+    const method = isV2
+        ? event.requestContext.http.method
+        : (event.httpMethod || 'GET');
 
-    const method = event.httpMethod;
-    const path   = (event.path || event.rawPath || '').replace(/^\/rsvp/, '') || '/';
-    const parts  = path.split('/').filter(Boolean);
+    if (method === 'OPTIONS') return respond(200, {});
+
+    const rawPath = event.rawPath || event.path || '/';
+    const path    = rawPath.replace(/^\/rsvp/, '') || '/';
+    const parts   = path.split('/').filter(Boolean);
 
     let body = {};
     try { if (event.body) body = JSON.parse(event.body); } catch { /* ignore */ }
