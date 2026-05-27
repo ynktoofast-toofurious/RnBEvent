@@ -1299,7 +1299,12 @@ textarea.ev-input {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding-right: 8px;
+    padding: 28px 32px;
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 .ev-editor__title {
@@ -1317,9 +1322,10 @@ textarea.ev-input {
     border-bottom: 2px solid transparent;
     transition: border-color 0.2s;
     word-break: break-word;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
-.ev-editor__title:focus { border-bottom-color: rgba(184,154,94,0.4); }
-.ev-editor__title:empty::before { content: attr(data-placeholder); color: rgba(255,255,255,0.22); }
+.ev-editor__title:focus { border-bottom-color: rgba(184,154,94,0.5); }
+.ev-editor__title:empty::before { content: attr(data-placeholder); color: rgba(255,255,255,0.3); }
 
 /* Type selector row */
 .ev-editor__type-row { margin-bottom: 4px; }
@@ -1346,12 +1352,13 @@ textarea.ev-input {
     gap: 14px;
     padding: 14px 18px;
     border-radius: 12px;
-    background: rgba(255,255,255,0.04);
-    border: 1.5px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.09);
+    border: 1.5px solid rgba(255,255,255,0.14);
     cursor: text;
     transition: border-color 0.2s, background 0.2s;
 }
-.ev-editor__field:hover { background: rgba(255,255,255,0.07); border-color: rgba(184,154,94,0.2); }
+.ev-editor__field:hover { background: rgba(255,255,255,0.13); border-color: rgba(184,154,94,0.35); }
+.ev-editor__field:focus-within { background: rgba(255,255,255,0.13); border-color: rgba(184,154,94,0.45); }
 .ev-editor__field--desc { align-items: flex-start; }
 
 .ev-editor__field-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; line-height: 1; }
@@ -1360,13 +1367,13 @@ textarea.ev-input {
     font-size: 9px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.5);
     margin-bottom: 4px;
     font-family: 'Montserrat', sans-serif;
 }
 .ev-editor__field-val {
     font-size: 14px;
-    color: rgba(255,255,255,0.75);
+    color: rgba(255,255,255,0.9);
     font-family: 'Montserrat', sans-serif;
 }
 .ev-editor__field-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
@@ -1374,7 +1381,7 @@ textarea.ev-input {
 .ev-editor__date-input, .ev-editor__time-input {
     background: transparent;
     border: none;
-    color: rgba(255,255,255,0.75);
+    color: rgba(255,255,255,0.92);
     font-size: 14px;
     font-family: 'Montserrat', sans-serif;
     outline: none;
@@ -1386,19 +1393,19 @@ textarea.ev-input {
 .ev-editor__inline {
     outline: none;
     font-size: 14px;
-    color: rgba(255,255,255,0.75);
+    color: rgba(255,255,255,0.92);
     font-family: 'Montserrat', sans-serif;
     background: transparent;
     border: none;
     min-height: 22px;
     line-height: 1.5;
 }
-.ev-editor__inline:empty::before { content: attr(data-placeholder); color: rgba(255,255,255,0.22); }
+.ev-editor__inline:empty::before { content: attr(data-placeholder); color: rgba(255,255,255,0.35); }
 
 .ev-editor__textarea {
     outline: none;
     font-size: 13px;
-    color: rgba(255,255,255,0.7);
+    color: rgba(255,255,255,0.88);
     font-family: 'Montserrat', sans-serif;
     background: transparent;
     border: none;
@@ -1406,14 +1413,14 @@ textarea.ev-input {
     line-height: 1.7;
     width: 100%;
 }
-.ev-editor__textarea:empty::before { content: attr(data-placeholder); color: rgba(255,255,255,0.2); }
+.ev-editor__textarea:empty::before { content: attr(data-placeholder); color: rgba(255,255,255,0.32); }
 
 /* Guests */
 .ev-editor__guests {
     padding: 14px 18px;
     border-radius: 12px;
-    background: rgba(255,255,255,0.04);
-    border: 1.5px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.09);
+    border: 1.5px solid rgba(255,255,255,0.14);
     margin-top: 4px;
 }
 .ev-editor__guests-header {
@@ -1424,7 +1431,7 @@ textarea.ev-input {
     font-size: 9px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.5);
     font-family: 'Montserrat', sans-serif;
 }
 .ev-editor__guests-add {
@@ -1529,8 +1536,10 @@ textarea.ev-input {
 
 /* RSVP box */
 .ev-editor__rsvp-box {
-    background: rgba(255,255,255,0.04);
-    border: 1.5px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1.5px solid rgba(255,255,255,0.12);
     border-radius: 12px;
     padding: 16px 18px;
 }
@@ -1538,7 +1547,7 @@ textarea.ev-input {
     font-size: 9px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.5);
     margin-bottom: 12px;
     font-family: 'Montserrat', sans-serif;
 }
@@ -1548,9 +1557,9 @@ textarea.ev-input {
     justify-content: space-between;
     padding: 10px 0;
     font-size: 13px;
-    color: rgba(255,255,255,0.65);
+    color: rgba(255,255,255,0.85);
     font-family: 'Montserrat', sans-serif;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
     cursor: pointer;
     gap: 12px;
 }
@@ -1655,6 +1664,7 @@ textarea.ev-input {
         gap: 20px;
     }
     .ev-editor__right { order: -1; }
+    .ev-editor__left { padding: 20px; }
     .ev-editor__cover { aspect-ratio: 4/3; }
     .ev-editor__title { font-size: 2.2rem; }
     .ev-editor__guest-panel { width: 100%; border-left: none; border-top: 1px solid rgba(255,255,255,0.08); top: auto; bottom: 60px; height: 65vh; transform: translateY(100%); }
