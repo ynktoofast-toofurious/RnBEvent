@@ -839,20 +839,33 @@
                 return;
             }
 
-            results.innerHTML = '<p style="font-size:12px;color:#a4c195;padding:12px 0;letter-spacing:1px">Searching…</p>';
+            results.innerHTML = '<p style="font-size:12px;color:#a4c195;padding:12px 0;letter-spacing:1px">Searching Apple Music…</p>';
 
             state.searchTimer = setTimeout(async function() {
                 var res = await apiSearchSongs(query.trim());
                 renderSearchResults(res, results);
-            }, 320);
+            }, 250);
         }
 
         async function apiSearchSongs(query) {
             try {
-                var res = await fetch(URTHEDJ_URL + '/search-song?q=' + encodeURIComponent(query));
+                var res = await fetch(URTHEDJ_URL + '/search-song?query=' + encodeURIComponent(query), { cache: 'no-store' });
                 if (!res.ok) return [];
                 var data = await res.json();
-                return Array.isArray(data) ? data : (data.results || []);
+                var rows = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
+                return rows.map(function(s, i) {
+                    return {
+                        songTitle:      s.songTitle || s.trackName || ('Result ' + (i + 1)),
+                        artistName:     s.artistName || 'Unknown Artist',
+                        albumName:      s.albumName || s.collectionName || '',
+                        artworkUrl:     s.artworkUrl || s.artworkUrl100 || '',
+                        appleMusicId:   String(s.appleMusicId || s.trackId || ''),
+                        sourceProvider: s.sourceProvider || 'apple-music',
+                        bpm:            s.bpm || null,
+                        energyLevel:    s.energyLevel || '',
+                        style:          s.style || ''
+                    };
+                });
             } catch { return []; }
         }
 
@@ -866,28 +879,31 @@
             var html  = '';
             for (var i = 0; i < limit; i++) {
                 var s         = songs[i];
-                var isAdded   = state.mySongs.some(function(ms) { return ms.appleMusicId && ms.appleMusicId === s.appleMusicId; });
-                var artHtml   = s.artworkUrl
-                    ? '<img class="ev-song-art" src="' + escHtml(s.artworkUrl) + '" alt="' + escHtml(s.songTitle) + '" onerror="this.style.display=\'none\'">'
+                var isAdded   = state.mySongs.some(function(ms) { return ms.appleMusicId && s.appleMusicId && ms.appleMusicId === s.appleMusicId; });
+                var artUrl    = String(s.artworkUrl || '').replace('100x100bb', '400x400bb');
+                var artHtml   = artUrl
+                    ? '<img class="ev-song-art" src="' + escHtml(artUrl) + '" alt="' + escHtml(s.songTitle) + '" onerror="this.style.display=\'none\'">'
                     : '<div class="ev-song-art ev-song-art--placeholder"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>';
 
+                var subtitle = escHtml(s.artistName || 'Unknown Artist') + (s.albumName ? ' • ' + escHtml(s.albumName) : '');
+
                 var badges = '';
-                if (s.bpm)         badges += '<span class="ev-badge">' + s.bpm + ' BPM</span>';
-                if (s.genre)       badges += '<span class="ev-badge ev-badge--green">' + escHtml(s.genre) + '</span>';
-                if (s.sourceProvider === 'apple-music') badges += '<span class="ev-badge ev-badge--gold">Apple Music</span>';
+                if (s.bpm)         badges += '<span class="ev-badge">' + escHtml(s.bpm) + ' BPM</span>';
+                if (s.energyLevel) badges += '<span class="ev-badge ev-badge--green">' + escHtml(s.energyLevel) + '</span>';
+                if (s.style)       badges += '<span class="ev-badge ev-badge--gold">' + escHtml(s.style) + '</span>';
 
                 html += '<div class="ev-song-card" data-idx="' + i + '">' +
                     artHtml +
                     '<div class="ev-song-info">' +
                     '<div class="ev-song-title">' + escHtml(s.songTitle) + '</div>' +
-                    '<div class="ev-song-artist">' + escHtml(s.artistName) + '</div>' +
+                    '<div class="ev-song-artist">' + subtitle + '</div>' +
                     (badges ? '<div class="ev-song-badges">' + badges + '</div>' : '') +
                     '</div>' +
                     '<button class="ev-song-add-btn' + (isAdded ? ' ev-song-add-btn--added' : '') + '" ' +
-                    (isAdded ? 'disabled title="Already added"' : 'onclick="addSong(' + i + ')" title="Add to playlist"') + '>' +
+                    (isAdded ? 'disabled title="Already added"' : 'onclick="addSong(' + i + ')" title="Add to queue"') + '>' +
                     (isAdded
                         ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
-                        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>') +
+                        : 'Add to Queue') +
                     '</button>' +
                     '</div>';
             }
