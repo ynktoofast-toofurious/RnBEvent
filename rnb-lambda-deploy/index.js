@@ -118,6 +118,39 @@ function sanitizeUrl(raw) {
     return /^https?:\/\//i.test(u) ? u : '';
 }
 
+function normalizeSearchText(raw) {
+    return String(raw || '').toLowerCase().trim().replace(/[^a-z0-9\s]/g, ' ');
+}
+
+const SONG_SEARCH_FALLBACK = [
+    { songTitle: 'Titanium', artistName: 'David Guetta feat. Sia', albumName: 'Nothing but the Beat', genre: 'Dance' },
+    { songTitle: 'Levitating', artistName: 'Dua Lipa', albumName: 'Future Nostalgia', genre: 'Pop' },
+    { songTitle: 'One More Time', artistName: 'Daft Punk', albumName: 'Discovery', genre: 'Electronic' },
+    { songTitle: 'Yeah!', artistName: 'Usher feat. Lil Jon & Ludacris', albumName: 'Confessions', genre: 'Hip-Hop' },
+    { songTitle: 'September', artistName: 'Earth, Wind & Fire', albumName: 'The Best of Earth, Wind & Fire', genre: 'Funk' },
+    { songTitle: 'Superstition', artistName: 'Stevie Wonder', albumName: 'Talking Book', genre: 'Soul' }
+];
+
+function searchFallbackCatalog(query) {
+    const q = normalizeSearchText(query);
+    if (!q || q.length < 2) return [];
+    return SONG_SEARCH_FALLBACK
+        .filter((song) => normalizeSearchText(`${song.songTitle} ${song.artistName} ${song.albumName} ${song.genre}`).includes(q))
+        .slice(0, 10)
+        .map((song, i) => ({
+            songTitle: song.songTitle,
+            artistName: song.artistName,
+            albumName: song.albumName,
+            appleMusicId: `catalog-${normalizeSearchText(song.songTitle).replace(/\s+/g, '-')}`,
+            artworkUrl: '',
+            bpm: 90 + i * 4,
+            genre: song.genre,
+            style: 'catalog',
+            energyLevel: 'medium',
+            sourceProvider: 'catalog'
+        }));
+}
+
 /* Sanitize the visual-customization payload sent from event-create.html.
    Caps every string; rejects non-whitelisted theme/iconStyle values; keeps fieldIcons
    to a known shape; clamps customLayout positions to numeric coords. */
@@ -643,6 +676,42 @@ async function getMySOungs(eventId, event) {
     })).catch(() => ({ Items: [] }));
 
     return respond(200, { songs: (res.Items || []).sort((a, b) => a.songIndex - b.songIndex) });
+}
+
+/* GET /search-song?query=... ── urTheDJ-compatible song search with iTunes + catalog fallback */
+async function searchSongs(queryRaw) {
+    const query = sanitizeText(queryRaw, 120);
+    if (!query || query.length < 2) return respond(200, []);
+
+    try {
+        const term = encodeURIComponent(query);
+        const r = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=10`);
+        if (r.ok) {
+            const data = await r.json();
+            const rows = Array.isArray(data?.results) ? data.results : [];
+            if (rows.length) {
+                const mapped = rows.map((track, index) => ({
+                    songTitle:      sanitizeText(track.trackName || `Result ${index + 1}`, 200),
+                    artistName:     sanitizeText(track.artistName || 'Unknown Artist', 200),
+                    albumName:      sanitizeText(track.collectionName || '', 200),
+                    appleMusicId:   String(track.trackId || ''),
+                    artworkUrl:     String(track.artworkUrl100 || '').replace('100x100bb', '400x400bb'),
+                    previewUrl:     sanitizeUrl(track.previewUrl || ''),
+                    durationMs:     Number(track.trackTimeMillis) || null,
+                    bpm:            90 + index * 4,
+                    genre:          sanitizeText(track.primaryGenreName || 'Music', 50),
+                    style:          'catalog',
+                    energyLevel:    'medium',
+                    sourceProvider: 'apple-music'
+                }));
+                return respond(200, mapped);
+            }
+        }
+    } catch (_) {
+        // fall through to local catalog fallback
+    }
+
+    return respond(200, searchFallbackCatalog(query));
 }
 
 /* POST /events/:id/guests ── add guests to invite list */
@@ -1477,6 +1546,7 @@ exports.handler = async (event) => {
     const parts   = path.split('/').filter(Boolean);
 
     let body = {};
+    const queryParams = event.queryStringParameters || {};
     try { if (event.body) body = JSON.parse(event.body); } catch { /* ignore */ }
 
     try {
@@ -1489,6 +1559,7 @@ exports.handler = async (event) => {
 
         // Events
         if (method === 'POST' && path === '/events')            return await createEvent(body, event);
+        if (method === 'GET'  && path === '/search-song')       return await searchSongs(queryParams.query || queryParams.q || '');
         if (method === 'GET'  && parts[0] === 'events' && parts.length === 2)        return await getEvent(parts[1]);
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'update')     return await updateEvent(parts[1], body, event);
         if (method === 'DELETE' && parts[0] === 'events' && parts.length === 2)      return await deleteEvent(parts[1], event);
