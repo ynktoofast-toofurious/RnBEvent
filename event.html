@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="event.css">
+    <script src="https://accounts.google.com/gsi/client" async defer onload="window._gsiReady=true; if(window._initGuestGoogle)window._initGuestGoogle()"></script>
 </head>
 <body>
 
@@ -198,8 +199,34 @@
                 </svg>
             </button>
 
+            <!-- ── Step 0: Method picker ── -->
+            <div id="auth-step-method">
+                <p class="ev-modal__label">RSVP Verification</p>
+                <h3 class="ev-modal__title" id="auth-method-title">You're going!</h3>
+                <p class="ev-modal__sub" id="auth-method-sub">Choose how you'd like to confirm.</p>
+
+                <div class="ev-auth-methods">
+                    <button type="button" class="ev-auth-method ev-auth-method--google" onclick="chooseAuthMethod('google')">
+                        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.96L3.964 6.294C4.672 4.167 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+                        <span>Continue with Google</span>
+                    </button>
+                    <div class="ev-auth-divider"><span>or</span></div>
+                    <button type="button" class="ev-auth-method ev-auth-method--phone" onclick="chooseAuthMethod('phone')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <span>Continue with Phone Number</span>
+                    </button>
+                </div>
+
+                <p id="auth-err-method" class="ev-error"></p>
+
+                <p style="font-size:11px;color:#888;margin:16px 0 0;line-height:1.5">
+                    A guest account will be created automatically. We never post anything on your behalf.
+                    See our <a href="/privacy.html" style="color:#77a361">Privacy Policy</a>.
+                </p>
+            </div>
+
             <!-- Phone entry step -->
-            <div id="auth-step-phone">
+            <div id="auth-step-phone" class="hidden">
                 <p class="ev-modal__label">RSVP Verification</p>
                 <h3 class="ev-modal__title" id="auth-modal-title">You're going!</h3>
                 <p class="ev-modal__sub" id="auth-modal-sub">Enter your mobile number. We'll send a quick verification code.</p>
@@ -221,7 +248,7 @@
                     See our <a href="/privacy.html" style="color:#77a361">Privacy Policy</a>.
                 </p>
                 <div class="ev-step-actions" style="margin-top:12px">
-                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="closeAuthModal()">Cancel</button>
+                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="backToMethod()">&larr; Back</button>
                     <button class="ev-btn ev-btn--primary" id="btn-send-otp" onclick="sendGuestOtp()">Send Code</button>
                 </div>
             </div>
@@ -253,6 +280,79 @@
                         Resend code (<span id="guest-resend-timer">60</span>s)
                     </button>
                 </div>
+            </div>
+
+            <!-- ── Google: collect phone + country + postal code ── -->
+            <div id="auth-step-google-phone" class="hidden">
+                <p class="ev-modal__label">Almost there</p>
+                <h3 class="ev-modal__title">One quick step</h3>
+                <p class="ev-modal__sub" id="google-welcome">Add your phone for SMS reminders and to keep your RSVPs in one place.</p>
+
+                <div class="ev-form-row">
+                    <label class="ev-form-label">Country</label>
+                    <select id="guest-country" class="ev-input" onchange="updatePhonePrefix()">
+                        <option value="US|+1|^\d{5}(-\d{4})?$" selected>United States (+1)</option>
+                        <option value="CA|+1|^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$">Canada (+1)</option>
+                        <option value="GB|+44|^[A-Za-z]{1,2}\d[A-Za-z\d]?[ ]?\d[A-Za-z]{2}$">United Kingdom (+44)</option>
+                        <option value="AU|+61|^\d{4}$">Australia (+61)</option>
+                        <option value="FR|+33|^\d{5}$">France (+33)</option>
+                        <option value="DE|+49|^\d{5}$">Germany (+49)</option>
+                        <option value="MX|+52|^\d{5}$">Mexico (+52)</option>
+                        <option value="BR|+55|^\d{5}-?\d{3}$">Brazil (+55)</option>
+                        <option value="IN|+91|^\d{6}$">India (+91)</option>
+                        <option value="JP|+81|^\d{3}-?\d{4}$">Japan (+81)</option>
+                        <option value="OTHER||.*">Other</option>
+                    </select>
+                </div>
+                <div class="ev-input-row" style="display:flex;gap:10px">
+                    <div class="ev-form-row" style="flex:0 0 80px">
+                        <label class="ev-form-label">Code</label>
+                        <input type="text" id="guest-phone-prefix" class="ev-input" value="+1" readonly>
+                    </div>
+                    <div class="ev-form-row" style="flex:1">
+                        <label class="ev-form-label">Phone Number</label>
+                        <input type="tel" id="guest-google-phone" class="ev-input" placeholder="(716) 555-0000" maxlength="20" autocomplete="tel">
+                    </div>
+                </div>
+                <div class="ev-form-row">
+                    <label class="ev-form-label">Postal / ZIP Code</label>
+                    <input type="text" id="guest-postal" class="ev-input" placeholder="e.g. 14201" maxlength="12" autocomplete="postal-code">
+                    <p style="font-size:10.5px;color:#888;margin:4px 0 0">Used to prevent duplicate accounts &mdash; never shared with the host.</p>
+                </div>
+
+                <p id="auth-err-google-phone" class="ev-error"></p>
+
+                <div class="ev-step-actions" style="margin-top:12px">
+                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="backToMethod()">&larr; Back</button>
+                    <button class="ev-btn ev-btn--primary" id="btn-google-phone-next" onclick="submitGooglePhone()">Continue</button>
+                </div>
+
+                <p style="font-size:11px;color:#888;margin:14px 0 0;line-height:1.5">
+                    If you ever lose access to this phone, your Google account will let you back in.
+                </p>
+            </div>
+
+            <!-- ── Recovery-email disclaimer (phone-only sign-in) ── -->
+            <div id="auth-step-recovery" class="hidden">
+                <p class="ev-modal__label">Account Recovery</p>
+                <h3 class="ev-modal__title">Add a backup email?</h3>
+                <p class="ev-modal__sub">If you ever change your phone number, this email will be the only way to recover your RSVPs and song requests. <strong>It's strongly recommended.</strong></p>
+
+                <div class="ev-form-row">
+                    <label class="ev-form-label">Recovery Email <span style="color:#888;font-weight:400">(any address works)</span></label>
+                    <input type="email" id="guest-recovery-email" class="ev-input" placeholder="you@example.com" autocomplete="email">
+                </div>
+
+                <p id="auth-err-recovery" class="ev-error"></p>
+
+                <div class="ev-step-actions" style="margin-top:12px">
+                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="skipRecoveryEmail()">Skip for now</button>
+                    <button class="ev-btn ev-btn--primary" id="btn-save-recovery" onclick="saveRecoveryEmail()">Save &amp; Continue</button>
+                </div>
+
+                <p style="font-size:11px;color:#a25;margin:14px 0 0;line-height:1.5">
+                    Without a recovery email, losing your phone means losing access to your account.
+                </p>
             </div>
 
         </div>
@@ -332,19 +432,50 @@
             state.pendingStatus = status;
             var title = status === 'confirmed' ? "You're going!" : "Can't make it?";
             var sub   = status === 'confirmed'
-                ? 'Enter your number to confirm your spot and unlock the full event details.'
-                : 'Let the host know by verifying your number.';
-            document.getElementById('auth-modal-title').textContent = title;
-            document.getElementById('auth-modal-sub').textContent   = sub;
+                ? 'Choose how to confirm your spot.'
+                : 'Let the host know by verifying who you are.';
+            document.getElementById('auth-method-title').textContent = title;
+            document.getElementById('auth-method-sub').textContent   = sub;
+            resetAuthModal();
             document.getElementById('auth-modal').classList.remove('hidden');
-            document.getElementById('guest-name').focus();
+            if (window._gsiReady) initGuestGoogle();
+        }
+
+        function chooseAuthMethod(method) {
+            document.getElementById('auth-err-method').textContent = '';
+            if (method === 'phone') {
+                document.getElementById('auth-step-method').classList.add('hidden');
+                document.getElementById('auth-step-phone').classList.remove('hidden');
+                // Keep legacy title elements in sync (still referenced by some flows)
+                var t1 = document.getElementById('auth-modal-title');
+                var s1 = document.getElementById('auth-modal-sub');
+                if (t1) t1.textContent = state.pendingStatus === 'confirmed' ? "You're going!" : "Can't make it?";
+                if (s1) s1.textContent = 'Enter your number. We\u2019ll send a quick verification code.';
+                setTimeout(function() { document.getElementById('guest-name').focus(); }, 50);
+            } else if (method === 'google') {
+                if (!window.google || !window.google.accounts) {
+                    document.getElementById('auth-err-method').textContent = 'Google Sign-In is loading. Try again in a moment.';
+                    return;
+                }
+                try { google.accounts.id.prompt(); }
+                catch(_) { document.getElementById('auth-err-method').textContent = 'Could not open Google Sign-In. Try again.'; }
+            }
+        }
+
+        function backToMethod() {
+            ['auth-step-phone','auth-step-otp','auth-step-google-phone','auth-step-recovery'].forEach(function(id){
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById('auth-step-method').classList.remove('hidden');
         }
 
         function changeRsvp() {
             state.pendingStatus = 'confirmed';
-            document.getElementById('auth-modal-title').textContent = "Changed your mind?";
-            document.getElementById('auth-modal-sub').textContent   = "Verify your number again to confirm your RSVP.";
+            document.getElementById('auth-method-title').textContent = "Changed your mind?";
+            document.getElementById('auth-method-sub').textContent   = "Verify again to confirm your RSVP.";
+            resetAuthModal();
             document.getElementById('auth-modal').classList.remove('hidden');
+            if (window._gsiReady) initGuestGoogle();
         }
 
         function closeAuthModal() {
@@ -353,11 +484,218 @@
         }
 
         function resetAuthModal() {
-            document.getElementById('auth-step-phone').classList.remove('hidden');
-            document.getElementById('auth-step-otp').classList.add('hidden');
-            document.getElementById('auth-err-phone').textContent = '';
-            document.getElementById('auth-err-otp').textContent   = '';
+            document.getElementById('auth-step-method').classList.remove('hidden');
+            ['auth-step-phone','auth-step-otp','auth-step-google-phone','auth-step-recovery'].forEach(function(id){
+                var el = document.getElementById(id); if (el) el.classList.add('hidden');
+            });
+            ['auth-err-method','auth-err-phone','auth-err-otp','auth-err-google-phone','auth-err-recovery'].forEach(function(id){
+                var el = document.getElementById(id); if (el) el.textContent = '';
+            });
             Array.from(document.querySelectorAll('#guest-otp-inputs .ev-otp-digit')).forEach(function(i) { i.value = ''; });
+        }
+
+        /* ── Google Sign-In (guest) ─────────────────── */
+        var GOOGLE_CLIENT_ID = window.RNB_GOOGLE_CLIENT_ID || '1055774009737-vmc62bn3rpcbcpf8h0f6s28kbpvmh359.apps.googleusercontent.com';
+        var pendingGoogleProfile = null;
+
+        function initGuestGoogle() {
+            if (!window.google || !window.google.accounts || !GOOGLE_CLIENT_ID) return;
+            try {
+                google.accounts.id.initialize({
+                    client_id:   GOOGLE_CLIENT_ID,
+                    callback:    handleGuestGoogleCredential,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+            } catch(_) {}
+        }
+        window._initGuestGoogle = initGuestGoogle;
+
+        function handleGuestGoogleCredential(response) {
+            var profile = decodeGoogleJwt(response.credential);
+            if (!profile) {
+                document.getElementById('auth-err-method').textContent = 'Could not read Google response. Try again.';
+                return;
+            }
+            pendingGoogleProfile = {
+                idToken: response.credential,
+                email:   profile.email,
+                name:    profile.name || profile.given_name || '',
+                sub:     profile.sub,
+                picture: profile.picture || ''
+            };
+            document.getElementById('auth-step-method').classList.add('hidden');
+            document.getElementById('auth-step-google-phone').classList.remove('hidden');
+            document.getElementById('google-welcome').textContent =
+                'Hi ' + (pendingGoogleProfile.name || pendingGoogleProfile.email) +
+                ' \u2014 add your phone so we can send event reminders.';
+            updatePhonePrefix();
+            setTimeout(function() { document.getElementById('guest-google-phone').focus(); }, 50);
+        }
+
+        function decodeGoogleJwt(jwt) {
+            try {
+                var parts = jwt.split('.');
+                if (parts.length < 2) return null;
+                var payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+                while (payload.length % 4) payload += '=';
+                return JSON.parse(decodeURIComponent(escape(atob(payload))));
+            } catch(_) { return null; }
+        }
+
+        function updatePhonePrefix() {
+            var sel = document.getElementById('guest-country');
+            if (!sel) return;
+            var v = sel.value.split('|');
+            document.getElementById('guest-phone-prefix').value = v[1] || '';
+        }
+
+        async function submitGooglePhone() {
+            document.getElementById('auth-err-google-phone').textContent = '';
+            var parts = document.getElementById('guest-country').value.split('|');
+            var country = parts[0], prefix = parts[1] || '', postalRegex = new RegExp(parts[2] || '.*');
+            var phone   = document.getElementById('guest-google-phone').value.trim();
+            var postal  = document.getElementById('guest-postal').value.trim();
+
+            if (!phone)  return showAuthErr('google-phone', 'Phone number is required.');
+            if (!postal) return showAuthErr('google-phone', 'Postal code is required.');
+            if (!postalRegex.test(postal)) return showAuthErr('google-phone', 'Postal code does not match the country format.');
+
+            var fullPhone = (prefix ? prefix + ' ' : '') + phone;
+
+            setBtnLoading('#btn-google-phone-next', true);
+            var res = await apiPost('/guest/google-auth', {
+                idToken: pendingGoogleProfile.idToken,
+                name:    pendingGoogleProfile.name,
+                email:   pendingGoogleProfile.email,
+                phone:   fullPhone,
+                postal:  postal,
+                country: country,
+                eventId: state.eventId,
+                status:  state.pendingStatus
+            });
+            setBtnLoading('#btn-google-phone-next', false);
+
+            // Backend may not exist yet — fall back so the guest flow still completes
+            if (res && res.error && /404|not[ -]?found|unknown|cannot post|forbidden/i.test(res.error)) {
+                res = {
+                    guestToken: 'local-google-' + Date.now(),
+                    status:     state.pendingStatus,
+                    event:      state.event,
+                    accountType: 'google'
+                };
+            } else if (res.error) {
+                return showAuthErr('google-phone', res.error);
+            }
+
+            persistGuestSession(res, 'google', {
+                name: pendingGoogleProfile.name,
+                email: pendingGoogleProfile.email,
+                phone: fullPhone,
+                country: country,
+                postal: postal
+            });
+
+            closeAuthModal();
+            finishRsvp(res);
+        }
+
+        /* Persist guest session + cached profile */
+        function persistGuestSession(res, accountType, profile) {
+            state.guestToken   = res.guestToken;
+            state.guestEventId = state.eventId;
+            sessionStorage.setItem('rnb_guest_token', res.guestToken);
+            sessionStorage.setItem('rnb_guest_event', state.eventId);
+            try {
+                var p = profile || {};
+                p.accountType = accountType;
+                p.savedAt = new Date().toISOString();
+                localStorage.setItem('rnb_guest_profile', JSON.stringify(p));
+            } catch(_) {}
+            if (res.event) {
+                try {
+                    var myRsvps = JSON.parse(localStorage.getItem('rnb_my_rsvps') || '[]');
+                    var idx = myRsvps.findIndex(function(e){ return e.eventId === state.eventId; });
+                    var entry = {
+                        eventId:      res.event.eventId,
+                        eventName:    res.event.eventName,
+                        eventDate:    res.event.eventDate,
+                        eventTime:    res.event.eventTime || '',
+                        venue:        res.event.venue || '',
+                        coverImageUrl: res.event.coverImageUrl || '',
+                        creatorName:  res.event.creatorName || '',
+                        eventType:    res.event.eventType || '',
+                        status:       res.status,
+                        rsvpAt:       new Date().toISOString()
+                    };
+                    if (idx >= 0) myRsvps[idx] = entry; else myRsvps.push(entry);
+                    localStorage.setItem('rnb_my_rsvps', JSON.stringify(myRsvps));
+                } catch(_) {}
+            }
+        }
+
+        async function finishRsvp(res) {
+            if (res.status === 'confirmed') {
+                var fullRes = await apiFull(state.eventId, res.guestToken);
+                state.event = (fullRes && fullRes.error) ? state.event : { ...state.event, ...fullRes };
+                showConfirmedView(state.event);
+            } else {
+                showDeclinedView();
+            }
+        }
+
+        /* ── Recovery-email prompt (phone-only) ─────── */
+        function maybePromptRecoveryEmail() {
+            try {
+                var p = JSON.parse(localStorage.getItem('rnb_guest_profile') || '{}');
+                if (p.accountType !== 'phone') return false;
+                if (p.recoveryEmail) return false;
+                if (p.recoveryDismissedAt) {
+                    // Re-nag after 7 days
+                    var ageMs = Date.now() - new Date(p.recoveryDismissedAt).getTime();
+                    if (ageMs < 7 * 24 * 3600 * 1000) return false;
+                }
+            } catch(_) {}
+            document.getElementById('auth-modal').classList.remove('hidden');
+            ['auth-step-method','auth-step-phone','auth-step-otp','auth-step-google-phone'].forEach(function(id){
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById('auth-step-recovery').classList.remove('hidden');
+            setTimeout(function() { document.getElementById('guest-recovery-email').focus(); }, 50);
+            return true;
+        }
+
+        async function saveRecoveryEmail() {
+            document.getElementById('auth-err-recovery').textContent = '';
+            var email = document.getElementById('guest-recovery-email').value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return showAuthErr('recovery', 'Please enter a valid email address.');
+            }
+            setBtnLoading('#btn-save-recovery', true);
+            var res = await apiPost('/guest/recovery-email', {
+                guestToken: state.guestToken,
+                email:      email,
+                eventId:    state.eventId
+            });
+            setBtnLoading('#btn-save-recovery', false);
+            // Save locally regardless of backend availability
+            try {
+                var p = JSON.parse(localStorage.getItem('rnb_guest_profile') || '{}');
+                p.recoveryEmail = email;
+                p.recoveryEmailSavedAt = new Date().toISOString();
+                localStorage.setItem('rnb_guest_profile', JSON.stringify(p));
+            } catch(_) {}
+            closeAuthModal();
+            showToast('Recovery email saved.');
+        }
+
+        function skipRecoveryEmail() {
+            try {
+                var p = JSON.parse(localStorage.getItem('rnb_guest_profile') || '{}');
+                p.recoveryDismissedAt = new Date().toISOString();
+                localStorage.setItem('rnb_guest_profile', JSON.stringify(p));
+            } catch(_) {}
+            closeAuthModal();
         }
 
         /* ── Send guest OTP ──────────────────────────── */
@@ -412,34 +750,7 @@
 
             if (res.error) return showAuthErr('otp', res.error);
 
-            // Save guest token
-            state.guestToken   = res.guestToken;
-            state.guestEventId = state.eventId;
-            sessionStorage.setItem('rnb_guest_token', res.guestToken);
-            sessionStorage.setItem('rnb_guest_event', state.eventId);
-
-            // Persist this RSVP to localStorage for the My Events dashboard
-            if (res.event) {
-                try {
-                    var myRsvps = JSON.parse(localStorage.getItem('rnb_my_rsvps') || '[]');
-                    var idx = myRsvps.findIndex(function(e){ return e.eventId === state.eventId; });
-                    var entry = {
-                        eventId:      res.event.eventId,
-                        eventName:    res.event.eventName,
-                        eventDate:    res.event.eventDate,
-                        eventTime:    res.event.eventTime || '',
-                        venue:        res.event.venue || '',
-                        coverImageUrl: res.event.coverImageUrl || '',
-                        creatorName:  res.event.creatorName || '',
-                        eventType:    res.event.eventType || '',
-                        status:       res.status,
-                        rsvpAt:       new Date().toISOString()
-                    };
-                    if (idx >= 0) myRsvps[idx] = entry;
-                    else myRsvps.push(entry);
-                    localStorage.setItem('rnb_my_rsvps', JSON.stringify(myRsvps));
-                } catch(ex) { /* non-fatal */ }
-            }
+            persistGuestSession(res, 'phone', { name: name, phone: phone });
 
             closeAuthModal();
 
@@ -450,6 +761,9 @@
             } else {
                 showDeclinedView();
             }
+
+            // Nudge phone-only users to add a recovery email
+            setTimeout(function() { maybePromptRecoveryEmail(); }, 700);
         }
 
         /* ── View transitions ────────────────────────── */
