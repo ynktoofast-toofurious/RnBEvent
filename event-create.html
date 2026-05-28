@@ -448,6 +448,60 @@
                     </div>
 
                 </div><!-- /ev-editor__body -->
+
+                <!-- Party Features: Montage & Collage -->
+                <div class="ev-party-features" id="ev-party-features">
+                    <div class="ev-pf__header">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <span>Party Features</span>
+                        <span class="ev-pf__sub">Add interactive experiences for your guests</span>
+                    </div>
+                    <div class="ev-pf__cards">
+
+                        <!-- MONTAGE -->
+                        <div class="ev-pf__card" id="pf-montage-card">
+                            <div class="ev-pf__card-top">
+                                <div class="ev-pf__card-icon">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.26a1 1 0 0 1-1.447.894L15 14"/><rect x="2" y="7" width="13" height="10" rx="2"/></svg>
+                                </div>
+                                <div class="ev-pf__card-info">
+                                    <strong>Montage</strong>
+                                    <p>Guests record live video clips &mdash; every angle, every moment. A real-time video wall from every point of view.</p>
+                                </div>
+                                <label class="ev-pf__toggle" title="Enable Montage">
+                                    <input type="checkbox" id="pf-montage-toggle" onchange="togglePartyFeature('montage', this.checked)">
+                                    <span class="ev-pf__toggle-track"></span>
+                                </label>
+                            </div>
+                            <div class="ev-pf__retention-notice">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                Video clips are automatically deleted <strong>3 days after the event</strong>. Download before then.
+                            </div>
+                        </div>
+
+                        <!-- COLLAGE -->
+                        <div class="ev-pf__card" id="pf-collage-card">
+                            <div class="ev-pf__card-top">
+                                <div class="ev-pf__card-icon">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+                                </div>
+                                <div class="ev-pf__card-info">
+                                    <strong>Collage</strong>
+                                    <p>A shared photo &amp; video drop box. Guests upload their favorite moments and the host collects everything in one place.</p>
+                                </div>
+                                <label class="ev-pf__toggle" title="Enable Collage">
+                                    <input type="checkbox" id="pf-collage-toggle" onchange="togglePartyFeature('collage', this.checked)">
+                                    <span class="ev-pf__toggle-track"></span>
+                                </label>
+                            </div>
+                            <div class="ev-pf__retention-notice">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                Photos &amp; videos are automatically deleted <strong>3 days after the event</strong>. Download before then.
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div><!-- /ev-editor__main -->
 
         </div><!-- /ev-editor__content-row -->
@@ -547,60 +601,6 @@
                     <span class="gp-count" id="gp-grid-count">0 guests</span>
                     <button class="ev-btn ev-btn--primary" id="btn-add-guests" onclick="gpSaveGrid()">Send invites</button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Party Features: Montage & Collage -->
-        <div class="ev-party-features" id="ev-party-features">
-            <div class="ev-pf__header">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                <span>Party Features</span>
-                <span class="ev-pf__sub">Add interactive experiences for your guests</span>
-            </div>
-            <div class="ev-pf__cards">
-
-                <!-- MONTAGE -->
-                <div class="ev-pf__card" id="pf-montage-card">
-                    <div class="ev-pf__card-top">
-                        <div class="ev-pf__card-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.26a1 1 0 0 1-1.447.894L15 14"/><rect x="2" y="7" width="13" height="10" rx="2"/></svg>
-                        </div>
-                        <div class="ev-pf__card-info">
-                            <strong>Montage</strong>
-                            <p>Guests record live video clips &mdash; every angle, every moment. A real-time video wall from every point of view.</p>
-                        </div>
-                        <label class="ev-pf__toggle" title="Enable Montage">
-                            <input type="checkbox" id="pf-montage-toggle" onchange="togglePartyFeature('montage', this.checked)">
-                            <span class="ev-pf__toggle-track"></span>
-                        </label>
-                    </div>
-                    <div class="ev-pf__retention-notice">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Video clips are automatically deleted <strong>3 days after the event</strong>. Download before then.
-                    </div>
-                </div>
-
-                <!-- COLLAGE -->
-                <div class="ev-pf__card" id="pf-collage-card">
-                    <div class="ev-pf__card-top">
-                        <div class="ev-pf__card-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
-                        </div>
-                        <div class="ev-pf__card-info">
-                            <strong>Collage</strong>
-                            <p>A shared photo &amp; video drop box. Guests upload their favorite moments and the host collects everything in one place.</p>
-                        </div>
-                        <label class="ev-pf__toggle" title="Enable Collage">
-                            <input type="checkbox" id="pf-collage-toggle" onchange="togglePartyFeature('collage', this.checked)">
-                            <span class="ev-pf__toggle-track"></span>
-                        </label>
-                    </div>
-                    <div class="ev-pf__retention-notice">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Photos &amp; videos are automatically deleted <strong>3 days after the event</strong>. Download before then.
-                    </div>
-                </div>
-
             </div>
         </div>
 
@@ -1746,12 +1746,25 @@
 
             document.getElementById('inv-preview-frame').innerHTML = html;
             document.getElementById('inv-preview-overlay').classList.remove('hidden');
+            // Re-apply current scale if not default
+            if (typeof invPreviewScale !== 'undefined' && invPreviewScale !== 100) {
+                var scaledCard = document.querySelector('#inv-preview-frame .inv-card');
+                if (scaledCard) { scaledCard.style.transform = 'scale(' + (invPreviewScale/100) + ')'; scaledCard.style.transformOrigin = 'top center'; }
+            }
         }
 
         function closeInvPreview() {
             document.getElementById('inv-preview-overlay').classList.add('hidden');
             invFreeLayout = false;
             document.getElementById('inv-preview-dialog').classList.remove('free-layout');
+            var hint = document.getElementById('inv-free-hint');
+            if (hint) hint.style.display = 'none';
+            // Reset scale slider to 100%
+            invPreviewScale = 100;
+            var slider = document.getElementById('inv-scale-slider');
+            if (slider) slider.value = 100;
+            var lbl = document.getElementById('inv-scale-label');
+            if (lbl) lbl.textContent = '100%';
         }
 
         /* -- Party features (Montage / Collage) -------- */
@@ -1762,9 +1775,18 @@
             if (card) card.classList.toggle('is-active', on);
         }
 
-        /* -- Preview: free-layout drag mode ------------ */
+        /* -- Preview: free-layout drag mode + scale ----- */
         var invFreeLayout = false;
-        var invDragEl = null, invDragStartX = 0, invDragStartY = 0, invDragOX = 0, invDragOY = 0;
+        var invDragEl = null, invDragContainer = null, invDragOX = 0, invDragOY = 0;
+        var invPreviewScale = 100;
+
+        function setInvScale(val) {
+            invPreviewScale = +val;
+            var card = document.querySelector('#inv-preview-frame .inv-card');
+            if (card) { card.style.transform = 'scale(' + (val/100) + ')'; card.style.transformOrigin = 'top center'; }
+            var lbl = document.getElementById('inv-scale-label');
+            if (lbl) lbl.textContent = val + '%';
+        }
 
         function toggleFreeLayout() {
             invFreeLayout = !invFreeLayout;
@@ -1775,12 +1797,12 @@
             if (btn) btn.textContent = invFreeLayout ? 'Lock Layout' : 'Free Layout';
             if (hint) hint.style.display = invFreeLayout ? 'block' : 'none';
             if (!invFreeLayout) {
-                // Remove inline positions so sections return to flow
                 document.querySelectorAll('.inv-draggable').forEach(function(el) {
                     el.style.position = '';
                     el.style.left = '';
                     el.style.top = '';
                     el.style.zIndex = '';
+                    el.style.width = '';
                 });
             }
         }
@@ -1792,26 +1814,28 @@
             invDragEl = handle.closest('.inv-draggable');
             if (!invDragEl) return;
             e.preventDefault();
+            // Use .inv-card as the absolute positioning container (it has position:relative)
+            invDragContainer = invDragEl.closest('.inv-card') || invDragEl.parentElement;
+            var scale = (invPreviewScale || 100) / 100;
             var rect = invDragEl.getBoundingClientRect();
-            var frame = document.getElementById('inv-preview-frame');
-            var frameRect = frame.getBoundingClientRect();
-            // Switch to absolute positioning relative to frame
+            var cRect = invDragContainer.getBoundingClientRect();
             invDragEl.style.position = 'absolute';
-            invDragEl.style.left = (rect.left - frameRect.left) + 'px';
-            invDragEl.style.top  = (rect.top  - frameRect.top)  + 'px';
+            invDragEl.style.width = (rect.width / scale) + 'px';
+            invDragEl.style.left = ((rect.left - cRect.left) / scale) + 'px';
+            invDragEl.style.top  = ((rect.top  - cRect.top)  / scale) + 'px';
             invDragEl.style.zIndex = '10';
-            invDragOX = e.clientX - rect.left + frameRect.left;
-            invDragOY = e.clientY - rect.top  + frameRect.top;
+            // Offset from mouse pointer to element top-left (in visual/screen px)
+            invDragOX = e.clientX - rect.left;
+            invDragOY = e.clientY - rect.top;
         });
         document.addEventListener('mousemove', function(e) {
-            if (!invDragEl) return;
-            var frame = document.getElementById('inv-preview-frame');
-            if (!frame) return;
-            var frameRect = frame.getBoundingClientRect();
-            invDragEl.style.left = (e.clientX - frameRect.left - invDragOX) + 'px';
-            invDragEl.style.top  = (e.clientY - frameRect.top  - invDragOY) + 'px';
+            if (!invDragEl || !invDragContainer) return;
+            var scale = (invPreviewScale || 100) / 100;
+            var cRect = invDragContainer.getBoundingClientRect();
+            invDragEl.style.left = ((e.clientX - cRect.left - invDragOX) / scale) + 'px';
+            invDragEl.style.top  = ((e.clientY - cRect.top  - invDragOY) / scale) + 'px';
         });
-        document.addEventListener('mouseup', function() { invDragEl = null; });
+        document.addEventListener('mouseup', function() { invDragEl = null; invDragContainer = null; });
 
 
         // Close on Escape key
@@ -2739,6 +2763,11 @@
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     Guest View Preview
                 </span>
+                <label class="inv-preview-scale" title="Resize preview card">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                    <input type="range" id="inv-scale-slider" min="50" max="130" value="100" step="5" oninput="setInvScale(this.value)">
+                    <span id="inv-scale-label">100%</span>
+                </label>
                 <div class="inv-preview-topbar-right">
                     <button id="inv-free-btn" class="inv-preview-free-btn" onclick="toggleFreeLayout()" title="Drag sections to any position">Free Layout</button>
                     <button class="inv-preview-close" onclick="closeInvPreview()" aria-label="Close preview">

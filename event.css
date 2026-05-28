@@ -3664,15 +3664,44 @@ button.ev-fi-btn .ev-fi-svg svg { width: 18px; height: 18px; }
    INVITATION PREVIEW — Free-Layout Drag Mode
    ================================================================ */
 /* Topbar additions */
-.inv-preview-topbar {
-    display: flex; align-items: center; gap: 8px;
+.inv-preview-topbar { gap: 8px; justify-content: flex-start; } /* extend original rule */
+.inv-preview-badge { display: flex; align-items: center; gap: 5px; }
+.inv-preview-topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+/* Scale slider */
+.inv-preview-scale {
+    display: flex; align-items: center; gap: 6px;
+    color: rgba(255,255,255,0.45);
+    flex-shrink: 0;
+    cursor: default;
+    padding: 0 4px;
 }
-.inv-preview-badge {
-    display: flex; align-items: center; gap: 5px;
+.inv-preview-scale svg { flex-shrink: 0; }
+.inv-preview-scale input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 72px; height: 3px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.15);
+    cursor: pointer; outline: none;
+    padding: 0;
 }
-.inv-preview-topbar-right {
-    display: flex; align-items: center; gap: 8px;
-    margin-left: auto;
+.inv-preview-scale input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: var(--accent-color, #b89a5e);
+    cursor: pointer;
+}
+.inv-preview-scale input[type="range"]::-moz-range-thumb {
+    width: 13px; height: 13px;
+    border-radius: 50%; border: none;
+    background: var(--accent-color, #b89a5e);
+    cursor: pointer;
+}
+.inv-preview-scale span {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 9px; letter-spacing: 0.5px;
+    min-width: 28px; text-align: right;
+    color: rgba(255,255,255,0.5);
 }
 .inv-preview-free-btn {
     background: rgba(255,255,255,0.08);
