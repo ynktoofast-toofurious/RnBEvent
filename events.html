@@ -1410,9 +1410,8 @@
                 var badge = ev.status === 'draft'
                     ? '<div class="dash-card__badge dash-card__badge--draft">DRAFT</div>'
                     : '<div class="dash-card__badge dash-card__badge--published">🎉 LIVE</div>';
-                var href = ev.status === 'draft'
-                    ? 'event-create.html?draft=' + encodeURIComponent(ev.eventId)
-                    : 'event.html?id=' + encodeURIComponent(ev.eventId);
+                // Host's own dashboard: card always opens the editor. Preview goes through the 3-dot menu.
+                var href = 'event-create.html?draft=' + encodeURIComponent(ev.eventId);
                 html += '<a class="dash-card" href="' + href + '" data-id="' + ev.eventId + '">'
                     + cover
                     + '<div class="dash-card__shade"></div>'
