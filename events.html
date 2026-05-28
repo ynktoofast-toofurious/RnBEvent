@@ -638,6 +638,11 @@
             border-color:rgba(184,154,94,0.45);
         }
         .dash-card__cover { position:absolute; inset:0; background-size:cover; background-position:center; background-color:#1f2a1f; }
+        .dash-card__cover,
+        .dash-card__shade,
+        .dash-card__date,
+        .dash-card__badge,
+        .dash-card__title { pointer-events:none; }
         .dash-card__cover--placeholder {
             background:linear-gradient(135deg, #2c3e2c 0%, #1a2a1a 50%, #3d2e1a 100%);
             display:flex; align-items:center; justify-content:center;
@@ -647,13 +652,24 @@
         .dash-card__date { position:absolute; top:12px; left:12px; padding:5px 11px; border-radius:999px; background:rgba(255,255,255,0.92); color:#1a1a1a; font-size:11.5px; font-weight:600; }
         .dash-card__menu {
             position:absolute; top:10px; right:10px;
-            width:30px; height:30px; border-radius:50%;
+            width:34px; height:34px; border-radius:50%;
             background:rgba(0,0,0,0.55); color:#fff; backdrop-filter:blur(6px);
             display:flex; align-items:center; justify-content:center;
             cursor:pointer; border:none; padding:0;
+            z-index:6;
             opacity:1; transition:background 0.15s;
         }
         .dash-card__menu:hover { background:rgba(0,0,0,0.75); }
+        .dash-card__menu-hit {
+            position:absolute;
+            top:0;
+            right:0;
+            width:72px;
+            height:72px;
+            z-index:5;
+            background:transparent;
+            cursor:pointer;
+        }
         .dash-card__badge { position:absolute; bottom:54px; left:12px; padding:4px 10px; border-radius:999px; background:#fff; color:#1a1a1a; font-size:10.5px; font-weight:700; letter-spacing:0.4px; display:inline-flex; align-items:center; gap:5px; }
         .dash-card__badge--draft { background:rgba(212,184,118,0.95); color:#1a1a1a; }
         .dash-card__badge--published { background:rgba(119,163,97,0.95); color:#fff; }
@@ -1417,6 +1433,7 @@
                     + cover
                     + '<div class="dash-card__shade"></div>'
                     + (datePill ? '<div class="dash-card__date">' + escapeHtml(datePill) + '</div>' : '')
+                    + '<span class="dash-card__menu-hit" data-menu-hit="' + ev.eventId + '" aria-hidden="true"></span>'
                     + '<button type="button" class="dash-card__menu" data-menu="' + ev.eventId + '" title="More" aria-label="More actions"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18" r="1.7"/></svg></button>'
                     + badge
                     + '<div class="dash-card__title">' + escapeHtml(ev.eventName || 'Untitled event') + '</div>'
@@ -1441,8 +1458,8 @@
                     + '</a>';
             }
             grid.innerHTML = html;
-            // Wire ellipsis menu buttons
-            grid.querySelectorAll('[data-menu]').forEach(function(btn) {
+            // Wire ellipsis menu hit zone + button
+            grid.querySelectorAll('[data-menu], [data-menu-hit]').forEach(function(btn) {
                 // These guards keep the card anchor from navigating when opening menu.
                 ['pointerdown', 'mousedown', 'touchstart'].forEach(function(evtName) {
                     btn.addEventListener(evtName, function(e) {
@@ -1453,7 +1470,7 @@
                 btn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    showCardMenu(btn.dataset.menu, btn);
+                    showCardMenu(btn.dataset.menu || btn.dataset.menuHit, btn);
                 });
             });
         }
