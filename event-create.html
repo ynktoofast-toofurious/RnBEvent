@@ -656,6 +656,8 @@
                 venue: { emoji: String.fromCodePoint(0x1F4CD), style: 'emoji' },
                 desc:  { emoji: String.fromCodePoint(0x1F4DD), style: 'emoji' }
             },
+            // Saved drag offsets from invite preview Free Layout mode: { key: {left,top} }
+            customLayout: {},
             parsedGuests: [],
             // Undo/redo + autosave
             history: [],
@@ -1549,6 +1551,7 @@
                 eventEmoji:   state.eventEmoji,
                 iconStyle:    state.iconStyle,
                 fieldIcons:   state.fieldIcons,
+                customLayout: state.customLayout || {},
                 requireVerify: document.getElementById('ed-rsvp-verify').checked,
                 showGuests:    document.getElementById('ed-rsvp-showguests').checked,
                 playlist:      document.getElementById('ed-rsvp-playlist').checked,
@@ -1702,7 +1705,7 @@
 
             // ---- Build card HTML -------------------------------------------
             var DRAG = '<span class="inv-drag-handle" title="Drag to reposition"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="2"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="9" cy="18" r="2"/><circle cx="15" cy="18" r="2"/></svg></span>';
-            var metaHtml = '<div class="inv-meta inv-draggable">' + DRAG;
+            var metaHtml = '<div class="inv-meta inv-draggable" data-layout-key="meta">' + DRAG;
             if (dateStr || timeStr) {
                 var dtVal = [dateStr, timeStr].filter(Boolean).join(' &mdash; ');
                 metaHtml += '<div class="inv-meta-row">'
@@ -1725,17 +1728,17 @@
             metaHtml += '</div>';
 
             var html = '<div class="inv-card inv-layout-root" data-theme="' + theme + '" data-font="' + font + '">'
-                + (coverSrc ? '<div class="inv-draggable">' + DRAG + '<img class="inv-cover" src="' + coverSrc + '" alt="Event cover"></div>' : '')
+                + (coverSrc ? '<div class="inv-draggable" data-layout-key="cover">' + DRAG + '<img class="inv-cover" src="' + coverSrc + '" alt="Event cover"></div>' : '')
                 + '<div class="inv-body">'
-                + '<div class="inv-draggable">' + DRAG + iconHtml
+                + '<div class="inv-draggable" data-layout-key="title">' + DRAG + iconHtml
                     + (eventType ? '<p class="inv-type">' + eventType + '</p>' : '')
                     + '<h1 class="inv-title">' + eventName + '</h1>'
                     + '<div class="inv-divider"></div>'
                 + '</div>'
                 + metaHtml
-                + (desc ? '<div class="inv-draggable">' + DRAG + '<p class="inv-desc">' + desc.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p></div>' : '')
-                + (addonsHtml ? '<div class="inv-draggable">' + DRAG + addonsHtml + '</div>' : '')
-                + '<div class="inv-draggable">' + DRAG
+                + (desc ? '<div class="inv-draggable" data-layout-key="desc">' + DRAG + '<p class="inv-desc">' + desc.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p></div>' : '')
+                + (addonsHtml ? '<div class="inv-draggable" data-layout-key="addons">' + DRAG + addonsHtml + '</div>' : '')
+                + '<div class="inv-draggable" data-layout-key="rsvp">' + DRAG
                     + '<div class="inv-rsvp-wrap">'
                     + '<div class="inv-rsvp-btn">RSVP Now</div>'
                     + '<p class="inv-rsvp-note">Preview only &mdash; this button is not active</p>'
@@ -1746,6 +1749,7 @@
 
             document.getElementById('inv-preview-frame').innerHTML = html;
             document.getElementById('inv-preview-overlay').classList.remove('hidden');
+            applyCustomLayout();
             // Re-apply current scale if not default
             if (typeof invPreviewScale !== 'undefined' && invPreviewScale !== 100) {
                 var scaledCard = document.querySelector('#inv-preview-frame .inv-card');
@@ -1812,6 +1816,8 @@
                     el.style.zIndex = '';
                     el.style.width = '';
                 });
+                // Re-apply any persisted positions so locking preserves the layout the host designed
+                applyCustomLayout();
             }
         }
 
@@ -1843,7 +1849,33 @@
             invDragEl.style.left = ((e.clientX - cRect.left - invDragOX) / scale) + 'px';
             invDragEl.style.top  = ((e.clientY - cRect.top  - invDragOY) / scale) + 'px';
         });
-        document.addEventListener('mouseup', function() { invDragEl = null; invDragContainer = null; });
+        document.addEventListener('mouseup', function() {
+            if (invDragEl) {
+                var key = invDragEl.getAttribute('data-layout-key');
+                if (key) {
+                    state.customLayout = state.customLayout || {};
+                    state.customLayout[key] = {
+                        left: parseFloat(invDragEl.style.left) || 0,
+                        top:  parseFloat(invDragEl.style.top)  || 0
+                    };
+                    if (typeof scheduleAutosave === 'function') scheduleAutosave();
+                }
+            }
+            invDragEl = null;
+            invDragContainer = null;
+        });
+
+        function applyCustomLayout() {
+            var cl = state.customLayout || {};
+            Object.keys(cl).forEach(function(key) {
+                var el = document.querySelector('#inv-preview-frame .inv-draggable[data-layout-key="' + key + '"]');
+                if (!el) return;
+                var pos = cl[key] || {};
+                el.style.position = 'absolute';
+                el.style.left = (pos.left || 0) + 'px';
+                el.style.top  = (pos.top  || 0) + 'px';
+            });
+        }
 
 
         // Close on Escape key
@@ -2151,6 +2183,17 @@
             if (ev.coverImageUrl) state.coverImageUrl = ev.coverImageUrl;
             if (ev.eventEmoji)    { state.eventEmoji   = ev.eventEmoji; state.fieldIcons.title.emoji = ev.eventEmoji; }
             if (ev.iconStyle)     { state.iconStyle    = ev.iconStyle;  state.fieldIcons.title.style = ev.iconStyle; }
+            if (ev.fieldIcons && typeof ev.fieldIcons === 'object') {
+                Object.keys(ev.fieldIcons).forEach(function(k) {
+                    if (state.fieldIcons[k] && ev.fieldIcons[k]) {
+                        if (ev.fieldIcons[k].emoji) state.fieldIcons[k].emoji = ev.fieldIcons[k].emoji;
+                        if (ev.fieldIcons[k].style) state.fieldIcons[k].style = ev.fieldIcons[k].style;
+                    }
+                });
+            }
+            if (ev.customLayout && typeof ev.customLayout === 'object') {
+                state.customLayout = ev.customLayout;
+            }
             loadFieldIconsLocal();
             applyIconUI();
             // Reset history with this loaded state
