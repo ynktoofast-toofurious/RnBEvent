@@ -407,15 +407,95 @@
                 <h3>Invite Guests</h3>
                 <button onclick="toggleGuestPanel()">✕</button>
             </div>
-            <textarea id="ed-bulk-guests" class="ev-bulk-area"
-                placeholder="One guest per line:&#10;  5551234567&#10;  Jane Smith | 5551234567&#10;  Jane Smith | 5551234567 | jane@email.com"></textarea>
-            <p class="ev-bulk-hint">Include email to send personal invitations.</p>
-            <div id="ed-guest-preview-pills" class="ev-guest-pills" style="margin-top:8px"></div>
-            <p id="ed-err-guests" class="ev-error"></p>
-            <p id="ed-success-guests" class="ev-success"></p>
-            <div style="display:flex;gap:8px;margin-top:auto">
-                <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="parseGuestPreview()">Preview</button>
-                <button class="ev-btn ev-btn--primary" id="btn-add-guests" onclick="saveGuestsFromPanel()">Add Guests</button>
+
+            <!-- Mode tabs -->
+            <div class="gp-tabs">
+                <button type="button" class="gp-tab is-active" data-mode="single" onclick="gpSwitchMode('single')">Add one</button>
+                <button type="button" class="gp-tab" data-mode="bulk" onclick="gpSwitchMode('bulk')">Paste / Import</button>
+            </div>
+
+            <!-- SINGLE-GUEST MODE -->
+            <div class="gp-mode" id="gp-mode-single">
+                <div class="gp-row gp-row--2">
+                    <div class="gp-field">
+                        <label class="gp-label">First name</label>
+                        <input id="gp-first" class="gp-input" type="text" placeholder="Jane" autocomplete="given-name">
+                    </div>
+                    <div class="gp-field">
+                        <label class="gp-label">Last name</label>
+                        <input id="gp-last" class="gp-input" type="text" placeholder="Smith" autocomplete="family-name">
+                    </div>
+                </div>
+                <div class="gp-field">
+                    <label class="gp-label">Phone number</label>
+                    <input id="gp-phone" class="gp-input" type="tel" placeholder="(555) 123-4567" autocomplete="tel">
+                </div>
+                <div class="gp-field">
+                    <label class="gp-label">Email <span class="gp-optional">(optional)</span></label>
+                    <div class="gp-email">
+                        <input id="gp-email-local" class="gp-input gp-email__local" type="text" placeholder="jane.smith" autocomplete="off">
+                        <div class="gp-email__domain-wrap">
+                            <select id="gp-email-domain" class="gp-email__domain" onchange="gpDomainChange()">
+                                <option value="@gmail.com">@gmail.com</option>
+                                <option value="@hotmail.com">@hotmail.com</option>
+                                <option value="@outlook.com">@outlook.com</option>
+                                <option value="@yahoo.com">@yahoo.com</option>
+                                <option value="@icloud.com">@icloud.com</option>
+                                <option value="@aol.com">@aol.com</option>
+                                <option value="@proton.me">@proton.me</option>
+                                <option value="__custom__">Custom…</option>
+                            </select>
+                            <input id="gp-email-custom" class="gp-input gp-email__custom hidden" type="text" placeholder="@yourdomain.com">
+                        </div>
+                    </div>
+                </div>
+                <div id="gp-single-pills" class="ev-guest-pills" style="margin-top:8px"></div>
+                <p id="ed-err-guests-single" class="ev-error"></p>
+                <p id="ed-success-guests-single" class="ev-success"></p>
+                <div style="display:flex;gap:8px;margin-top:auto">
+                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="gpAddToQueue()">+ Add another</button>
+                    <button class="ev-btn ev-btn--primary" id="btn-add-guests-single" onclick="gpSaveSingle()">Send invites</button>
+                </div>
+            </div>
+
+            <!-- BULK / EXCEL-PASTE MODE -->
+            <div class="gp-mode hidden" id="gp-mode-bulk">
+                <p class="gp-hint">
+                    Paste from Excel/Google Sheets or upload a CSV. Columns can be in any order \u2014 we\u2019ll detect them automatically.<br>
+                    <span class="gp-hint__cols">Expected: <strong>First name</strong>, <strong>Last name</strong>, <strong>Phone</strong>, <strong>Email</strong></span>
+                </p>
+                <div class="gp-grid-toolbar">
+                    <button type="button" class="ev-btn ev-btn--outline ev-btn--sm" onclick="gpAddGridRow()">+ Add row</button>
+                    <label class="ev-btn ev-btn--outline ev-btn--sm" style="cursor:pointer;margin:0">
+                        Import CSV
+                        <input type="file" id="gp-csv-input" accept=".csv,text/csv" onchange="gpImportCsv(event)" style="display:none">
+                    </label>
+                    <button type="button" class="ev-btn ev-btn--outline ev-btn--sm" onclick="gpClearGrid()">Clear</button>
+                </div>
+                <div class="gp-grid-wrap" id="gp-grid-wrap">
+                    <table class="gp-grid" id="gp-grid">
+                        <thead>
+                            <tr>
+                                <th style="width:24px"></th>
+                                <th>First name</th>
+                                <th>Last name</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th style="width:32px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="gp-grid-body"></tbody>
+                    </table>
+                </div>
+                <p class="gp-hint" style="margin-top:8px">
+                    <em>Tip:</em> click any cell and press <kbd>Ctrl/Cmd</kbd>+<kbd>V</kbd> to paste a spreadsheet block.
+                </p>
+                <p id="ed-err-guests" class="ev-error"></p>
+                <p id="ed-success-guests" class="ev-success"></p>
+                <div style="display:flex;gap:8px;margin-top:auto">
+                    <span class="gp-count" id="gp-grid-count">0 guests</span>
+                    <button class="ev-btn ev-btn--primary" id="btn-add-guests" onclick="gpSaveGrid()">Send invites</button>
+                </div>
             </div>
         </div>
 
@@ -686,6 +766,88 @@
             document.querySelectorAll('.ev-font-pill[data-effect]').forEach(function(btn) {
                 btn.classList.toggle('ev-font-pill--active', btn.dataset.effect === name);
             });
+            // Persist & trigger a live preview burst over the editor
+            if (name && name !== 'none') {
+                triggerEffectBurst(name);
+            }
+        }
+
+        /* ── Confetti / Petals canvas burst ─────────── */
+        var _effectCanvas = null, _effectCtx = null, _effectParticles = [], _effectRaf = 0, _effectStop = 0;
+        function _ensureEffectCanvas() {
+            if (_effectCanvas) return _effectCanvas;
+            var c = document.createElement('canvas');
+            c.id = 'ev-effect-canvas';
+            c.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9800;';
+            document.body.appendChild(c);
+            _effectCanvas = c;
+            _effectCtx = c.getContext('2d');
+            function resize() {
+                c.width = window.innerWidth * devicePixelRatio;
+                c.height = window.innerHeight * devicePixelRatio;
+                _effectCtx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+            }
+            resize();
+            window.addEventListener('resize', resize);
+            return c;
+        }
+        function triggerEffectBurst(kind) {
+            _ensureEffectCanvas();
+            var W = window.innerWidth, H = window.innerHeight;
+            var palette = kind === 'petals'
+                ? ['#f9c5d1', '#f6a4b8', '#fcd9d6', '#ffd0e0', '#e69bb1']
+                : ['#d4b876', '#b89a5e', '#f3ede0', '#77a361', '#c0414f', '#7aa3e0'];
+            var count = kind === 'petals' ? 60 : 130;
+            for (var i = 0; i < count; i++) {
+                _effectParticles.push({
+                    x: Math.random() * W,
+                    y: -20 - Math.random() * H * 0.4,
+                    vx: (Math.random() - 0.5) * 1.2,
+                    vy: 1 + Math.random() * 2.2,
+                    rot: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.18,
+                    size: kind === 'petals' ? 8 + Math.random() * 10 : 5 + Math.random() * 6,
+                    color: palette[Math.floor(Math.random() * palette.length)],
+                    kind: kind,
+                    sway: Math.random() * 1.6,
+                    life: 0
+                });
+            }
+            _effectStop = performance.now() + 5500;
+            if (!_effectRaf) _effectRaf = requestAnimationFrame(_effectStep);
+        }
+        function _effectStep(t) {
+            var ctx = _effectCtx, H = window.innerHeight;
+            ctx.clearRect(0, 0, _effectCanvas.width, _effectCanvas.height);
+            _effectParticles = _effectParticles.filter(function(p) {
+                p.life += 1;
+                p.vy += 0.012;
+                p.x += p.vx + Math.sin((p.life + p.sway*40) * 0.04) * (p.kind === 'petals' ? 0.9 : 0.4);
+                p.y += p.vy;
+                p.rot += p.rotSpeed;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = 0.95;
+                if (p.kind === 'petals') {
+                    // teardrop petal
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, p.size * 0.55, p.size, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // small rectangle confetti
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size * 0.6);
+                }
+                ctx.restore();
+                return p.y < H + 40;
+            });
+            if (_effectParticles.length || t < _effectStop) {
+                _effectRaf = requestAnimationFrame(_effectStep);
+            } else {
+                _effectRaf = 0;
+                ctx.clearRect(0, 0, _effectCanvas.width, _effectCanvas.height);
+            }
         }
 
         /* ── Add-ons / links section ─────────────────── */
@@ -816,50 +978,307 @@
 
         /* ── Guest panel ─────────────────────────────── */
         function toggleGuestPanel() {
-            document.getElementById('ed-guest-panel').classList.toggle('hidden');
+            var panel = document.getElementById('ed-guest-panel');
+            var willOpen = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            if (willOpen) {
+                gpEnsureGridRow();
+                gpLoadRuthieIntake();
+                gpUpdateCount();
+            }
         }
 
-        function parseGuestPreview() {
-            var raw = document.getElementById('ed-bulk-guests').value.trim();
-            if (!raw) return;
-            var guests = raw.split('\n').map(function(l) { return l.trim(); }).filter(Boolean).map(parseGuestLine).filter(function(g) { return g.phone; });
-            state.parsedGuests = guests;
-            renderPills(guests, 'ed-guest-preview-pills');
-            document.getElementById('ed-err-guests').textContent = guests.length ? '' : 'No valid phone numbers found.';
+        // Pull a guest list collected via Ruthie.ai into the bulk grid
+        function gpLoadRuthieIntake() {
+            try {
+                var raw = localStorage.getItem('rnb_guest_intake');
+                if (!raw) return;
+                var list = JSON.parse(raw);
+                if (!Array.isArray(list) || !list.length) return;
+                gpSwitchMode('bulk');
+                // Clear placeholder empty row
+                var body = document.getElementById('gp-grid-body');
+                Array.prototype.forEach.call(body.querySelectorAll('tr'), function(tr){
+                    var allEmpty = Array.prototype.every.call(tr.querySelectorAll('input'), function(i){ return !i.value; });
+                    if (allEmpty) tr.remove();
+                });
+                list.forEach(function(g) {
+                    var parts = (g.name || '').split(/\s+/);
+                    gpAddGridRow({
+                        first: parts[0] || '',
+                        last:  parts.slice(1).join(' '),
+                        phone: g.phone || '',
+                        email: g.email || ''
+                    });
+                });
+                localStorage.removeItem('rnb_guest_intake');
+            } catch(_) {}
         }
 
-        async function saveGuestsFromPanel() {
+        function gpSwitchMode(mode) {
+            document.querySelectorAll('#ed-guest-panel .gp-tab').forEach(function(b) {
+                b.classList.toggle('is-active', b.dataset.mode === mode);
+            });
+            document.getElementById('gp-mode-single').classList.toggle('hidden', mode !== 'single');
+            document.getElementById('gp-mode-bulk').classList.toggle('hidden', mode !== 'bulk');
+            if (mode === 'bulk') { gpEnsureGridRow(); gpUpdateCount(); }
+        }
+
+        function gpDomainChange() {
+            var sel = document.getElementById('gp-email-domain');
+            var custom = document.getElementById('gp-email-custom');
+            if (sel.value === '__custom__') { custom.classList.remove('hidden'); custom.focus(); }
+            else { custom.classList.add('hidden'); custom.value = ''; }
+        }
+
+        function gpReadSingleEmail() {
+            var local = (document.getElementById('gp-email-local').value || '').trim();
+            if (!local) return '';
+            var domainSel = document.getElementById('gp-email-domain').value;
+            var domain = domainSel === '__custom__'
+                ? (document.getElementById('gp-email-custom').value || '').trim()
+                : domainSel;
+            if (!domain) return '';
+            if (domain[0] !== '@') domain = '@' + domain;
+            return local + domain;
+        }
+
+        function _normalizePhone(p) {
+            if (!p) return '';
+            var d = String(p).replace(/[^\d+]/g, '');
+            return d;
+        }
+
+        var _gpQueue = []; // queued single-mode guests not yet sent
+        function gpAddToQueue() {
+            var first = (document.getElementById('gp-first').value || '').trim();
+            var last  = (document.getElementById('gp-last').value || '').trim();
+            var phone = _normalizePhone(document.getElementById('gp-phone').value);
+            var email = gpReadSingleEmail();
+            if (!phone) { showErr('ed-err-guests-single', 'Phone is required.'); return; }
+            clearErr('ed-err-guests-single');
+            var name = (first + ' ' + last).trim() || 'Guest';
+            _gpQueue.push({ name: name, phone: phone, email: email || null });
+            renderPills(_gpQueue, 'gp-single-pills');
+            // Clear the form for next entry
+            ['gp-first','gp-last','gp-phone','gp-email-local','gp-email-custom'].forEach(function(id){ document.getElementById(id).value = ''; });
+            document.getElementById('gp-email-domain').value = '@gmail.com';
+            document.getElementById('gp-email-custom').classList.add('hidden');
+            document.getElementById('gp-first').focus();
+        }
+
+        async function gpSaveSingle() {
+            // Capture current form input if not yet queued
+            var first = (document.getElementById('gp-first').value || '').trim();
+            var last  = (document.getElementById('gp-last').value || '').trim();
+            var phone = _normalizePhone(document.getElementById('gp-phone').value);
+            var email = gpReadSingleEmail();
+            if (phone) {
+                var name = (first + ' ' + last).trim() || 'Guest';
+                _gpQueue.push({ name: name, phone: phone, email: email || null });
+            }
+            if (!_gpQueue.length) { showErr('ed-err-guests-single', 'Add at least one guest.'); return; }
+            await _gpSendGuests(_gpQueue, 'single');
+            _gpQueue = [];
+            renderPills([], 'gp-single-pills');
+        }
+
+        /* ── Bulk / Excel-paste grid ───────────────── */
+        function gpAddGridRow(data) {
+            var body = document.getElementById('gp-grid-body');
+            var tr = document.createElement('tr');
+            var rowNum = body.children.length + 1;
+            tr.innerHTML =
+                '<td class="gp-grid__rownum">' + rowNum + '</td>'
+              + '<td><input type="text" data-col="first" placeholder="First" autocomplete="off"></td>'
+              + '<td><input type="text" data-col="last"  placeholder="Last"  autocomplete="off"></td>'
+              + '<td><input type="tel"  data-col="phone" placeholder="Phone" autocomplete="off"></td>'
+              + '<td><input type="email" data-col="email" placeholder="Email" autocomplete="off"></td>'
+              + '<td><button type="button" class="gp-grid__del" onclick="gpDeleteRow(this)" title="Remove">✕</button></td>';
+            body.appendChild(tr);
+            // Wire paste + change
+            tr.querySelectorAll('input').forEach(function(inp) {
+                inp.addEventListener('paste', gpHandlePaste);
+                inp.addEventListener('input', gpUpdateCount);
+                inp.addEventListener('keydown', gpHandleKeydown);
+            });
+            if (data) {
+                tr.querySelector('[data-col="first"]').value = data.first || '';
+                tr.querySelector('[data-col="last"]').value  = data.last  || '';
+                tr.querySelector('[data-col="phone"]').value = data.phone || '';
+                tr.querySelector('[data-col="email"]').value = data.email || '';
+            }
+            gpUpdateCount();
+            return tr;
+        }
+        function gpEnsureGridRow() {
+            var body = document.getElementById('gp-grid-body');
+            if (!body.children.length) gpAddGridRow();
+        }
+        function gpDeleteRow(btn) {
+            var tr = btn.closest('tr');
+            tr.remove();
+            // Renumber
+            var body = document.getElementById('gp-grid-body');
+            Array.prototype.forEach.call(body.children, function(row, i) {
+                row.querySelector('.gp-grid__rownum').textContent = i + 1;
+            });
+            gpEnsureGridRow();
+            gpUpdateCount();
+        }
+        function gpClearGrid() {
+            document.getElementById('gp-grid-body').innerHTML = '';
+            gpAddGridRow();
+            gpUpdateCount();
+        }
+        function gpHandleKeydown(e) {
+            // Tab on last cell of last row creates a new row
+            if (e.key === 'Tab' && !e.shiftKey) {
+                var tr = e.target.closest('tr');
+                var tbody = tr.parentNode;
+                var isLast = tr === tbody.lastElementChild;
+                var inputs = tr.querySelectorAll('input');
+                if (isLast && e.target === inputs[inputs.length - 1]) {
+                    e.preventDefault();
+                    var next = gpAddGridRow();
+                    next.querySelector('input').focus();
+                }
+            }
+        }
+        function gpHandlePaste(e) {
+            var text = (e.clipboardData || window.clipboardData).getData('text');
+            if (!text) return;
+            // Detect spreadsheet paste — multiple rows OR tab-separated cells
+            var hasRows = /\r?\n/.test(text.trim());
+            var hasTabs = /\t/.test(text);
+            if (!hasRows && !hasTabs) return; // single-cell paste, let it happen
+            e.preventDefault();
+            gpIngestText(text, e.target);
+        }
+        function gpIngestText(text, startInput) {
+            var lines = text.replace(/\r\n/g, '\n').split('\n').filter(function(l){ return l.trim(); });
+            if (!lines.length) return;
+            // detect delimiter: tab vs comma vs semicolon vs pipe
+            var first = lines[0];
+            var delim = first.indexOf('\t') !== -1 ? '\t'
+                      : first.indexOf(';')  !== -1 ? ';'
+                      : first.indexOf(',')  !== -1 ? ','
+                      : first.indexOf('|')  !== -1 ? '|'
+                      : '\t';
+            var rows = lines.map(function(l) { return l.split(delim).map(function(c){ return c.trim(); }); });
+            // header detection
+            var headerMap = null;
+            var firstRow = rows[0].map(function(c){ return c.toLowerCase(); });
+            var looksLikeHeader = firstRow.some(function(c) {
+                return /first|last|name|phone|mobile|cell|email|e[-_ ]?mail/.test(c);
+            });
+            if (looksLikeHeader) {
+                headerMap = {};
+                firstRow.forEach(function(h, i) {
+                    if (/first/.test(h))                        headerMap.first = i;
+                    else if (/last|surname|family/.test(h))     headerMap.last  = i;
+                    else if (/^name$|full.*name|guest/.test(h)) headerMap.name  = i;
+                    else if (/phone|mobile|cell|tel/.test(h))   headerMap.phone = i;
+                    else if (/email|e[-_ ]?mail/.test(h))       headerMap.email = i;
+                });
+                rows = rows.slice(1);
+            }
+            var added = 0;
+            rows.forEach(function(cells) {
+                var rowData = { first:'', last:'', phone:'', email:'' };
+                if (headerMap) {
+                    if (headerMap.first  != null) rowData.first = cells[headerMap.first]  || '';
+                    if (headerMap.last   != null) rowData.last  = cells[headerMap.last]   || '';
+                    if (headerMap.phone  != null) rowData.phone = cells[headerMap.phone]  || '';
+                    if (headerMap.email  != null) rowData.email = cells[headerMap.email]  || '';
+                    if (headerMap.name   != null && !rowData.first && !rowData.last) {
+                        var parts = (cells[headerMap.name] || '').split(/\s+/);
+                        rowData.first = parts[0] || '';
+                        rowData.last  = parts.slice(1).join(' ');
+                    }
+                } else {
+                    // Heuristic: detect email and phone by content
+                    cells.forEach(function(c) {
+                        if (!c) return;
+                        if (/@/.test(c) && !rowData.email) rowData.email = c;
+                        else if (/[\d().+\-\s]{7,}/.test(c) && !rowData.phone) rowData.phone = c;
+                        else if (!rowData.first) rowData.first = c;
+                        else if (!rowData.last) rowData.last = c;
+                    });
+                }
+                if (rowData.first || rowData.last || rowData.phone || rowData.email) {
+                    gpAddGridRow(rowData);
+                    added++;
+                }
+            });
+            // Remove the original empty row that triggered the paste
+            if (startInput && added) {
+                var tr = startInput.closest('tr');
+                var inputs = tr.querySelectorAll('input');
+                var allEmpty = Array.prototype.every.call(inputs, function(i){ return !i.value; });
+                if (allEmpty) tr.remove();
+            }
+            gpUpdateCount();
+        }
+        function gpImportCsv(e) {
+            var file = e.target.files && e.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                gpIngestText(String(ev.target.result || ''), null);
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+        function gpReadGrid() {
+            var rows = document.querySelectorAll('#gp-grid-body tr');
+            var out = [];
+            rows.forEach(function(tr) {
+                var first = (tr.querySelector('[data-col="first"]').value || '').trim();
+                var last  = (tr.querySelector('[data-col="last"]').value  || '').trim();
+                var phone = _normalizePhone(tr.querySelector('[data-col="phone"]').value);
+                var email = (tr.querySelector('[data-col="email"]').value || '').trim();
+                if (!phone && !email) return;
+                var name = (first + ' ' + last).trim() || 'Guest';
+                out.push({ name: name, phone: phone, email: email || null, _tr: tr });
+            });
+            return out;
+        }
+        function gpUpdateCount() {
+            var list = gpReadGrid();
+            var el = document.getElementById('gp-grid-count');
+            if (el) el.textContent = list.length + ' guest' + (list.length === 1 ? '' : 's');
+        }
+        async function gpSaveGrid() {
             clearErr('ed-err-guests');
             document.getElementById('ed-success-guests').textContent = '';
-            var raw = document.getElementById('ed-bulk-guests').value.trim();
-            if (!raw) return showErr('ed-err-guests', 'Enter at least one guest.');
-            var guests = raw.split('\n').map(function(l) { return l.trim(); }).filter(Boolean).map(parseGuestLine).filter(function(g) { return g.phone; });
-            if (!guests.length) return showErr('ed-err-guests', 'No valid phone numbers found.');
+            var list = gpReadGrid();
+            if (!list.length) { showErr('ed-err-guests', 'Add at least one row with a phone or email.'); return; }
+            // Validate: each must have phone OR email
+            var invalid = list.filter(function(g){ return !g.phone; });
+            if (invalid.length === list.length) {
+                showErr('ed-err-guests', 'Phone is required for at least one guest.');
+                return;
+            }
+            await _gpSendGuests(list.map(function(g){ return { name:g.name, phone:g.phone, email:g.email }; }), 'bulk');
+        }
 
-            // If no event yet, need to create it first
+        async function _gpSendGuests(guests, mode) {
+            var btnId = mode === 'single' ? 'btn-add-guests-single' : 'btn-add-guests';
+            var errId = mode === 'single' ? 'ed-err-guests-single'   : 'ed-err-guests';
+            var okId  = mode === 'single' ? 'ed-success-guests-single' : 'ed-success-guests';
             if (!state.eventId) {
                 var ok = await doCreateEvent('draft');
                 if (!ok) return;
             }
-
-            setBtnLoading('#btn-add-guests', true, 'Adding…');
-            var res = await apiPost('/events/' + state.eventId + '/guests', { guests, method: 'bulk' }, state.creatorToken);
-            setBtnLoading('#btn-add-guests', false, 'Add Guests');
-
-            if (res.error) return showErr('ed-err-guests', res.error);
-
+            setBtnLoading('#' + btnId, true, 'Sending\u2026');
+            var res = await apiPost('/events/' + state.eventId + '/guests', { guests: guests, method: 'bulk' }, state.creatorToken);
+            setBtnLoading('#' + btnId, false, 'Send invites');
+            if (res.error) { showErr(errId, res.error); return; }
             var added = res.added || guests.length;
-            document.getElementById('ed-success-guests').textContent = added + ' guest(s) added' + (res.skipped ? ', ' + res.skipped + ' skipped.' : '.');
+            document.getElementById(okId).textContent = added + ' guest(s) added' + (res.skipped ? ', ' + res.skipped + ' skipped.' : '.');
             renderPills(guests, 'ed-guest-pills');
-            document.getElementById('ed-bulk-guests').value = '';
-            document.getElementById('ed-guest-preview-pills').innerHTML = '';
-        }
-
-        function parseGuestLine(line) {
-            var parts = line.split('|').map(function(p) { return p.trim(); });
-            if (parts.length === 1) return { phone: parts[0], name: 'Guest', email: null };
-            if (parts.length === 2) return { name: parts[0], phone: parts[1], email: null };
-            return { name: parts[0], phone: parts[1], email: parts[2] || null };
+            if (mode === 'bulk') gpClearGrid();
         }
 
         function renderPills(guests, containerId) {

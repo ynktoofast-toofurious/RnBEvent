@@ -395,6 +395,8 @@
             padding-top:18px; border-top:1px solid rgba(184,154,94,0.12);
             font-size:11px; letter-spacing:0.8px; color:rgba(243,237,224,0.35); text-align:center;
         }
+        .rnb-footer__partner { color:#d4b876; text-decoration:none; border-bottom:1px solid rgba(212,184,118,0.4); transition:color .15s; }
+        .rnb-footer__partner:hover { color:#f3ede0; }
 
         /* ── Paywall modal ── */
         .paywall { position:fixed; inset:0; z-index:9500; display:flex; align-items:center; justify-content:center; }
@@ -959,7 +961,7 @@
                 <button type="button" class="rnb-footer__up-btn" onclick="openPaywall()">Upgrade</button>
             </div>
         </div>
-        <p class="rnb-footer__legal">&copy; 2026 RNB Events. All rights reserved.</p>
+        <p class="rnb-footer__legal">&copy; 2026 RNB Events. All rights reserved. \u00b7 A product of <strong>RNB Events</strong> \u2014 Powered by <a href="https://ynk-tech.com" target="_blank" rel="noopener" class="rnb-footer__partner">YNK-Tech USA</a></p>
     </footer>
 
     <!-- ── Paywall modal ── -->
@@ -1558,93 +1560,308 @@
 
         var chatHistory = []; // [{role:'user'|'model', text:''}]
         // Smart event-creation wizard state
-        var wizard = null; // { step:int, data:{}, fields:[...] }
-        var WIZARD_FIELDS = [
-            { key:'eventName', label:'event name', q:'What should we call your event? (e.g., "Marcus\u2019s Graduation Soir\u00e9e")' },
-            { key:'eventDate', label:'date',       q:'Great. What date is it on? (YYYY-MM-DD, e.g., 2026-06-15)' },
-            { key:'eventTime', label:'time',       q:'And what time does it start? (HH:MM, e.g., 18:00)' },
-            { key:'venue',     label:'venue',      q:'Where will it be hosted? (venue name or address)' },
-            { key:'theme',     label:'theme',      q:'What\u2019s the theme or vibe? (e.g., old school, Belle \u00c9poque, beach chic)' },
-            { key:'dresscode', label:'dress code', q:'Any dress code? (e.g., black tie, smart casual \u2014 type "skip" to omit)' }
-        ];
-        function detectCreateIntent(text) {
+        var wizard = null; // { data:{}, lastAsked:'fieldKey' }
+        // Smart guest-intake state
+        var guestIntake = null; // { stage, current:{}, list:[] }
+
+        // ───── Natural-language parsers (Ruthie thinks from prompts) ─────
+        var MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+        var TODAY = new Date(2026, 4, 27); // anchored to current session date; updated below
+        try { TODAY = new Date(); } catch(_) {}
+        function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+        function toISODate(d) { return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+        function parseDate(text) {
+            if (!text) return null;
+            var s = text.toLowerCase();
+            // ISO
+            var iso = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+            if (iso) return iso[0];
+            // US slash
+            var us = s.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
+            if (us) {
+                var yr = us[3] ? (us[3].length === 2 ? 2000 + +us[3] : +us[3]) : TODAY.getFullYear();
+                return yr + '-' + pad2(+us[1]) + '-' + pad2(+us[2]);
+            }
+            // "tomorrow", "today"
+            if (/\btomorrow\b/.test(s)) { var t = new Date(TODAY); t.setDate(t.getDate()+1); return toISODate(t); }
+            if (/\btoday\b/.test(s))    { return toISODate(TODAY); }
+            // "next friday", "this saturday"
+            var weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+            var wd = s.match(/\b(this|next|coming)?\s*(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+            if (wd) {
+                var targetIdx = weekdays.indexOf(wd[2]);
+                var d = new Date(TODAY);
+                var add = (targetIdx - d.getDay() + 7) % 7;
+                if (add === 0 || wd[1] === 'next') add = add === 0 ? 7 : add;
+                d.setDate(d.getDate() + add);
+                return toISODate(d);
+            }
+            // "june 17", "june 17th", "june 17 2026"
+            for (var mi = 0; mi < 12; mi++) {
+                var m = s.match(new RegExp('\\b' + MONTHS[mi] + '\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:[ ,]+(\\d{4}))?', 'i'));
+                if (m) {
+                    var day = +m[1];
+                    var year = m[2] ? +m[2] : TODAY.getFullYear();
+                    // If month already past this year, roll to next
+                    if (!m[2] && (mi < TODAY.getMonth() || (mi === TODAY.getMonth() && day < TODAY.getDate()))) {
+                        year++;
+                    }
+                    return year + '-' + pad2(mi+1) + '-' + pad2(day);
+                }
+            }
+            // "next month" → first weekend of next month (rough fallback if day missing)
+            if (/\bnext month\b/.test(s)) {
+                var nm = new Date(TODAY.getFullYear(), TODAY.getMonth()+1, 15);
+                return toISODate(nm);
+            }
+            // "end of the month"
+            if (/\bend of (?:the )?month\b/.test(s)) {
+                var eom = new Date(TODAY.getFullYear(), TODAY.getMonth()+1, 0);
+                return toISODate(eom);
+            }
+            return null;
+        }
+        function parseTime(text) {
+            if (!text) return null;
+            var s = text.toLowerCase();
+            // HH:MM (24h)
+            var hm = s.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+            if (hm) return pad2(+hm[1]) + ':' + hm[2];
+            // 8pm / 8 pm / 7:30pm
+            var ap = s.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)\b/);
+            if (ap) {
+                var h = +ap[1], min = ap[2] ? +ap[2] : 0;
+                var p = ap[3].replace(/\./g,'');
+                if (p === 'pm' && h !== 12) h += 12;
+                if (p === 'am' && h === 12) h = 0;
+                return pad2(h) + ':' + pad2(min);
+            }
+            if (/\bnoon\b/.test(s))     return '12:00';
+            if (/\bmidnight\b/.test(s)) return '00:00';
+            if (/\bevening\b/.test(s))  return '19:00';
+            if (/\bmorning\b/.test(s))  return '10:00';
+            if (/\bafternoon\b/.test(s))return '14:00';
+            return null;
+        }
+        function detectEventType(text) {
             var t = text.toLowerCase();
-            if (!/create|plan|make|set\s*up|build|throw/.test(t)) return null;
-            if (!/event|party|soir|wedding|gala|gathering|graduation|birthday|reception|brunch|dinner/.test(t)) return null;
-            // crude parameter extraction
-            var data = {};
-            var types = { graduation:'Graduation', wedding:'Wedding', birthday:'Birthday', gala:'Gala', brunch:'Brunch', dinner:'Dinner Party', soir:'Soir\u00e9e', reception:'Reception' };
-            for (var k in types) { if (t.indexOf(k) !== -1) { data._type = types[k]; break; } }
-            var themeMatch = text.match(/theme(?:\s+(?:will\s+be|is|of))?\s+([^.]+?)(?:\.|$)/i) || text.match(/old school|belle\s*\u00e9poque|gatsby|tropical|boho|modern|elegant|vintage/i);
-            if (themeMatch) data.theme = (themeMatch[1] || themeMatch[0]).trim().replace(/^\W+|\W+$/g, '');
-            var monthMatch = text.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i);
-            if (monthMatch) data._monthHint = monthMatch[1];
-            if (/end of (?:the )?month/i.test(text)) data._dateHint = 'end of month';
+            var map = { graduation:'Graduation', wedding:'Wedding', birthday:'Birthday', baby:'Baby Shower', gala:'Gala', brunch:'Brunch', dinner:'Dinner Party', soir:'Soir\u00e9e', reception:'Reception', anniversary:'Anniversary', engagement:'Engagement' };
+            for (var k in map) if (t.indexOf(k) !== -1) return map[k];
+            return null;
+        }
+        function detectHonoree(text) {
+            // "for my husband Romeo" / "for Romeo" / "his name is Romeo"
+            var m = text.match(/(?:for(?: my (?:husband|wife|son|daughter|mom|mother|dad|father|friend|brother|sister|partner|fianc[ée]e?|boyfriend|girlfriend))?\s+)([A-Z][a-zA-Z]+)/);
+            if (m) return _titleCase(m[1]);
+            m = text.match(/\b(?:his|her|their|my)\s+name\s+is\s+([A-Za-z]+)/i);
+            if (m) return _titleCase(m[1]);
+            m = text.match(/\bname[':\s]+([A-Za-z]+)/i);
+            if (m && !/^(skip|the|a|an|his|her|my)$/i.test(m[1])) return _titleCase(m[1]);
+            return null;
+        }
+        function _titleCase(s) { return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+        function detectTheme(text) {
+            var m = text.match(/theme(?:\s+(?:will\s+be|is|of))?\s+([^.,;]+)/i);
+            if (m) return m[1].trim().replace(/^["']|["']$/g, '');
+            var vibes = text.match(/\b(old school|belle\s*\u00e9poque|gatsby|tropical|boho|bohemian|modern|elegant|vintage|sport[s]?|black tie|garden|beach|masquerade|disco|80s|90s)\b/i);
+            if (vibes) return _titleCase(vibes[0]);
+            // "he likes sport(s)"
+            var likes = text.match(/(?:he|she|they)\s+like[s]?\s+([a-zA-Z]+)/i);
+            if (likes) return _titleCase(likes[1]);
+            return null;
+        }
+        function detectVenue(text) {
+            var m = text.match(/(?:at|@)\s+(?:the\s+)?([A-Z][\w &']+(?:\s+[A-Z][\w &']+)*)/);
+            if (m) return m[1].trim();
+            m = text.match(/\b(?:venue|location|address)[':\s]+(.+)/i);
+            if (m) return m[1].trim().replace(/^[\-\s]+/, '');
+            return null;
+        }
+        function detectEventName(text, honoree, type) {
+            // explicit "call it X" / "name it X"
+            var m = text.match(/(?:call(?:ed)?|name(?:d)?|title(?:d)?)\s+(?:it|this|the event)?\s*[":]?\s*["']?([A-Z][^.\n"']+)["']?/i);
+            if (m) return m[1].trim();
+            if (honoree && type)  return honoree + "\u2019s " + type;
+            if (honoree)          return honoree + "\u2019s Event";
+            if (type)             return type;
+            return null;
+        }
+        function smartExtract(text, existing) {
+            var data = Object.assign({}, existing || {});
+            if (!data.eventType) data.eventType = detectEventType(text);
+            if (!data.honoree)   data.honoree   = detectHonoree(text);
+            if (!data.theme)     data.theme     = detectTheme(text);
+            if (!data.eventDate) data.eventDate = parseDate(text);
+            if (!data.eventTime) data.eventTime = parseTime(text);
+            if (!data.venue)     data.venue     = detectVenue(text);
+            if (!data.eventName) data.eventName = detectEventName(text, data.honoree, data.eventType);
             return data;
         }
-        function wizardNextQuestion() {
-            // find first unfilled field
-            for (var i = 0; i < WIZARD_FIELDS.length; i++) {
-                var f = WIZARD_FIELDS[i];
-                if (!wizard.data[f.key]) return f;
+        function detectCreateIntent(text) {
+            var t = text.toLowerCase();
+            if (!/create|plan|make|set\s*up|build|throw|organize|host|prepare/.test(t)) return null;
+            if (!/event|party|soir|wedding|gala|gathering|graduation|birthday|reception|brunch|dinner|invitation|baby shower|anniversary|engagement/.test(t)) return null;
+            return smartExtract(text, {});
+        }
+        function detectGuestIntent(text) {
+            return /\b(add|invite|enter|input|collect|register)\b.*\b(guest|guests|invitees|people|attendee|attendees)\b/i.test(text)
+                || /\b(guest|attendee)\s+list\b/i.test(text);
+        }
+
+        var WIZARD_REQUIRED = ['eventName','eventDate','eventTime','venue','theme'];
+        var WIZARD_QUESTIONS = {
+            eventName: function(d) {
+                if (d.honoree && d.eventType) return 'How about \u201c' + d.honoree + '\u2019s ' + d.eventType + '\u201d as the event name? You can give me a different name if you\u2019d like.';
+                if (d.eventType) return 'What should we call this ' + d.eventType.toLowerCase() + '? (e.g., \u201cSummer Soir\u00e9e\u201d)';
+                return 'What should we call your event?';
+            },
+            eventDate: function(d) {
+                return 'What date is it on? You can say something like \u201cJune 17\u201d, \u201cnext Friday\u201d, or \u201c2026-06-15\u201d.';
+            },
+            eventTime: function(d) {
+                return 'What time does it start? You can say \u201c8pm\u201d, \u201c19:30\u201d, or \u201cevening\u201d.';
+            },
+            venue: function(d) {
+                return 'Where will it be? (venue name, address, or just the neighborhood \u2014 say \u201cTBD\u201d if you\u2019re not sure yet)';
+            },
+            theme: function(d) {
+                if (d.honoree) return 'Any theme or vibe? ' + d.honoree + ' seems like the kind of person who\u2019d love something special. (You can say \u201cskip\u201d.)';
+                return 'Any theme or vibe? (e.g., old school, garden party, black tie \u2014 or \u201cskip\u201d)';
+            }
+        };
+        function nextMissing(data) {
+            for (var i = 0; i < WIZARD_REQUIRED.length; i++) {
+                if (!data[WIZARD_REQUIRED[i]]) return WIZARD_REQUIRED[i];
             }
             return null;
         }
         async function startCreateWizard(seed) {
-            wizard = { data: {} };
-            // seed any parsed values
-            if (seed.theme) wizard.data.theme = seed.theme;
-            if (seed._type) wizard.data._suggestedName = seed._type;
+            wizard = { data: seed, lastAsked: null };
             var intro;
-            if (seed._type && seed.theme) {
-                intro = 'Love it \u2014 a ' + seed._type.toLowerCase() + ' with an ' + seed.theme + ' vibe. Let\u2019s lock in the details.';
-            } else if (seed._type) {
-                intro = 'Beautiful \u2014 let\u2019s plan that ' + seed._type.toLowerCase() + '. I\u2019ll ask a few quick questions.';
+            if (seed.eventType && seed.theme && seed.honoree) {
+                intro = 'Beautiful \u2014 a ' + seed.eventType.toLowerCase() + ' for ' + seed.honoree + ' with a ' + seed.theme.toLowerCase() + ' vibe. Let\u2019s lock in the details I\u2019m still missing.';
+            } else if (seed.eventType && seed.honoree) {
+                intro = 'Lovely \u2014 a ' + seed.eventType.toLowerCase() + ' for ' + seed.honoree + '. Let me ask a couple of things.';
+            } else if (seed.eventType) {
+                intro = 'Let\u2019s plan that ' + seed.eventType.toLowerCase() + '. I\u2019ll fill in what I can and ask about the rest.';
             } else {
-                intro = 'Let\u2019s plan this together. I\u2019ll ask a few quick questions.';
+                intro = 'Let\u2019s plan this together \u2014 I\u2019ll keep it quick.';
             }
             await appendChatTyped(intro);
-            await new Promise(function(r){ setTimeout(r, 250); });
-            var q = wizardNextQuestion();
-            if (q) await appendChatTyped(q.q);
+            await wizardAskNext();
+        }
+        async function wizardAskNext() {
+            var key = nextMissing(wizard.data);
+            if (!key) return wizardFinish();
+            wizard.lastAsked = key;
+            var q = (WIZARD_QUESTIONS[key] || function(){ return 'Tell me more.'; })(wizard.data);
+            await new Promise(function(r){ setTimeout(r, 240); });
+            await appendChatTyped(q);
         }
         async function wizardHandleAnswer(answer) {
-            var q = wizardNextQuestion();
-            if (!q) return false;
-            var val = answer.trim();
-            if (val.toLowerCase() === 'skip' && q.key === 'dresscode') {
-                wizard.data[q.key] = '';
-            } else if (q.key === 'eventDate' && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                await appendChatTyped('I need the date in YYYY-MM-DD format. Try again? (e.g., 2026-06-15)');
-                return true;
-            } else if (q.key === 'eventTime' && !/^\d{1,2}:\d{2}$/.test(val)) {
-                await appendChatTyped('Time needs to be HH:MM (24h). Try again? (e.g., 18:00)');
-                return true;
-            } else {
-                wizard.data[q.key] = val;
+            var key = wizard.lastAsked;
+            var s = answer.trim();
+            var lower = s.toLowerCase();
+            // Always re-run the full extractor against the latest answer so
+            // Ruthie can pick up anything else the user volunteers.
+            var merged = smartExtract(s, wizard.data);
+            // Field-specific handling for the asked field
+            if (key === 'eventName') {
+                if (/^(yes|yep|yeah|sure|ok(?:ay)?|sounds good|that works|perfect|love it)/.test(lower) && wizard.data.honoree && wizard.data.eventType) {
+                    merged.eventName = wizard.data.honoree + '\u2019s ' + wizard.data.eventType;
+                } else if (!merged.eventName) {
+                    // Treat the answer as the name unless they obviously named someone
+                    var maybeName = s.replace(/^(call|name|title)?\s*(it|this|the event)?\s*[":]?\s*/i, '').trim();
+                    if (maybeName && !/^(skip|none|idk|i don'?t know)$/i.test(maybeName)) merged.eventName = maybeName;
+                }
+            } else if (key === 'eventDate') {
+                if (!merged.eventDate) {
+                    await appendChatTyped('Hmm, I couldn\u2019t read a date in that. Try \u201cJune 17\u201d, \u201cnext Saturday\u201d, or \u201c2026-06-15\u201d.');
+                    return;
+                }
+            } else if (key === 'eventTime') {
+                if (!merged.eventTime) {
+                    await appendChatTyped('I need a time \u2014 something like \u201c7pm\u201d or \u201c19:30\u201d.');
+                    return;
+                }
+            } else if (key === 'venue') {
+                if (!merged.venue) {
+                    if (/^(skip|tbd|n\/?a|none|don'?t know|not sure)$/i.test(lower)) merged.venue = 'TBD';
+                    else merged.venue = s; // accept whatever they typed
+                }
+            } else if (key === 'theme') {
+                if (!merged.theme) {
+                    if (/^(skip|none|no|nothing|no theme)$/i.test(lower)) merged.theme = '';
+                    else merged.theme = s;
+                }
             }
-            var nextQ = wizardNextQuestion();
-            if (nextQ) {
-                await appendChatTyped(nextQ.q);
-                return true;
-            }
-            // All collected
-            await appendChatTyped('Perfect \u2014 I\u2019ve got everything I need.');
-            await new Promise(function(r){ setTimeout(r, 250); });
-            await appendChatTyped('Pre-filling your event now. The editor will open with all your details so you can add the finishing touches.');
-            await new Promise(function(r){ setTimeout(r, 600); });
+            wizard.data = merged;
+            // Friendly acknowledgement using the new value
+            var ack = ackForField(key, merged);
+            if (ack) await appendChatTyped(ack);
+            await wizardAskNext();
+        }
+        function ackForField(key, d) {
+            if (key === 'eventName' && d.eventName) return 'Got it \u2014 \u201c' + d.eventName + '\u201d. \u2728';
+            if (key === 'eventDate' && d.eventDate) return 'Locked in for ' + d.eventDate + '.';
+            if (key === 'eventTime' && d.eventTime) return 'Starting at ' + d.eventTime + '.';
+            if (key === 'venue'     && d.venue)     return 'Venue noted: ' + d.venue + '.';
+            if (key === 'theme'     && d.theme)     return 'I\u2019m feeling the ' + d.theme.toLowerCase() + ' vibe. Beautiful.';
+            return '';
+        }
+        async function wizardFinish() {
+            await appendChatTyped('Perfect \u2014 I have everything I need.');
+            await new Promise(function(r){ setTimeout(r, 240); });
+            await appendChatTyped('Opening the editor with everything pre-filled so you can add the finishing touches.');
+            await new Promise(function(r){ setTimeout(r, 500); });
             var check = canCreateMore();
             if (!check.ok) {
                 wizard = null;
                 openPaywall(check.kind);
                 await appendChatTyped('Heads up: you\u2019ve hit your free-plan limit. Upgrade or delete an old event to continue.');
-                return true;
+                return;
             }
-            // Persist the prefill and open editor
             try { localStorage.setItem('rnb_event_prefill', JSON.stringify(wizard.data)); } catch(_) {}
             wizard = null;
             setTimeout(function() { window.location.href = 'event-create.html?prefill=1'; }, 700);
-            return true;
+        }
+
+        /* ── Guest intake (Ruthie collects guests via chat) ── */
+        async function startGuestIntake() {
+            guestIntake = { stage: 'collect', current: {}, list: [] };
+            await appendChatTyped('Sure \u2014 I\u2019ll collect the guest list with you. Tell me one guest at a time, like:\n\u201cJane Smith, 555-123-4567, jane@gmail.com\u201d\n\nWhen you\u2019re done, say \u201cthat\u2019s all\u201d.');
+        }
+        async function guestIntakeHandle(text) {
+            var lower = text.toLowerCase().trim();
+            if (/^(done|that'?s all|thats all|finish|stop|no more|end)$/.test(lower)) {
+                if (!guestIntake.list.length) {
+                    await appendChatTyped('No guests collected. Closing intake \u2014 ping me anytime to start again.');
+                    guestIntake = null;
+                    return;
+                }
+                try { localStorage.setItem('rnb_guest_intake', JSON.stringify(guestIntake.list)); } catch(_) {}
+                await appendChatTyped('Got ' + guestIntake.list.length + ' guest' + (guestIntake.list.length === 1 ? '' : 's') + '. I\u2019ll drop them into your guest panel \u2014 open an event\u2019s editor and click \u201c+ Invite\u201d to review and send.');
+                guestIntake = null;
+                return;
+            }
+            var g = _parseGuestFromChat(text);
+            if (!g.phone && !g.email) {
+                await appendChatTyped('I need at least a phone or an email. Try: \u201cJane Smith, 555-123-4567, jane@gmail.com\u201d.');
+                return;
+            }
+            guestIntake.list.push(g);
+            await appendChatTyped('Added ' + (g.name || g.phone || g.email) + '. (' + guestIntake.list.length + ' total) \u2014 next one, or say \u201cthat\u2019s all\u201d.');
+        }
+        function _parseGuestFromChat(text) {
+            // Split by comma/pipe/semicolon
+            var parts = text.split(/[,;|]/).map(function(p){ return p.trim(); }).filter(Boolean);
+            var g = { name:'', phone:'', email:'' };
+            parts.forEach(function(p) {
+                if (/@/.test(p) && !g.email)                                  g.email = p;
+                else if (/[\d().+\-\s]{7,}/.test(p) && !g.phone)              g.phone = p.replace(/[^\d+]/g,'');
+                else if (!g.name)                                             g.name  = p;
+            });
+            return g;
         }
 
         async function sendChat() {
@@ -1662,23 +1879,40 @@
 
         async function doSendPrompt(text) {
             appendChat('user', text);
-            // If a wizard is active, handle its answer locally
+            // Active wizard? Hand the answer to it (but also let it re-extract everything from the message)
             if (wizard) {
                 showTyping();
-                await new Promise(function(r){ setTimeout(r, 350); });
+                await new Promise(function(r){ setTimeout(r, 320); });
                 hideTyping();
                 await wizardHandleAnswer(text);
                 return;
             }
-            // Detect smart-creation intent
+            // Active guest intake?
+            if (guestIntake) {
+                showTyping();
+                await new Promise(function(r){ setTimeout(r, 280); });
+                hideTyping();
+                await guestIntakeHandle(text);
+                return;
+            }
+            // Intent: smart event creation
             var intent = detectCreateIntent(text);
             if (intent) {
                 showTyping();
-                await new Promise(function(r){ setTimeout(r, 400); });
+                await new Promise(function(r){ setTimeout(r, 360); });
                 hideTyping();
                 await startCreateWizard(intent);
                 return;
             }
+            // Intent: guest intake
+            if (detectGuestIntent(text)) {
+                showTyping();
+                await new Promise(function(r){ setTimeout(r, 280); });
+                hideTyping();
+                await startGuestIntake();
+                return;
+            }
+            // Default: forward to Lambda AI
             chatHistory.push({ role: 'user', text: text });
             showTyping();
             document.getElementById('chat-send').disabled = true;
