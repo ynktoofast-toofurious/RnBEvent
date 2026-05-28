@@ -695,7 +695,176 @@ async function verifyGuestOtp(body) {
     return respond(200, { guestToken, status: rsvpStatus, event: safeEvent });
 }
 
-/* POST /events/:id/songs ── add a song (max 5) */
+/* POST /guest/google-auth ── Google ID token + phone + postal → guest RSVP */
+async function guestGoogleAuth(body) {
+    const idToken    = String(body.idToken || '').trim();
+    if (!idToken || idToken.length > 4096) return respond(400, { error: 'Google ID token required' });
+
+    const phone      = sanitizePhone(body.phone);
+    const eventId    = sanitizeText(body.eventId, 30);
+    const postal     = sanitizeText(body.postal, 20);
+    const country    = sanitizeText(body.country, 8).toUpperCase();
+    const rsvpStatus = body.status === 'declined' ? 'declined' : 'confirmed';
+
+    if (!phone)   return respond(400, { error: 'Valid phone number required' });
+    if (!postal)  return respond(400, { error: 'Postal code required' });
+    if (!country) return respond(400, { error: 'Country required' });
+    if (!eventId) return respond(400, { error: 'Event ID required' });
+
+    // Verify Google token server-side
+    let googleUser;
+    try {
+        const r = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken));
+        if (!r.ok) return respond(401, { error: 'Invalid Google token' });
+        googleUser = await r.json();
+    } catch {
+        return respond(401, { error: 'Could not verify Google token' });
+    }
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (clientId && googleUser.aud !== clientId) return respond(401, { error: 'Token audience mismatch' });
+    if (googleUser.email_verified !== 'true')     return respond(401, { error: 'Google email not verified' });
+    const now = Math.floor(Date.now() / 1000);
+    if (!googleUser.exp || parseInt(googleUser.exp) < now) return respond(401, { error: 'Google token expired' });
+
+    const googleId = String(googleUser.sub || '').slice(0, 64);
+    const email    = sanitizeEmail(googleUser.email);
+    const guestName = sanitizeText(body.name || googleUser.name || googleUser.given_name || 'Guest', 100);
+    if (!googleId || !email) return respond(401, { error: 'Incomplete Google profile' });
+
+    // Load event
+    const evRes = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
+    if (!evRes?.Item) return respond(404, { error: 'Event not found' });
+
+    // Cross-event duplicate check: if this phone is already linked to a different googleId
+    // in any prior member-rsvps row, refuse — they need to sign in with that original Google account.
+    try {
+        const prior = await ddb.send(new QueryCommand({
+            TableName: T.MEMBER_RSVPS,
+            KeyConditionExpression: 'phone = :p',
+            ExpressionAttributeValues: { ':p': phone },
+            Limit: 25
+        }));
+        if (prior?.Items && prior.Items.length) {
+            const conflict = prior.Items.find(it => it.googleId && it.googleId !== googleId);
+            if (conflict) {
+                return respond(409, { error: 'This phone is already linked to another Google account. Sign in with that account or use a different number.' });
+            }
+        }
+    } catch { /* non-fatal */ }
+
+    // Write RSVP, member-rsvps (denormalized with profile fields), session
+    await Promise.all([
+        ddb.send(new PutCommand({
+            TableName: T.RSVPS,
+            Item: {
+                eventId,
+                guestPhone:  phone,
+                guestName,
+                guestEmail:  email,
+                status:      rsvpStatus,
+                confirmedAt: new Date().toISOString(),
+                authMethod:  'google',
+                songCount:   0
+            }
+        })),
+        ddb.send(new PutCommand({
+            TableName: T.MEMBER_RSVPS,
+            Item: {
+                phone,
+                eventId,
+                guestName,
+                guestEmail:    email,
+                googleId,
+                postal,
+                country,
+                accountType:   'google',
+                recoveryEmail: email,  // Google email doubles as recovery
+                status:        rsvpStatus,
+                rsvpAt:        new Date().toISOString(),
+                eventName:     evRes.Item.eventName,
+                eventDate:     evRes.Item.eventDate,
+                eventTime:     evRes.Item.eventTime  || '',
+                eventType:     evRes.Item.eventType  || '',
+                venue:         evRes.Item.venue       || '',
+                coverImageUrl: evRes.Item.coverImageUrl || '',
+                creatorName:   evRes.Item.creatorName || ''
+            }
+        })),
+        ddb.send(new PutCommand({
+            TableName: T.REGISTRY,
+            Item: {
+                eventId,
+                guestPhone:  phone,
+                guestName,
+                guestEmail:  email,
+                googleId,
+                addedAt:     new Date().toISOString()
+            }
+        })).catch(() => {})
+    ]);
+
+    const guestToken = crypto.randomBytes(32).toString('hex');
+    await ddb.send(new PutCommand({
+        TableName: T.SESSIONS,
+        Item: {
+            token:     guestToken,
+            phone,
+            eventId,
+            guestName,
+            type:      'guest',
+            authMethod: 'google',
+            googleId,
+            email,
+            expiresAt: Math.floor(Date.now() / 1000) + 86400
+        }
+    }));
+
+    if (rsvpStatus === 'confirmed') {
+        notifyCreatorOfRsvp(evRes.Item, guestName, rsvpStatus).catch(() => {});
+    }
+
+    const { creatorEmail, urthedj_sessionId, ...safeEvent } = evRes.Item;
+    return respond(200, { guestToken, status: rsvpStatus, event: safeEvent, accountType: 'google' });
+}
+
+/* POST /guest/recovery-email ── add recovery email to phone-only guest account */
+async function guestRecoveryEmail(body) {
+    const guestToken = String(body.guestToken || '').trim();
+    const email      = sanitizeEmail(body.email);
+
+    if (!guestToken || guestToken.length > 128) return respond(400, { error: 'Guest session required' });
+    if (!email)                                  return respond(400, { error: 'Valid email required' });
+
+    // Resolve session → phone
+    const sessRes = await ddb.send(new GetCommand({ TableName: T.SESSIONS, Key: { token: guestToken } })).catch(() => null);
+    if (!sessRes?.Item || sessRes.Item.type !== 'guest') return respond(401, { error: 'Invalid guest session' });
+    if (sessRes.Item.expiresAt && sessRes.Item.expiresAt < Math.floor(Date.now() / 1000)) {
+        return respond(401, { error: 'Session expired' });
+    }
+
+    const phone = sessRes.Item.phone;
+
+    // Update every member-rsvps row for this phone with the recovery email
+    let updated = 0;
+    try {
+        const rows = await ddb.send(new QueryCommand({
+            TableName: T.MEMBER_RSVPS,
+            KeyConditionExpression: 'phone = :p',
+            ExpressionAttributeValues: { ':p': phone }
+        }));
+        const items = (rows?.Items) || [];
+        await Promise.all(items.map(it => ddb.send(new UpdateCommand({
+            TableName: T.MEMBER_RSVPS,
+            Key: { phone: it.phone, eventId: it.eventId },
+            UpdateExpression: 'SET recoveryEmail = :e, recoveryEmailSavedAt = :t',
+            ExpressionAttributeValues: { ':e': email, ':t': new Date().toISOString() }
+        })).then(() => { updated++; }).catch(() => {})));
+    } catch { /* non-fatal */ }
+
+    return respond(200, { ok: true, updated });
+}
+
+
 async function addSong(eventId, body, event) {
     const guest = await getGuestFromToken(event, eventId);
     if (!guest) return respond(401, { error: 'Guest session required' });
@@ -1127,6 +1296,10 @@ exports.handler = async (event) => {
         // Guest OTP
         if (method === 'POST' && path === '/otp/send')   return await sendGuestOtp(body);
         if (method === 'POST' && path === '/otp/verify') return await verifyGuestOtp(body);
+
+        // Guest Google sign-in + recovery email
+        if (method === 'POST' && path === '/guest/google-auth')    return await guestGoogleAuth(body);
+        if (method === 'POST' && path === '/guest/recovery-email') return await guestRecoveryEmail(body);
 
         // Member auth + dashboard
         if (method === 'POST' && path === '/member/auth')      return await memberAuthSend(body);

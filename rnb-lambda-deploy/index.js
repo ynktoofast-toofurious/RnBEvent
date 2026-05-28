@@ -381,8 +381,6 @@ async function createEvent(body, event) {
     const eventDate   = String(body.eventDate || '').slice(0, 10);
     const eventTime   = sanitizeText(body.eventTime, 10);
     const coverImageUrl = sanitizeUrl(body.coverImageUrl);
-    const eventEmoji  = sanitizeText(body.eventEmoji, 8);
-    const iconStyle   = body.iconStyle === 'svg' ? 'svg' : 'emoji';
 
     if (!eventName || eventName.length < 2) return respond(400, { error: 'Event name required' });
     if (!eventDate || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return respond(400, { error: 'Valid date required (YYYY-MM-DD)' });
@@ -438,8 +436,6 @@ async function createEvent(body, event) {
             venue,
             description,
             coverImageUrl,
-            eventEmoji,
-            iconStyle,
             status,
             urthedj_sessionId,
             createdAt:         new Date().toISOString()
@@ -465,8 +461,6 @@ async function updateEvent(eventId, body, event) {
     const eventDate   = String(body.eventDate || '').slice(0, 10);
     const eventTime   = sanitizeText(body.eventTime, 10);
     const coverImageUrl = sanitizeUrl(body.coverImageUrl);
-    const eventEmoji  = sanitizeText(body.eventEmoji, 8);
-    const iconStyle   = body.iconStyle === 'svg' ? 'svg' : 'emoji';
     const newStatus   = body.status === 'draft' ? 'draft' : 'published';
 
     if (!eventName || eventName.length < 2) return respond(400, { error: 'Event name required' });
@@ -476,12 +470,11 @@ async function updateEvent(eventId, body, event) {
     await ddb.send(new UpdateCommand({
         TableName: T.EVENTS,
         Key: { eventId },
-        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, eventEmoji=:em, iconStyle=:is, #st=:s, updatedAt=:u',
+        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u',
         ExpressionAttributeNames:  { '#st': 'status' },
         ExpressionAttributeValues: {
             ':n': eventName, ':t': eventType, ':d': eventDate, ':tm': eventTime,
             ':v': venue, ':desc': description, ':img': coverImageUrl || null,
-            ':em': eventEmoji || null, ':is': iconStyle,
             ':s': newStatus, ':u': new Date().toISOString()
         }
     }));
@@ -500,52 +493,6 @@ async function deleteEvent(eventId, event) {
 
     await ddb.send(new DeleteCommand({ TableName: T.EVENTS, Key: { eventId } }));
     return respond(200, { ok: true });
-}
-
-/* POST /ai/chat ── Gemini proxy (key stays server-side) */
-async function aiChat(body, event) {
-    const creator = await getCreatorFromToken(event);
-    if (!creator) return respond(401, { error: 'Authentication required' });
-
-    const key = process.env.GEMINI_API_KEY;
-    if (!key) return respond(500, { error: 'AI is not configured on the server.' });
-
-    const messages = Array.isArray(body.messages) ? body.messages : [];
-    if (!messages.length) return respond(400, { error: 'No messages provided' });
-
-    // Cap history length & message size to control cost / abuse
-    const trimmed = messages.slice(-20).map(m => ({
-        role: m.role === 'model' ? 'model' : 'user',
-        parts: [{ text: String(m.text || '').slice(0, 4000) }]
-    }));
-
-    const systemText = 'You are Ruthie.ai, the in-house planner assistant for RNB Events RSVP \u2014 an elegant, upscale event-hosting platform. Help the host brainstorm event themes, write tasteful invite captions, draft event descriptions, suggest dress codes, music playlists, menu ideas, and copy. Keep replies warm, concise (under 220 words unless asked), and stylish. Never use crude language. Use short markdown when helpful (lists, bold). If asked to "auto-fill", give labeled fields (Title, Type, Date, Venue, Description) the user can paste into the event editor. Sign off naturally; do not mention the underlying AI provider.';
-
-    const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
-
-    try {
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                systemInstruction: { parts: [{ text: systemText }] },
-                contents: trimmed,
-                generationConfig: { temperature: 0.85, topP: 0.95, maxOutputTokens: 800 }
-            })
-        });
-        const data = await res.json();
-        if (data.error) {
-            console.error('[ai/chat] Gemini error:', data.error);
-            return respond(502, { error: 'AI service error. Please try again.' });
-        }
-        const parts = (((data.candidates || [])[0] || {}).content || {}).parts || [];
-        const reply = parts.map(p => p.text || '').join('').trim() || '(empty response)';
-        return respond(200, { reply });
-    } catch (e) {
-        console.error('[ai/chat] Network error:', e);
-        return respond(502, { error: 'AI service unreachable.' });
-    }
 }
 
 /* GET /events/:id ── public teaser */
@@ -748,7 +695,176 @@ async function verifyGuestOtp(body) {
     return respond(200, { guestToken, status: rsvpStatus, event: safeEvent });
 }
 
-/* POST /events/:id/songs ── add a song (max 5) */
+/* POST /guest/google-auth ── Google ID token + phone + postal → guest RSVP */
+async function guestGoogleAuth(body) {
+    const idToken    = String(body.idToken || '').trim();
+    if (!idToken || idToken.length > 4096) return respond(400, { error: 'Google ID token required' });
+
+    const phone      = sanitizePhone(body.phone);
+    const eventId    = sanitizeText(body.eventId, 30);
+    const postal     = sanitizeText(body.postal, 20);
+    const country    = sanitizeText(body.country, 8).toUpperCase();
+    const rsvpStatus = body.status === 'declined' ? 'declined' : 'confirmed';
+
+    if (!phone)   return respond(400, { error: 'Valid phone number required' });
+    if (!postal)  return respond(400, { error: 'Postal code required' });
+    if (!country) return respond(400, { error: 'Country required' });
+    if (!eventId) return respond(400, { error: 'Event ID required' });
+
+    // Verify Google token server-side
+    let googleUser;
+    try {
+        const r = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken));
+        if (!r.ok) return respond(401, { error: 'Invalid Google token' });
+        googleUser = await r.json();
+    } catch {
+        return respond(401, { error: 'Could not verify Google token' });
+    }
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (clientId && googleUser.aud !== clientId) return respond(401, { error: 'Token audience mismatch' });
+    if (googleUser.email_verified !== 'true')     return respond(401, { error: 'Google email not verified' });
+    const now = Math.floor(Date.now() / 1000);
+    if (!googleUser.exp || parseInt(googleUser.exp) < now) return respond(401, { error: 'Google token expired' });
+
+    const googleId = String(googleUser.sub || '').slice(0, 64);
+    const email    = sanitizeEmail(googleUser.email);
+    const guestName = sanitizeText(body.name || googleUser.name || googleUser.given_name || 'Guest', 100);
+    if (!googleId || !email) return respond(401, { error: 'Incomplete Google profile' });
+
+    // Load event
+    const evRes = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
+    if (!evRes?.Item) return respond(404, { error: 'Event not found' });
+
+    // Cross-event duplicate check: if this phone is already linked to a different googleId
+    // in any prior member-rsvps row, refuse — they need to sign in with that original Google account.
+    try {
+        const prior = await ddb.send(new QueryCommand({
+            TableName: T.MEMBER_RSVPS,
+            KeyConditionExpression: 'phone = :p',
+            ExpressionAttributeValues: { ':p': phone },
+            Limit: 25
+        }));
+        if (prior?.Items && prior.Items.length) {
+            const conflict = prior.Items.find(it => it.googleId && it.googleId !== googleId);
+            if (conflict) {
+                return respond(409, { error: 'This phone is already linked to another Google account. Sign in with that account or use a different number.' });
+            }
+        }
+    } catch { /* non-fatal */ }
+
+    // Write RSVP, member-rsvps (denormalized with profile fields), session
+    await Promise.all([
+        ddb.send(new PutCommand({
+            TableName: T.RSVPS,
+            Item: {
+                eventId,
+                guestPhone:  phone,
+                guestName,
+                guestEmail:  email,
+                status:      rsvpStatus,
+                confirmedAt: new Date().toISOString(),
+                authMethod:  'google',
+                songCount:   0
+            }
+        })),
+        ddb.send(new PutCommand({
+            TableName: T.MEMBER_RSVPS,
+            Item: {
+                phone,
+                eventId,
+                guestName,
+                guestEmail:    email,
+                googleId,
+                postal,
+                country,
+                accountType:   'google',
+                recoveryEmail: email,  // Google email doubles as recovery
+                status:        rsvpStatus,
+                rsvpAt:        new Date().toISOString(),
+                eventName:     evRes.Item.eventName,
+                eventDate:     evRes.Item.eventDate,
+                eventTime:     evRes.Item.eventTime  || '',
+                eventType:     evRes.Item.eventType  || '',
+                venue:         evRes.Item.venue       || '',
+                coverImageUrl: evRes.Item.coverImageUrl || '',
+                creatorName:   evRes.Item.creatorName || ''
+            }
+        })),
+        ddb.send(new PutCommand({
+            TableName: T.REGISTRY,
+            Item: {
+                eventId,
+                guestPhone:  phone,
+                guestName,
+                guestEmail:  email,
+                googleId,
+                addedAt:     new Date().toISOString()
+            }
+        })).catch(() => {})
+    ]);
+
+    const guestToken = crypto.randomBytes(32).toString('hex');
+    await ddb.send(new PutCommand({
+        TableName: T.SESSIONS,
+        Item: {
+            token:     guestToken,
+            phone,
+            eventId,
+            guestName,
+            type:      'guest',
+            authMethod: 'google',
+            googleId,
+            email,
+            expiresAt: Math.floor(Date.now() / 1000) + 86400
+        }
+    }));
+
+    if (rsvpStatus === 'confirmed') {
+        notifyCreatorOfRsvp(evRes.Item, guestName, rsvpStatus).catch(() => {});
+    }
+
+    const { creatorEmail, urthedj_sessionId, ...safeEvent } = evRes.Item;
+    return respond(200, { guestToken, status: rsvpStatus, event: safeEvent, accountType: 'google' });
+}
+
+/* POST /guest/recovery-email ── add recovery email to phone-only guest account */
+async function guestRecoveryEmail(body) {
+    const guestToken = String(body.guestToken || '').trim();
+    const email      = sanitizeEmail(body.email);
+
+    if (!guestToken || guestToken.length > 128) return respond(400, { error: 'Guest session required' });
+    if (!email)                                  return respond(400, { error: 'Valid email required' });
+
+    // Resolve session → phone
+    const sessRes = await ddb.send(new GetCommand({ TableName: T.SESSIONS, Key: { token: guestToken } })).catch(() => null);
+    if (!sessRes?.Item || sessRes.Item.type !== 'guest') return respond(401, { error: 'Invalid guest session' });
+    if (sessRes.Item.expiresAt && sessRes.Item.expiresAt < Math.floor(Date.now() / 1000)) {
+        return respond(401, { error: 'Session expired' });
+    }
+
+    const phone = sessRes.Item.phone;
+
+    // Update every member-rsvps row for this phone with the recovery email
+    let updated = 0;
+    try {
+        const rows = await ddb.send(new QueryCommand({
+            TableName: T.MEMBER_RSVPS,
+            KeyConditionExpression: 'phone = :p',
+            ExpressionAttributeValues: { ':p': phone }
+        }));
+        const items = (rows?.Items) || [];
+        await Promise.all(items.map(it => ddb.send(new UpdateCommand({
+            TableName: T.MEMBER_RSVPS,
+            Key: { phone: it.phone, eventId: it.eventId },
+            UpdateExpression: 'SET recoveryEmail = :e, recoveryEmailSavedAt = :t',
+            ExpressionAttributeValues: { ':e': email, ':t': new Date().toISOString() }
+        })).then(() => { updated++; }).catch(() => {})));
+    } catch { /* non-fatal */ }
+
+    return respond(200, { ok: true, updated });
+}
+
+
 async function addSong(eventId, body, event) {
     const guest = await getGuestFromToken(event, eventId);
     if (!guest) return respond(401, { error: 'Guest session required' });
@@ -1118,6 +1234,8 @@ async function sendInviteEmail(toEmail, guestName, ev) {
 async function notifyCreatorOfRsvp(ev, guestName, status) {
     if (!ev.creatorEmail) return;
     const html = emailBase(`
+        if (method === 'POST' && parts[0] === 'events' && parts[2] === 'update')     return await updateEvent(parts[1], body, event);
+        if (method === 'DELETE' && parts[0] === 'events' && parts.length === 2)      return await deleteEvent(parts[1], event);
       <h2>New RSVP</h2>
       <p><strong>${guestName}</strong> just ${status === 'confirmed' ? 'confirmed their attendance' : 'declined'} for <strong>${ev.eventName}</strong>.</p>
       <div class="detail">
@@ -1170,8 +1288,6 @@ exports.handler = async (event) => {
         if (method === 'GET'  && parts[0] === 'events' && parts[2] === 'my-songs')   return await getMySOungs(parts[1], event);
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'guests')     return await addGuests(parts[1], body, event);
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'songs')      return await addSong(parts[1], body, event);
-        if (method === 'POST' && parts[0] === 'events' && parts[2] === 'update')     return await updateEvent(parts[1], body, event);
-        if (method === 'DELETE' && parts[0] === 'events' && parts.length === 2)      return await deleteEvent(parts[1], event);
         if (method === 'DELETE' && parts[0] === 'events' && parts[2] === 'songs' && parts[3]) return await removeSong(parts[1], parts[3], event);
         if (method === 'GET'  && parts[0] === 'events' && parts[2] === 'admin')      return await getEventAdmin(parts[1], event);
         if (method === 'PUT'  && parts[0] === 'events' && parts[2] === 'seating')    return await updateSeating(parts[1], body, event);
@@ -1181,13 +1297,14 @@ exports.handler = async (event) => {
         if (method === 'POST' && path === '/otp/send')   return await sendGuestOtp(body);
         if (method === 'POST' && path === '/otp/verify') return await verifyGuestOtp(body);
 
+        // Guest Google sign-in + recovery email
+        if (method === 'POST' && path === '/guest/google-auth')    return await guestGoogleAuth(body);
+        if (method === 'POST' && path === '/guest/recovery-email') return await guestRecoveryEmail(body);
+
         // Member auth + dashboard
         if (method === 'POST' && path === '/member/auth')      return await memberAuthSend(body);
         if (method === 'POST' && path === '/member/verify')    return await memberAuthVerify(body);
         if (method === 'GET'  && path === '/member/dashboard') return await getMemberDashboard(event);
-
-        // AI (server-side Gemini proxy)
-        if (method === 'POST' && path === '/ai/chat')          return await aiChat(body, event);
 
         return respond(404, { error: 'Route not found' });
     } catch (err) {
