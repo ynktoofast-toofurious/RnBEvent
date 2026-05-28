@@ -320,20 +320,7 @@
         return res.json();
     }
 
-    /* ── Merge localStorage RSVPs (offline fallback) ─ */
-
-    function mergeLocalRsvps() {
-        try {
-            var stored = JSON.parse(localStorage.getItem('rnb_my_rsvps') || '[]');
-            var seen   = {};
-            mem.attending.forEach(function(e) { seen[e.eventId] = true; });
-            stored.forEach(function(e) {
-                if (!seen[e.eventId]) {
-                    mem.attending.push({ role: 'guest', status: e.status || 'confirmed', ...e });
-                }
-            });
-        } catch (ex) { /* ignore */ }
-    }
+    /* ── (no localStorage RSVP cache — backend is the source of truth) ── */
 
     /* ── Init ─────────────────────────────────────── */
 
@@ -351,18 +338,10 @@
                     mem.phone     = data.phone;
                     mem.hosting   = (data.hosting   || []).map(function(e){ return Object.assign({ role: 'hosting' }, e); });
                     mem.attending = (data.attending || []).map(function(e){ return Object.assign({ role: 'guest' }, e); });
-                    mergeLocalRsvps();
                     showDashboard();
                     return;
                 }
             } catch (ex) { /* fall through */ }
-
-            // Token expired or API error — try local data only
-            mergeLocalRsvps();
-            if (mem.attending.length > 0) {
-                showDashboard();
-                return;
-            }
 
             // Token stale — clear and ask to re-auth
             localStorage.removeItem('rnb_creator_token');

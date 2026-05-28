@@ -658,6 +658,8 @@
             },
             // Saved drag offsets from invite preview Free Layout mode: { key: {left,top} }
             customLayout: {},
+            // Host-defined add-on rows (dresscode, parking, registry, etc.)
+            addons: [],
             parsedGuests: [],
             // Undo/redo + autosave
             history: [],
@@ -1055,6 +1057,36 @@
             link: 'Link', playlist: 'Playlist URL', registry: 'Registry', dresscode: 'Dress code',
             food: 'Food situation', parking: 'Parking info', accommodations: 'Accommodations', info: 'Additional info'
         };
+
+        /* Collect add-on rows for the publish payload. */
+        function collectAddons() {
+            var out = [];
+            document.querySelectorAll('#ed-addon-items .ev-addon-item').forEach(function(item) {
+                var inp = item.querySelector('input');
+                if (!inp) return;
+                var val = (inp.value || '').trim();
+                if (!val) return;
+                var type = inp.dataset.addonType || 'info';
+                var label = (item.querySelector('.ev-addon-item__label') || {}).textContent || _addonLabels[type] || 'Info';
+                out.push({ type: type, label: label.trim(), value: val });
+            });
+            return out;
+        }
+
+        /* Recreate add-on input rows when loading a saved draft. */
+        function restoreAddonsUI(addons) {
+            var container = document.getElementById('ed-addon-items');
+            if (!container) return;
+            container.innerHTML = '';
+            (addons || []).forEach(function(a) {
+                if (!a || !a.value) return;
+                var type = a.type || 'info';
+                addAddon(type);
+                var rows = container.querySelectorAll('.ev-addon-item input');
+                var last = rows[rows.length - 1];
+                if (last) last.value = a.value;
+            });
+        }
         function addAddon(type) {
             var container = document.getElementById('ed-addon-items');
             var id = 'addon-' + type + '-' + Date.now();
@@ -1552,6 +1584,7 @@
                 iconStyle:    state.iconStyle,
                 fieldIcons:   state.fieldIcons,
                 customLayout: state.customLayout || {},
+                addons:       collectAddons(),
                 requireVerify: document.getElementById('ed-rsvp-verify').checked,
                 showGuests:    document.getElementById('ed-rsvp-showguests').checked,
                 playlist:      document.getElementById('ed-rsvp-playlist').checked,
@@ -2193,6 +2226,10 @@
             }
             if (ev.customLayout && typeof ev.customLayout === 'object') {
                 state.customLayout = ev.customLayout;
+            }
+            if (Array.isArray(ev.addons)) {
+                state.addons = ev.addons;
+                restoreAddonsUI(ev.addons);
             }
             loadFieldIconsLocal();
             applyIconUI();

@@ -34,6 +34,7 @@ const {
     GetCommand,
     DeleteCommand,
     QueryCommand,
+    ScanCommand,
     UpdateCommand
 } = require('@aws-sdk/lib-dynamodb');
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
@@ -123,6 +124,7 @@ function sanitizeUrl(raw) {
 const ALLOWED_THEMES      = ['night','royal','candy','linen','ivory','sage','plum','copper'];
 const ALLOWED_ICON_STYLES = ['emoji','svg'];
 const ICON_FIELD_KEYS     = ['title','date','venue','host','desc'];
+const ALLOWED_ADDON_TYPES = ['link','playlist','registry','dresscode','food','parking','accommodations','info'];
 function sanitizeCustomization(body) {
     const out = {};
     const ee = String(body.eventEmoji || '').slice(0, 16);
@@ -157,6 +159,21 @@ function sanitizeCustomization(body) {
             };
         }
         if (Object.keys(cl).length) out.customLayout = cl;
+    }
+
+    // Custom add-on rows (dress code, parking, registry URLs, etc.)
+    if (Array.isArray(body.addons)) {
+        const addons = [];
+        for (const a of body.addons) {
+            if (!a || typeof a !== 'object') continue;
+            if (addons.length >= 12) break;
+            const type  = ALLOWED_ADDON_TYPES.includes(a.type) ? a.type : 'info';
+            const label = String(a.label || '').slice(0, 60);
+            const value = String(a.value || '').slice(0, 500);
+            if (!value) continue;
+            addons.push({ type, label, value });
+        }
+        if (addons.length) out.addons = addons;
     }
 
     if (typeof body.requireVerify   === 'boolean') out.requireVerify   = body.requireVerify;
@@ -524,7 +541,7 @@ async function updateEvent(eventId, body, event) {
     await ddb.send(new UpdateCommand({
         TableName: T.EVENTS,
         Key: { eventId },
-        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u, eventEmoji=:ee, iconStyle=:is, theme=:th, fieldIcons=:fi, customLayout=:cl, requireVerify=:rv, showGuests=:sg, playlistEnabled=:pl',
+        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u, eventEmoji=:ee, iconStyle=:is, theme=:th, fieldIcons=:fi, customLayout=:cl, addons=:ad, requireVerify=:rv, showGuests=:sg, playlistEnabled=:pl',
         ExpressionAttributeNames:  { '#st': 'status' },
         ExpressionAttributeValues: {
             ':n': eventName, ':t': eventType, ':d': eventDate, ':tm': eventTime,
@@ -574,6 +591,7 @@ async function getEvent(eventId) {
         eventDate:      it.eventDate,
         eventTime:      it.eventTime,
         venue:          it.venue,
+        description:    it.description || '',
         coverImageUrl:  it.coverImageUrl,
         eventType:      it.eventType,
         eventEmoji:     it.eventEmoji  || null,
@@ -581,6 +599,7 @@ async function getEvent(eventId) {
         theme:          it.theme       || null,
         fieldIcons:     it.fieldIcons  || null,
         customLayout:   it.customLayout|| null,
+        addons:         Array.isArray(it.addons) ? it.addons : [],
         requireVerify:  it.requireVerify !== false,
         showGuests:     it.showGuests    !== false,
         playlistEnabled: it.playlistEnabled !== false
@@ -775,41 +794,93 @@ async function verifyGuestOtp(body) {
     return respond(200, { guestToken, status: rsvpStatus, event: safeEvent });
 }
 
+/* Verify a Google ID token and return the parsed payload, or null on failure. */
+async function verifyGoogleIdToken(idToken) {
+    if (!idToken || typeof idToken !== 'string' || idToken.length > 4096) return null;
+    try {
+        const r = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken));
+        if (!r.ok) return null;
+        const u = await r.json();
+        const clientId = process.env.GOOGLE_CLIENT_ID;
+        if (clientId && u.aud !== clientId) return null;
+        if (u.email_verified !== 'true') return null;
+        const now = Math.floor(Date.now() / 1000);
+        if (!u.exp || parseInt(u.exp) < now) return null;
+        return u;
+    } catch { return null; }
+}
+
+/* Look up an existing guest's cached profile by googleId (member-rsvps scan).
+   Used for silent re-auth so returning Google guests skip the phone/postal form. */
+async function findGuestByGoogleId(googleId) {
+    if (!googleId) return null;
+    try {
+        const r = await ddb.send(new ScanCommand({
+            TableName: T.MEMBER_RSVPS,
+            FilterExpression: 'googleId = :g',
+            ExpressionAttributeValues: { ':g': googleId },
+            Limit: 1
+        }));
+        return (r.Items && r.Items[0]) || null;
+    } catch { return null; }
+}
+
+/* POST /guest/google-lookup ── verify Google token, return cached profile (no RSVP write).
+   Returns 404 if this Google account has never RSVP'd before. */
+async function guestGoogleLookup(body) {
+    const googleUser = await verifyGoogleIdToken(body.idToken);
+    if (!googleUser) return respond(401, { error: 'Invalid Google token' });
+    const googleId = String(googleUser.sub || '').slice(0, 64);
+    if (!googleId) return respond(401, { error: 'Incomplete Google profile' });
+
+    const existing = await findGuestByGoogleId(googleId);
+    if (!existing) return respond(404, { error: 'No prior RSVP for this Google account' });
+
+    return respond(200, {
+        found:   true,
+        phone:   existing.phone   || null,
+        postal:  existing.postal  || null,
+        country: existing.country || null,
+        name:    existing.guestName || null,
+        email:   existing.guestEmail || null
+    });
+}
+
 /* POST /guest/google-auth ── Google ID token + phone + postal → guest RSVP */
 async function guestGoogleAuth(body) {
     const idToken    = String(body.idToken || '').trim();
     if (!idToken || idToken.length > 4096) return respond(400, { error: 'Google ID token required' });
 
-    const phone      = sanitizePhone(body.phone);
+    let phone        = sanitizePhone(body.phone);
     const eventId    = sanitizeText(body.eventId, 30);
-    const postal     = sanitizeText(body.postal, 20);
-    const country    = sanitizeText(body.country, 8).toUpperCase();
+    let postal       = sanitizeText(body.postal, 20);
+    let country      = sanitizeText(body.country, 8).toUpperCase();
     const rsvpStatus = body.status === 'declined' ? 'declined' : 'confirmed';
 
-    if (!phone)   return respond(400, { error: 'Valid phone number required' });
-    if (!postal)  return respond(400, { error: 'Postal code required' });
-    if (!country) return respond(400, { error: 'Country required' });
     if (!eventId) return respond(400, { error: 'Event ID required' });
 
     // Verify Google token server-side
-    let googleUser;
-    try {
-        const r = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken));
-        if (!r.ok) return respond(401, { error: 'Invalid Google token' });
-        googleUser = await r.json();
-    } catch {
-        return respond(401, { error: 'Could not verify Google token' });
-    }
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    if (clientId && googleUser.aud !== clientId) return respond(401, { error: 'Token audience mismatch' });
-    if (googleUser.email_verified !== 'true')     return respond(401, { error: 'Google email not verified' });
-    const now = Math.floor(Date.now() / 1000);
-    if (!googleUser.exp || parseInt(googleUser.exp) < now) return respond(401, { error: 'Google token expired' });
+    const googleUser = await verifyGoogleIdToken(idToken);
+    if (!googleUser) return respond(401, { error: 'Invalid Google token' });
 
     const googleId = String(googleUser.sub || '').slice(0, 64);
     const email    = sanitizeEmail(googleUser.email);
     const guestName = sanitizeText(body.name || googleUser.name || googleUser.given_name || 'Guest', 100);
     if (!googleId || !email) return respond(401, { error: 'Incomplete Google profile' });
+
+    // Silent re-auth: if any field is missing, look up cached profile by googleId in member-rsvps.
+    if (!phone || !postal || !country) {
+        const cached = await findGuestByGoogleId(googleId);
+        if (cached) {
+            phone   = phone   || cached.phone;
+            postal  = postal  || cached.postal  || '';
+            country = country || cached.country || '';
+        }
+    }
+
+    if (!phone)   return respond(400, { error: 'Valid phone number required' });
+    if (!postal)  return respond(400, { error: 'Postal code required' });
+    if (!country) return respond(400, { error: 'Country required' });
 
     // Load event
     const evRes = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
@@ -1379,6 +1450,7 @@ exports.handler = async (event) => {
 
         // Guest Google sign-in + recovery email
         if (method === 'POST' && path === '/guest/google-auth')    return await guestGoogleAuth(body);
+        if (method === 'POST' && path === '/guest/google-lookup')  return await guestGoogleLookup(body);
         if (method === 'POST' && path === '/guest/recovery-email') return await guestRecoveryEmail(body);
 
         // Member auth + dashboard

@@ -140,6 +140,12 @@
                         <p class="ev-description" id="detail-description"></p>
                     </div>
 
+                    <!-- Host's custom add-ons (dress code, parking, registry, etc.) — mirrors event-create.html preview -->
+                    <div class="ev-card" id="ev-addons-card" style="display:none">
+                        <p class="ev-card__label">More Details</p>
+                        <div id="ev-addons-list" class="ev-addons-list"></div>
+                    </div>
+
                     <!-- Song requests card -->
                     <div class="ev-card ev-card--green" id="song-card">
                         <p class="ev-card__label">Optional</p>
@@ -387,6 +393,12 @@
 
         /* ── Init ───────────────────────────────────── */
         (function init() {
+            // One-time cleanup of legacy localStorage keys; backend is now the source of truth.
+            try {
+                localStorage.removeItem('rnb_guest_profile');
+                localStorage.removeItem('rnb_my_rsvps');
+            } catch(_) {}
+
             var params  = new URLSearchParams(window.location.search);
             state.eventId = params.get('id') || window.location.pathname.split('/').filter(Boolean).pop();
 
@@ -498,18 +510,9 @@
                 var s1 = document.getElementById('auth-modal-sub');
                 if (t1) t1.textContent = state.pendingStatus === 'confirmed' ? "You're going!" : "Can't make it?";
                 if (s1) s1.textContent = 'Enter your number. We\u2019ll send a quick verification code.';
-                // Prefill from any prior phone-based RSVP on this device
-                try {
-                    var p = JSON.parse(localStorage.getItem('rnb_guest_profile') || '{}');
-                    var nameInp  = document.getElementById('guest-name');
-                    var phoneInp = document.getElementById('guest-phone');
-                    if (nameInp  && !nameInp.value  && p.name)  nameInp.value  = p.name;
-                    if (phoneInp && !phoneInp.value && p.phone) phoneInp.value = p.phone;
-                } catch(_) {}
                 setTimeout(function() {
                     var nameInp = document.getElementById('guest-name');
-                    var focusEl = (nameInp && !nameInp.value) ? nameInp : document.getElementById('guest-phone');
-                    if (focusEl) focusEl.focus();
+                    if (nameInp) nameInp.focus();
                 }, 50);
             } else if (method === 'google') {
                 if (!window.google || !window.google.accounts) {
@@ -584,86 +587,68 @@
                 picture: profile.picture || ''
             };
 
-            // ---- Silent re-auth: if we already have this guest's phone/postal locally, skip the form
-            var saved = null;
-            try { saved = JSON.parse(localStorage.getItem('rnb_guest_profile') || 'null'); } catch(_) {}
-            var canSkip = saved
-                && saved.email && saved.email.toLowerCase() === (profile.email || '').toLowerCase()
-                && saved.phone && saved.postal && saved.country;
-
-            if (canSkip) {
-                silentGoogleReauth(saved);
-                return;
-            }
-
-            document.getElementById('auth-step-method').classList.add('hidden');
-            document.getElementById('auth-step-google-phone').classList.remove('hidden');
-            document.getElementById('google-welcome').textContent =
-                'Hi ' + (pendingGoogleProfile.name || pendingGoogleProfile.email) +
-                ' \u2014 add your phone so we can send event reminders.';
-            updatePhonePrefix();
-            setTimeout(function() { document.getElementById('guest-google-phone').focus(); }, 50);
+            // Ask the backend if this Google account has RSVP'd before — if so, skip the form entirely.
+            silentGoogleReauthFromServer();
         }
 
-        /* Silent re-auth for returning Google guests whose phone+postal are cached locally. */
-        async function silentGoogleReauth(saved) {
-            // Show spinner step
+        /* Ask backend whether this Google account already has a phone/postal on file.
+           If yes → spinner + silent RSVP. If no → show the manual form. */
+        async function silentGoogleReauthFromServer() {
+            // Pop the spinner immediately so the flow feels seamless
             ['auth-step-method','auth-step-phone','auth-step-otp','auth-step-google-phone','auth-step-recovery'].forEach(function(id){
                 var el = document.getElementById(id); if (el) el.classList.add('hidden');
             });
             var loadStep = document.getElementById('auth-step-loading');
             loadStep.classList.remove('hidden');
             document.getElementById('auth-loading-title').textContent =
-                'Welcome back, ' + (pendingGoogleProfile.name || 'friend') + '!';
-            document.getElementById('auth-loading-sub').textContent =
-                state.pendingStatus === 'declined' ? 'Saving your response\u2026' : 'Confirming your RSVP\u2026';
+                'Welcome' + (pendingGoogleProfile.name ? ', ' + pendingGoogleProfile.name : '') + '!';
+            document.getElementById('auth-loading-sub').textContent = 'Looking up your details\u2026';
             document.getElementById('auth-err-loading').textContent = '';
 
-            // Give the spinner a brief moment so the welcome message reads naturally
-            await new Promise(function(r) { setTimeout(r, 650); });
+            var lookup = await apiPost('/guest/google-lookup', { idToken: pendingGoogleProfile.idToken });
+
+            var hasCached = lookup && !lookup.error && lookup.phone && lookup.postal && lookup.country;
+            if (!hasCached) {
+                // First-time guest — show the phone/postal form
+                loadStep.classList.add('hidden');
+                document.getElementById('auth-step-google-phone').classList.remove('hidden');
+                document.getElementById('google-welcome').textContent =
+                    'Hi ' + (pendingGoogleProfile.name || pendingGoogleProfile.email) +
+                    ' \u2014 add your phone so we can send event reminders.';
+                updatePhonePrefix();
+                setTimeout(function() { document.getElementById('guest-google-phone').focus(); }, 50);
+                return;
+            }
+
+            // Returning guest — update spinner copy and RSVP silently
+            document.getElementById('auth-loading-title').textContent =
+                'Welcome back' + (lookup.name ? ', ' + lookup.name : '') + '!';
+            document.getElementById('auth-loading-sub').textContent =
+                state.pendingStatus === 'declined' ? 'Saving your response\u2026' : 'Confirming your RSVP\u2026';
+
+            // Brief pause so the welcome message reads naturally
+            await new Promise(function(r) { setTimeout(r, 600); });
 
             var res = await apiPost('/guest/google-auth', {
                 idToken: pendingGoogleProfile.idToken,
                 name:    pendingGoogleProfile.name,
                 email:   pendingGoogleProfile.email,
-                phone:   saved.phone,
-                postal:  saved.postal,
-                country: saved.country,
                 eventId: state.eventId,
                 status:  state.pendingStatus
+                // phone/postal/country intentionally omitted — backend fills them from cached googleId record
             });
 
-            if (res && res.error && /404|not[ -]?found|unknown|cannot post|forbidden/i.test(res.error)) {
-                res = {
-                    guestToken: 'local-google-' + Date.now(),
-                    status:     state.pendingStatus,
-                    event:      state.event,
-                    accountType: 'google'
-                };
-            } else if (res && res.error) {
-                // Saved phone is stale (e.g., backend rejects) — fall back to the manual form
-                document.getElementById('auth-step-loading').classList.add('hidden');
-                document.getElementById('auth-step-google-phone').classList.remove('hidden');
-                document.getElementById('google-welcome').textContent =
-                    'Hi ' + (pendingGoogleProfile.name || pendingGoogleProfile.email) +
-                    ' \u2014 please re-confirm your phone and postal code.';
-                var phoneInput = document.getElementById('guest-google-phone');
-                if (phoneInput && !phoneInput.value) phoneInput.value = (saved.phone || '').replace(/^\+?\d{1,3}\s*/, '');
-                var postalInput = document.getElementById('guest-postal');
-                if (postalInput && !postalInput.value) postalInput.value = saved.postal || '';
-                updatePhonePrefix();
-                document.getElementById('auth-err-google-phone').textContent = res.error;
+            if (res && res.error) {
+                // Backend rejected (event missing, etc.) — surface the error inside the spinner step
+                document.getElementById('auth-err-loading').textContent = res.error;
+                setTimeout(function() {
+                    loadStep.classList.add('hidden');
+                    document.getElementById('auth-step-method').classList.remove('hidden');
+                }, 1500);
                 return;
             }
 
-            persistGuestSession(res, 'google', {
-                name:    pendingGoogleProfile.name,
-                email:   pendingGoogleProfile.email,
-                phone:   saved.phone,
-                country: saved.country,
-                postal:  saved.postal
-            });
-
+            persistGuestSession(res, 'google');
             closeAuthModal();
             finishRsvp(res);
         }
@@ -731,42 +716,21 @@
                 postal: postal
             });
 
+            persistGuestSession(res, 'google');
+
             closeAuthModal();
             finishRsvp(res);
         }
 
-        /* Persist guest session + cached profile */
-        function persistGuestSession(res, accountType, profile) {
+        /* Persist guest session only (sessionStorage, per-tab). No localStorage profile cache;
+           backend is the source of truth via /guest/google-lookup + /member/dashboard. */
+        function persistGuestSession(res /*, accountType, profile */) {
             state.guestToken   = res.guestToken;
             state.guestEventId = state.eventId;
-            sessionStorage.setItem('rnb_guest_token', res.guestToken);
-            sessionStorage.setItem('rnb_guest_event', state.eventId);
             try {
-                var p = profile || {};
-                p.accountType = accountType;
-                p.savedAt = new Date().toISOString();
-                localStorage.setItem('rnb_guest_profile', JSON.stringify(p));
+                sessionStorage.setItem('rnb_guest_token', res.guestToken);
+                sessionStorage.setItem('rnb_guest_event', state.eventId);
             } catch(_) {}
-            if (res.event) {
-                try {
-                    var myRsvps = JSON.parse(localStorage.getItem('rnb_my_rsvps') || '[]');
-                    var idx = myRsvps.findIndex(function(e){ return e.eventId === state.eventId; });
-                    var entry = {
-                        eventId:      res.event.eventId,
-                        eventName:    res.event.eventName,
-                        eventDate:    res.event.eventDate,
-                        eventTime:    res.event.eventTime || '',
-                        venue:        res.event.venue || '',
-                        coverImageUrl: res.event.coverImageUrl || '',
-                        creatorName:  res.event.creatorName || '',
-                        eventType:    res.event.eventType || '',
-                        status:       res.status,
-                        rsvpAt:       new Date().toISOString()
-                    };
-                    if (idx >= 0) myRsvps[idx] = entry; else myRsvps.push(entry);
-                    localStorage.setItem('rnb_my_rsvps', JSON.stringify(myRsvps));
-                } catch(_) {}
-            }
         }
 
         async function finishRsvp(res) {
@@ -779,26 +743,11 @@
             }
         }
 
-        /* ── Recovery-email prompt (phone-only) ─────── */
-        function maybePromptRecoveryEmail() {
-            try {
-                var p = JSON.parse(localStorage.getItem('rnb_guest_profile') || '{}');
-                if (p.accountType !== 'phone') return false;
-                if (p.recoveryEmail) return false;
-                if (p.recoveryDismissedAt) {
-                    // Re-nag after 7 days
-                    var ageMs = Date.now() - new Date(p.recoveryDismissedAt).getTime();
-                    if (ageMs < 7 * 24 * 3600 * 1000) return false;
-                }
-            } catch(_) {}
-            document.getElementById('auth-modal').classList.remove('hidden');
-            ['auth-step-method','auth-step-phone','auth-step-otp','auth-step-google-phone','auth-step-loading'].forEach(function(id){
-                document.getElementById(id).classList.add('hidden');
-            });
-            document.getElementById('auth-step-recovery').classList.remove('hidden');
-            setTimeout(function() { document.getElementById('guest-recovery-email').focus(); }, 50);
-            return true;
-        }
+        /* ── Recovery-email prompt ──────────────────────
+           Disabled: backend stores recovery preferences per phone, and we no longer keep
+           a localStorage cache to drive this nag. If needed in the future, gate this on a
+           backend flag returned with the session. */
+        function maybePromptRecoveryEmail() { return false; }
 
         async function saveRecoveryEmail() {
             document.getElementById('auth-err-recovery').textContent = '';
@@ -813,23 +762,11 @@
                 eventId:    state.eventId
             });
             setBtnLoading('#btn-save-recovery', false);
-            // Save locally regardless of backend availability
-            try {
-                var p = JSON.parse(localStorage.getItem('rnb_guest_profile') || '{}');
-                p.recoveryEmail = email;
-                p.recoveryEmailSavedAt = new Date().toISOString();
-                localStorage.setItem('rnb_guest_profile', JSON.stringify(p));
-            } catch(_) {}
             closeAuthModal();
-            showToast('Recovery email saved.');
+            if (res && res.error) showToast(res.error); else showToast('Recovery email saved.');
         }
 
         function skipRecoveryEmail() {
-            try {
-                var p = JSON.parse(localStorage.getItem('rnb_guest_profile') || '{}');
-                p.recoveryDismissedAt = new Date().toISOString();
-                localStorage.setItem('rnb_guest_profile', JSON.stringify(p));
-            } catch(_) {}
             closeAuthModal();
         }
 
@@ -920,6 +857,43 @@
             } else {
                 desc.style.display = 'none';
             }
+
+            // Render host's custom add-ons (mirrors the editor's invitation preview)
+            renderEventAddons(ev.addons);
+
+            // Hide the song-request card if the host disabled the playlist feature
+            var songCard = document.getElementById('song-card');
+            if (songCard) songCard.style.display = (ev.playlistEnabled === false) ? 'none' : '';
+        }
+
+        function renderEventAddons(addons) {
+            var card = document.getElementById('ev-addons-card');
+            var list = document.getElementById('ev-addons-list');
+            if (!card || !list) return;
+            if (!Array.isArray(addons) || !addons.length) {
+                card.style.display = 'none';
+                list.innerHTML = '';
+                return;
+            }
+            var defaultLabels = {
+                link: 'Link', playlist: 'Playlist', registry: 'Registry', dresscode: 'Dress code',
+                food: 'Food', parking: 'Parking', accommodations: 'Accommodations', info: 'Additional info'
+            };
+            list.innerHTML = addons.map(function(a) {
+                var label = escHtml(a.label || defaultLabels[a.type] || 'Note');
+                var raw   = String(a.value || '');
+                var val;
+                if (/^https?:\/\//i.test(raw)) {
+                    val = '<a href="' + escHtml(raw) + '" target="_blank" rel="noopener" style="color:#77a361;word-break:break-all">' + escHtml(raw) + '</a>';
+                } else {
+                    val = escHtml(raw).replace(/\n/g, '<br>');
+                }
+                return '<div class="ev-addon-row" style="display:flex;flex-direction:column;gap:4px;padding:12px 0;border-bottom:1px solid #e6ebe2">'
+                    +   '<span class="ev-detail-label" style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#888">' + label + '</span>'
+                    +   '<span class="ev-detail-value" style="font-size:14px;color:#2c3e2c">' + val + '</span>'
+                    + '</div>';
+            }).join('');
+            card.style.display = '';
         }
 
         function showDeclinedView() {
