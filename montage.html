@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Montage &mdash; RNB EVENTS</title>
+<link rel="icon" type="image/png" href="3D Assets/Mont and lock.png">
+<link rel="stylesheet" href="styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --accent-color: #b89a5e; }
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    background: radial-gradient(ellipse at 25% 20%, #1e3d1e 0%, #0b160b 55%), radial-gradient(ellipse at 75% 80%, #2c3e2c 0%, #0b160b 60%);
+    color: #f8f6f2;
+    min-height: 100vh;
+}
+.mtg-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+.mtg-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; gap: 16px; flex-wrap: wrap;
+}
+.mtg-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 8px 16px 8px 12px;
+    color: rgba(255,255,255,0.75);
+    font-size: 12px; letter-spacing: 0.5px;
+    text-decoration: none; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.mtg-back:hover { background: rgba(184,154,94,0.18); color: #fff; }
+.mtg-event {
+    text-align: right;
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.mtg-event strong { display: block; font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: #fff; letter-spacing: 0; text-transform: none; margin-top: 2px; }
+
+.mtg-hero { text-align: center; padding: 24px 0 36px; }
+.mtg-icon {
+    width: 68px; height: 68px; margin: 0 auto 16px;
+    background: rgba(184,154,94,0.15);
+    border: 1px solid rgba(184,154,94,0.35);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent-color);
+}
+.mtg-hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 6vw, 56px); font-weight: 400;
+    margin: 0 0 10px;
+}
+.mtg-hero p { color: rgba(255,255,255,0.6); font-size: 14px; max-width: 540px; margin: 0 auto; line-height: 1.6; }
+
+.mtg-retention {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,165,0,0.1);
+    border: 1px solid rgba(255,165,0,0.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: rgba(255,200,120,0.95);
+    font-size: 12px;
+    margin: 0 auto 28px;
+    max-width: 540px;
+    justify-content: center;
+}
+
+/* Action area */
+.mtg-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 36px; }
+@media (max-width: 640px) { .mtg-actions { grid-template-columns: 1fr; } }
+.mtg-action-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 28px 22px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.mtg-action-card:hover {
+    background: rgba(184,154,94,0.08);
+    border-color: rgba(184,154,94,0.5);
+    transform: translateY(-2px);
+}
+.mtg-action-card svg { color: var(--accent-color); margin-bottom: 12px; }
+.mtg-action-card strong {
+    display: block;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 400; color: #fff;
+    margin-bottom: 4px;
+}
+.mtg-action-card p { margin: 0; font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.5; }
+
+/* Recorder modal */
+.mtg-recorder {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1000;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 16px;
+}
+.mtg-recorder.active { display: flex; }
+.mtg-recorder__inner { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 14px; }
+.mtg-recorder video {
+    width: 100%;
+    max-height: 70vh;
+    background: #000;
+    border-radius: 14px;
+    transform: scaleX(-1); /* mirror like a selfie cam */
+}
+.mtg-recorder__controls {
+    display: flex; justify-content: center; align-items: center; gap: 14px;
+}
+.mtg-rec-btn {
+    background: #c8222a;
+    border: 4px solid #fff;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.mtg-rec-btn.recording { border-radius: 8px; background: #fff; }
+.mtg-rec-cancel {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    border-radius: 22px;
+    padding: 10px 22px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer;
+}
+.mtg-timer {
+    text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    color: #fff;
+    font-size: 14px; letter-spacing: 2px;
+}
+.mtg-timer.recording::before { content: '● '; color: #c8222a; }
+
+/* Gallery */
+.mtg-gallery-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 16px;
+}
+.mtg-gallery-head h2 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 26px; margin: 0; }
+.mtg-gallery-head span { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; }
+.mtg-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+.mtg-tile {
+    position: relative;
+    aspect-ratio: 9/16;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+}
+.mtg-tile video { width: 100%; height: 100%; object-fit: cover; }
+.mtg-tile__overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent 50%);
+    display: flex; align-items: flex-end; padding: 10px;
+    font-size: 11px; color: rgba(255,255,255,0.85);
+    pointer-events: none;
+}
+.mtg-tile__del {
+    position: absolute; top: 6px; right: 6px;
+    background: rgba(0,0,0,0.55);
+    border: none; color: #fff;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.15s;
+}
+.mtg-tile:hover .mtg-tile__del { opacity: 1; }
+.mtg-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.4);
+    font-style: italic;
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 14px;
+}
+</style>
+</head>
+<body>
+<div class="mtg-wrap">
+
+    <div class="mtg-top">
+        <a class="mtg-back" href="event-create.html">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to event
+        </a>
+        <div class="mtg-event">
+            Event<strong id="mtg-event-name">Untitled Event</strong>
+        </div>
+    </div>
+
+    <div class="mtg-hero">
+        <div class="mtg-icon">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.26a1 1 0 0 1-1.447.894L15 14"/><rect x="2" y="7" width="13" height="10" rx="2"/></svg>
+        </div>
+        <h1>Montage</h1>
+        <p>Capture every angle of the moment. Each guest contributes a short clip from their point of view &mdash; it all becomes one cinematic story.</p>
+    </div>
+
+    <div class="mtg-retention">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        All clips are automatically deleted <strong style="margin-left:4px">3 days after the event</strong>. Download yours before then.
+    </div>
+
+    <div class="mtg-actions">
+        <div class="mtg-action-card" onclick="openRecorder()">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+            <strong>Record Live</strong>
+            <p>Use your camera right now &mdash; up to 30 seconds per clip.</p>
+        </div>
+        <label class="mtg-action-card">
+            <input type="file" accept="video/*" capture="user" style="display:none" onchange="onVideoUpload(event)">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <strong>Upload Video</strong>
+            <p>Already recorded? Pick a video file from your device.</p>
+        </label>
+    </div>
+
+    <div class="mtg-gallery-head">
+        <h2>The Montage</h2>
+        <span id="mtg-count">0 clips</span>
+    </div>
+    <div class="mtg-gallery" id="mtg-gallery">
+        <div class="mtg-empty" id="mtg-empty">No clips yet. Record or upload the first one to start the montage.</div>
+    </div>
+
+</div>
+
+<!-- Recorder modal -->
+<div class="mtg-recorder" id="mtg-recorder">
+    <div class="mtg-recorder__inner">
+        <video id="mtg-cam" autoplay muted playsinline></video>
+        <div class="mtg-timer" id="mtg-timer">00:00</div>
+        <div class="mtg-recorder__controls">
+            <button class="mtg-rec-cancel" onclick="closeRecorder()">Cancel</button>
+            <button class="mtg-rec-btn" id="mtg-rec-btn" onclick="toggleRecord()" title="Start / stop recording"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load event context
+    var ctx = {};
+    try { ctx = JSON.parse(localStorage.getItem('rnb_party_feature_ctx') || '{}'); } catch(_) {}
+    if (ctx.eventName) document.getElementById('mtg-event-name').textContent = ctx.eventName;
+    var storeKey = 'rnb_montage_' + (ctx.eventId || 'demo');
+
+    // Load existing clips from localStorage (stored as data URLs)
+    var clips = [];
+    try { clips = JSON.parse(localStorage.getItem(storeKey) || '[]'); } catch(_) {}
+
+    function saveClips() {
+        try { localStorage.setItem(storeKey, JSON.stringify(clips)); } catch(e) { alert('Storage is full. Delete some clips to add more.'); }
+    }
+
+    function renderGallery() {
+        var g = document.getElementById('mtg-gallery');
+        document.getElementById('mtg-count').textContent = clips.length + (clips.length === 1 ? ' clip' : ' clips');
+        if (!clips.length) {
+            g.innerHTML = '<div class="mtg-empty" id="mtg-empty">No clips yet. Record or upload the first one to start the montage.</div>';
+            return;
+        }
+        g.innerHTML = clips.map(function(c, i) {
+            var when = new Date(c.t).toLocaleString();
+            return '<div class="mtg-tile">'
+                + '<video src="' + c.src + '" controls preload="metadata"></video>'
+                + '<button class="mtg-tile__del" onclick="deleteClip(' + i + ')" title="Delete">'
+                + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+                + '</button>'
+                + '<div class="mtg-tile__overlay">' + when + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
+    function deleteClip(i) {
+        if (!confirm('Delete this clip? It cannot be recovered.')) return;
+        clips.splice(i, 1);
+        saveClips();
+        renderGallery();
+    }
+
+    function onVideoUpload(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 25 * 1024 * 1024) { alert('Video is too large. Max 25 MB.'); return; }
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            clips.unshift({ src: ev.target.result, t: Date.now() });
+            saveClips();
+            renderGallery();
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    }
+
+    /* --- Live recorder --- */
+    var stream = null, recorder = null, chunks = [], recStart = 0, recTimer = null;
+
+    function openRecorder() {
+        document.getElementById('mtg-recorder').classList.add('active');
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true })
+            .then(function(s) {
+                stream = s;
+                document.getElementById('mtg-cam').srcObject = s;
+            })
+            .catch(function(err) {
+                alert('Could not access camera: ' + err.message);
+                closeRecorder();
+            });
+    }
+
+    function closeRecorder() {
+        if (recorder && recorder.state !== 'inactive') recorder.stop();
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+        stream = null; recorder = null; chunks = [];
+        clearInterval(recTimer);
+        document.getElementById('mtg-timer').textContent = '00:00';
+        document.getElementById('mtg-timer').classList.remove('recording');
+        document.getElementById('mtg-rec-btn').classList.remove('recording');
+        document.getElementById('mtg-recorder').classList.remove('active');
+    }
+
+    function toggleRecord() {
+        if (!stream) return;
+        if (!recorder || recorder.state === 'inactive') {
+            chunks = [];
+            try {
+                recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            } catch(_) {
+                try { recorder = new MediaRecorder(stream); } catch(e) { alert('Recording not supported in this browser.'); return; }
+            }
+            recorder.ondataavailable = function(e) { if (e.data.size) chunks.push(e.data); };
+            recorder.onstop = function() {
+                var blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
+                if (blob.size > 25 * 1024 * 1024) { alert('Clip too large. Try a shorter recording.'); return; }
+                var reader = new FileReader();
+                reader.onload = function(ev) {
+                    clips.unshift({ src: ev.target.result, t: Date.now() });
+                    saveClips();
+                    renderGallery();
+                    closeRecorder();
+                };
+                reader.readAsDataURL(blob);
+            };
+            recorder.start();
+            recStart = Date.now();
+            document.getElementById('mtg-rec-btn').classList.add('recording');
+            document.getElementById('mtg-timer').classList.add('recording');
+            recTimer = setInterval(function() {
+                var s = Math.floor((Date.now() - recStart) / 1000);
+                var m = String(Math.floor(s / 60)).padStart(2, '0');
+                var ss = String(s % 60).padStart(2, '0');
+                document.getElementById('mtg-timer').textContent = m + ':' + ss;
+                if (s >= 30) { toggleRecord(); } // auto-stop at 30s
+            }, 250);
+        } else {
+            recorder.stop();
+            clearInterval(recTimer);
+        }
+    }
+
+    renderGallery();
+</script>
+</body>
+</html>

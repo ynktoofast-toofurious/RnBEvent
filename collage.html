@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collage &mdash; RNB EVENTS</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --accent-color: #b89a5e; }
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    background: radial-gradient(ellipse at 25% 20%, #1e3d1e 0%, #0b160b 55%), radial-gradient(ellipse at 75% 80%, #2c3e2c 0%, #0b160b 60%);
+    color: #f8f6f2;
+    min-height: 100vh;
+}
+.col-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+.col-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; gap: 16px; flex-wrap: wrap;
+}
+.col-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 8px 16px 8px 12px;
+    color: rgba(255,255,255,0.75);
+    font-size: 12px; letter-spacing: 0.5px;
+    text-decoration: none; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.col-back:hover { background: rgba(184,154,94,0.18); color: #fff; }
+.col-event {
+    text-align: right;
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.col-event strong { display: block; font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: #fff; letter-spacing: 0; text-transform: none; margin-top: 2px; }
+
+.col-hero { text-align: center; padding: 24px 0 36px; }
+.col-icon {
+    width: 68px; height: 68px; margin: 0 auto 16px;
+    background: rgba(184,154,94,0.15);
+    border: 1px solid rgba(184,154,94,0.35);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent-color);
+}
+.col-hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 6vw, 56px); font-weight: 400;
+    margin: 0 0 10px;
+}
+.col-hero p { color: rgba(255,255,255,0.6); font-size: 14px; max-width: 540px; margin: 0 auto; line-height: 1.6; }
+
+.col-retention {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,165,0,0.1);
+    border: 1px solid rgba(255,165,0,0.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: rgba(255,200,120,0.95);
+    font-size: 12px;
+    margin: 0 auto 28px;
+    max-width: 540px;
+    justify-content: center;
+}
+
+/* Drop zone */
+.col-drop {
+    border: 2px dashed rgba(255,255,255,0.18);
+    border-radius: 16px;
+    padding: 36px 24px;
+    text-align: center;
+    background: rgba(255,255,255,0.03);
+    transition: all 0.2s;
+    cursor: pointer;
+    margin-bottom: 36px;
+}
+.col-drop:hover, .col-drop.dragover {
+    border-color: var(--accent-color);
+    background: rgba(184,154,94,0.08);
+}
+.col-drop svg { color: var(--accent-color); margin-bottom: 10px; }
+.col-drop strong {
+    display: block;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px; font-weight: 400; color: #fff;
+    margin-bottom: 4px;
+}
+.col-drop p { margin: 0; font-size: 12px; color: rgba(255,255,255,0.5); }
+.col-drop input { display: none; }
+
+/* Gallery */
+.col-gallery-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap; gap: 12px;
+}
+.col-gallery-head h2 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 26px; margin: 0; }
+.col-gallery-head .col-actions { display: flex; gap: 10px; align-items: center; }
+.col-count { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; }
+.col-download-all {
+    background: rgba(184,154,94,0.18);
+    border: 1px solid rgba(184,154,94,0.4);
+    color: #fff;
+    border-radius: 18px;
+    padding: 6px 14px;
+    font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;
+    cursor: pointer;
+}
+.col-download-all:hover { background: rgba(184,154,94,0.32); }
+
+.col-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+}
+.col-tile {
+    position: relative;
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+}
+.col-tile img, .col-tile video {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.3s;
+}
+.col-tile:hover img, .col-tile:hover video { transform: scale(1.04); }
+.col-tile__badge {
+    position: absolute; top: 6px; left: 6px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 10px; padding: 2px 7px;
+    border-radius: 8px;
+    letter-spacing: 0.5px;
+}
+.col-tile__del {
+    position: absolute; top: 6px; right: 6px;
+    background: rgba(0,0,0,0.6);
+    border: none; color: #fff;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.15s;
+}
+.col-tile:hover .col-tile__del { opacity: 1; }
+.col-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.4);
+    font-style: italic;
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 14px;
+}
+
+/* Lightbox */
+.col-lightbox {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1000;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 24px;
+}
+.col-lightbox.active { display: flex; }
+.col-lightbox img, .col-lightbox video {
+    max-width: 95%; max-height: 90vh;
+    border-radius: 10px;
+}
+.col-lb-close {
+    position: absolute; top: 20px; right: 20px;
+    background: rgba(255,255,255,0.12);
+    border: none; color: #fff;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+</style>
+</head>
+<body>
+<div class="col-wrap">
+
+    <div class="col-top">
+        <a class="col-back" href="event-create.html">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to event
+        </a>
+        <div class="col-event">
+            Event<strong id="col-event-name">Untitled Event</strong>
+        </div>
+    </div>
+
+    <div class="col-hero">
+        <div class="col-icon">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        </div>
+        <h1>Collage</h1>
+        <p>A shared drop box for the night. Guests and hosts upload photos and videos &mdash; everything from every camera, in one beautiful grid.</p>
+    </div>
+
+    <div class="col-retention">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Photos &amp; videos are automatically deleted <strong style="margin-left:4px">3 days after the event</strong>. Download yours before then.
+    </div>
+
+    <label class="col-drop" id="col-drop">
+        <input type="file" accept="image/*,video/*" multiple onchange="onFiles(event)">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <strong>Drop photos &amp; videos here</strong>
+        <p>or click to browse &mdash; multiple files allowed</p>
+    </label>
+
+    <div class="col-gallery-head">
+        <h2>The Collage</h2>
+        <div class="col-actions">
+            <span class="col-count" id="col-count">0 items</span>
+            <button class="col-download-all" id="col-download-all" onclick="downloadAll()" style="display:none">Download all</button>
+        </div>
+    </div>
+    <div class="col-gallery" id="col-gallery">
+        <div class="col-empty">No photos or videos yet. Upload the first one to start the collage.</div>
+    </div>
+
+</div>
+
+<!-- Lightbox -->
+<div class="col-lightbox" id="col-lightbox" onclick="if(event.target===this)closeLightbox()">
+    <button class="col-lb-close" onclick="closeLightbox()" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div id="col-lb-content"></div>
+</div>
+
+<script>
+    // Load event context
+    var ctx = {};
+    try { ctx = JSON.parse(localStorage.getItem('rnb_party_feature_ctx') || '{}'); } catch(_) {}
+    if (ctx.eventName) document.getElementById('col-event-name').textContent = ctx.eventName;
+    var storeKey = 'rnb_collage_' + (ctx.eventId || 'demo');
+
+    var items = [];
+    try { items = JSON.parse(localStorage.getItem(storeKey) || '[]'); } catch(_) {}
+
+    function saveItems() {
+        try { localStorage.setItem(storeKey, JSON.stringify(items)); }
+        catch(e) { alert('Storage is full. Delete some items to add more.'); }
+    }
+
+    function renderGallery() {
+        var g = document.getElementById('col-gallery');
+        document.getElementById('col-count').textContent = items.length + (items.length === 1 ? ' item' : ' items');
+        document.getElementById('col-download-all').style.display = items.length ? 'inline-block' : 'none';
+        if (!items.length) {
+            g.innerHTML = '<div class="col-empty">No photos or videos yet. Upload the first one to start the collage.</div>';
+            return;
+        }
+        g.innerHTML = items.map(function(it, i) {
+            var media = it.kind === 'video'
+                ? '<video src="' + it.src + '" muted preload="metadata"></video>'
+                : '<img src="' + it.src + '" alt="">';
+            var badge = it.kind === 'video' ? '<span class="col-tile__badge">VIDEO</span>' : '';
+            return '<div class="col-tile" onclick="openLightbox(' + i + ')">'
+                + media + badge
+                + '<button class="col-tile__del" onclick="event.stopPropagation();deleteItem(' + i + ')" title="Delete">'
+                + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+                + '</button>'
+                + '</div>';
+        }).join('');
+    }
+
+    function deleteItem(i) {
+        if (!confirm('Delete this item? It cannot be recovered.')) return;
+        items.splice(i, 1);
+        saveItems();
+        renderGallery();
+    }
+
+    function onFiles(e) {
+        var files = Array.from(e.target.files || []);
+        processFiles(files);
+        e.target.value = '';
+    }
+
+    function processFiles(files) {
+        files.forEach(function(file) {
+            if (file.size > 15 * 1024 * 1024) { alert(file.name + ' is too large (max 15 MB). Skipped.'); return; }
+            var kind = file.type.indexOf('video') === 0 ? 'video' : 'image';
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                items.unshift({ src: ev.target.result, kind: kind, name: file.name, t: Date.now() });
+                saveItems();
+                renderGallery();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /* Drag & drop */
+    var drop = document.getElementById('col-drop');
+    ['dragenter','dragover'].forEach(function(ev) {
+        drop.addEventListener(ev, function(e) { e.preventDefault(); drop.classList.add('dragover'); });
+    });
+    ['dragleave','drop'].forEach(function(ev) {
+        drop.addEventListener(ev, function(e) { e.preventDefault(); drop.classList.remove('dragover'); });
+    });
+    drop.addEventListener('drop', function(e) {
+        var files = Array.from(e.dataTransfer.files || []).filter(function(f) {
+            return f.type.indexOf('image') === 0 || f.type.indexOf('video') === 0;
+        });
+        processFiles(files);
+    });
+
+    /* Lightbox */
+    function openLightbox(i) {
+        var it = items[i];
+        if (!it) return;
+        var c = document.getElementById('col-lb-content');
+        c.innerHTML = it.kind === 'video'
+            ? '<video src="' + it.src + '" controls autoplay></video>'
+            : '<img src="' + it.src + '" alt="">';
+        document.getElementById('col-lightbox').classList.add('active');
+    }
+    function closeLightbox() {
+        document.getElementById('col-lb-content').innerHTML = '';
+        document.getElementById('col-lightbox').classList.remove('active');
+    }
+
+    /* Download all (zip not available without lib — fall back to sequential downloads) */
+    function downloadAll() {
+        items.forEach(function(it, i) {
+            setTimeout(function() {
+                var a = document.createElement('a');
+                a.href = it.src;
+                var ext = it.kind === 'video' ? '.webm' : '.jpg';
+                a.download = (it.name || 'collage-' + (i+1) + ext);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }, i * 200);
+        });
+    }
+
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+
+    renderGallery();
+</script>
+</body>
+</html>

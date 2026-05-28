@@ -439,7 +439,7 @@
                             <div class="ev-pf__cards">
 
                                 <!-- MONTAGE -->
-                                <div class="ev-pf__card" id="pf-montage-card">
+                                <a class="ev-pf__card ev-pf__card--link" id="pf-montage-card" href="montage.html" onclick="return openPartyFeature(event, 'montage')">
                                     <div class="ev-pf__card-top">
                                         <div class="ev-pf__card-icon">
                                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.26a1 1 0 0 1-1.447.894L15 14"/><rect x="2" y="7" width="13" height="10" rx="2"/></svg>
@@ -448,19 +448,18 @@
                                             <strong>Montage</strong>
                                             <p>Guests record live video clips &mdash; every angle, every moment. A real-time video wall from every point of view.</p>
                                         </div>
-                                        <label class="ev-pf__toggle" title="Enable Montage">
-                                            <input type="checkbox" id="pf-montage-toggle" onchange="togglePartyFeature('montage', this.checked)">
-                                            <span class="ev-pf__toggle-track"></span>
-                                        </label>
+                                        <span class="ev-pf__arrow" aria-hidden="true">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                        </span>
                                     </div>
                                     <div class="ev-pf__retention-notice">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                         Video clips are automatically deleted <strong>3 days after the event</strong>. Download before then.
                                     </div>
-                                </div>
+                                </a>
 
                                 <!-- COLLAGE -->
-                                <div class="ev-pf__card" id="pf-collage-card">
+                                <a class="ev-pf__card ev-pf__card--link" id="pf-collage-card" href="collage.html" onclick="return openPartyFeature(event, 'collage')">
                                     <div class="ev-pf__card-top">
                                         <div class="ev-pf__card-icon">
                                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
@@ -469,16 +468,15 @@
                                             <strong>Collage</strong>
                                             <p>A shared photo &amp; video drop box. Guests upload their favorite moments and the host collects everything in one place.</p>
                                         </div>
-                                        <label class="ev-pf__toggle" title="Enable Collage">
-                                            <input type="checkbox" id="pf-collage-toggle" onchange="togglePartyFeature('collage', this.checked)">
-                                            <span class="ev-pf__toggle-track"></span>
-                                        </label>
+                                        <span class="ev-pf__arrow" aria-hidden="true">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                        </span>
                                     </div>
                                     <div class="ev-pf__retention-notice">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                         Photos &amp; videos are automatically deleted <strong>3 days after the event</strong>. Download before then.
                                     </div>
-                                </div>
+                                </a>
 
                             </div>
                         </div>
@@ -1769,11 +1767,19 @@
         }
 
         /* -- Party features (Montage / Collage) -------- */
-        var partyFeatures = { montage: false, collage: false };
-        function togglePartyFeature(name, on) {
-            partyFeatures[name] = on;
-            var card = document.getElementById('pf-' + name + '-card');
-            if (card) card.classList.toggle('is-active', on);
+        function openPartyFeature(e, name) {
+            // Persist current event context so the destination page knows which event to attach media to
+            try {
+                var ctx = {
+                    eventId: state.eventId || ('draft-' + Date.now()),
+                    eventName: (document.getElementById('ed-title') || {}).textContent || 'Untitled Event',
+                    feature: name,
+                    openedAt: Date.now()
+                };
+                localStorage.setItem('rnb_party_feature_ctx', JSON.stringify(ctx));
+            } catch(_) {}
+            // Allow default <a href> navigation; return true so href fires
+            return true;
         }
 
         /* -- Preview: free-layout drag mode + scale ----- */

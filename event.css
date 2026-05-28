@@ -3616,12 +3616,8 @@ button.ev-fi-btn .ev-fi-svg svg { width: 18px; height: 18px; }
     color: rgba(255,255,255,0.45);
     line-height: 1.5;
 }
-/* Toggle switch */
-.ev-pf__toggle {
-    position: relative; display: inline-block;
-    width: 34px; height: 20px;
-    flex-shrink: 0; cursor: pointer;
-}
+/* Toggle switch (legacy — kept for future) */
+.ev-pf__toggle { position: relative; display: inline-block; width: 34px; height: 20px; flex-shrink: 0; cursor: pointer; }
 .ev-pf__toggle input { opacity: 0; width: 0; height: 0; }
 .ev-pf__toggle-track {
     position: absolute; inset: 0;
@@ -3638,12 +3634,28 @@ button.ev-fi-btn .ev-fi-svg svg { width: 18px; height: 18px; }
     border-radius: 50%;
     transition: transform 0.2s, background 0.2s;
 }
-.ev-pf__toggle input:checked + .ev-pf__toggle-track {
-    background: rgba(184,154,94,0.7);
+.ev-pf__toggle input:checked + .ev-pf__toggle-track { background: rgba(184,154,94,0.7); }
+.ev-pf__toggle input:checked + .ev-pf__toggle-track::before { transform: translateX(14px); background: #fff; }
+
+/* Action card link variant */
+.ev-pf__card--link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
 }
-.ev-pf__toggle input:checked + .ev-pf__toggle-track::before {
-    transform: translateX(14px);
-    background: #fff;
+.ev-pf__card--link:hover {
+    border-color: rgba(184,154,94,0.55);
+    background: rgba(184,154,94,0.08);
+    transform: translateY(-1px);
+}
+.ev-pf__card--link:hover .ev-pf__arrow { color: var(--accent-color, #b89a5e); transform: translateX(2px); }
+.ev-pf__arrow {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    flex-shrink: 0;
+    color: rgba(255,255,255,0.35);
+    transition: color 0.2s, transform 0.2s;
 }
 /* Retention warning */
 .ev-pf__retention-notice {
