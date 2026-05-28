@@ -3559,3 +3559,173 @@ button.ev-fi-btn .ev-fi-svg svg { width: 18px; height: 18px; }
     margin-top: 10px;
     letter-spacing: 0.5px;
 }
+
+/* ================================================================
+   PARTY FEATURES — Montage & Collage
+   ================================================================ */
+.ev-party-features {
+    margin: 0;
+    padding: 18px 24px 14px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.ev-pf__header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+}
+.ev-pf__header svg { color: var(--accent-color, #b89a5e); }
+.ev-pf__header span:first-of-type { color: rgba(255,255,255,0.7); }
+.ev-pf__sub { font-size: 9px; margin-left: auto; }
+.ev-pf__cards { display: flex; gap: 10px; flex-wrap: wrap; }
+.ev-pf__card {
+    flex: 1 1 240px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 14px 10px;
+    transition: border-color 0.2s, background 0.2s;
+}
+.ev-pf__card.is-active {
+    border-color: rgba(184,154,94,0.5);
+    background: rgba(184,154,94,0.06);
+}
+.ev-pf__card-top { display: flex; align-items: flex-start; gap: 10px; }
+.ev-pf__card-icon {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: var(--accent-color, #b89a5e);
+}
+.ev-pf__card-info { flex: 1; }
+.ev-pf__card-info strong {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11.5px; letter-spacing: 0.5px;
+    color: rgba(255,255,255,0.85);
+}
+.ev-pf__card-info p {
+    margin: 3px 0 0;
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.5;
+}
+/* Toggle switch */
+.ev-pf__toggle {
+    position: relative; display: inline-block;
+    width: 34px; height: 20px;
+    flex-shrink: 0; cursor: pointer;
+}
+.ev-pf__toggle input { opacity: 0; width: 0; height: 0; }
+.ev-pf__toggle-track {
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    transition: background 0.2s;
+}
+.ev-pf__toggle-track::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+}
+.ev-pf__toggle input:checked + .ev-pf__toggle-track {
+    background: rgba(184,154,94,0.7);
+}
+.ev-pf__toggle input:checked + .ev-pf__toggle-track::before {
+    transform: translateX(14px);
+    background: #fff;
+}
+/* Retention warning */
+.ev-pf__retention-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 10.5px;
+    color: rgba(255,165,0,0.75);
+    line-height: 1.4;
+}
+.ev-pf__retention-notice svg { flex-shrink: 0; margin-top: 1px; color: rgba(255,165,0,0.8); }
+.ev-pf__retention-notice strong { color: rgba(255,165,0,0.95); }
+
+/* ================================================================
+   INVITATION PREVIEW — Free-Layout Drag Mode
+   ================================================================ */
+/* Topbar additions */
+.inv-preview-topbar {
+    display: flex; align-items: center; gap: 8px;
+}
+.inv-preview-badge {
+    display: flex; align-items: center; gap: 5px;
+}
+.inv-preview-topbar-right {
+    display: flex; align-items: center; gap: 8px;
+    margin-left: auto;
+}
+.inv-preview-free-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px;
+    color: rgba(255,255,255,0.65);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 9px; font-weight: 500;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.inv-preview-free-btn:hover {
+    background: rgba(184,154,94,0.18);
+    color: rgba(255,255,255,0.92);
+}
+.free-layout .inv-preview-free-btn {
+    background: rgba(184,154,94,0.28);
+    color: #fff;
+    border-color: rgba(184,154,94,0.6);
+}
+/* Drag hint banner */
+.inv-preview-hint {
+    background: rgba(184,154,94,0.12);
+    border-bottom: 1px solid rgba(184,154,94,0.25);
+    color: rgba(255,255,255,0.6);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; letter-spacing: 0.5px;
+    padding: 7px 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+/* Frame and draggable elements */
+.inv-preview-frame { position: relative; }
+.inv-draggable { position: relative; }
+.inv-drag-handle {
+    display: none;
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 22px; height: 22px;
+    background: rgba(184,154,94,0.82);
+    border-radius: 4px;
+    cursor: grab;
+    align-items: center; justify-content: center;
+    color: #fff;
+    z-index: 5;
+    user-select: none;
+    pointer-events: all;
+}
+.inv-drag-handle:active { cursor: grabbing; }
+.free-layout .inv-draggable { cursor: default; }
+.free-layout .inv-drag-handle { display: flex; }
+.free-layout .inv-draggable:hover > .inv-drag-handle {
+    background: var(--accent-color, #b89a5e);
+}
