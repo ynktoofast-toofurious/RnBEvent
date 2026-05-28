@@ -1487,6 +1487,8 @@ exports.handler = async (event) => {
         // Events
         if (method === 'POST' && path === '/events')            return await createEvent(body, event);
         if (method === 'GET'  && parts[0] === 'events' && parts.length === 2)        return await getEvent(parts[1]);
+        if (method === 'POST' && parts[0] === 'events' && parts[2] === 'update')     return await updateEvent(parts[1], body, event);
+        if (method === 'DELETE' && parts[0] === 'events' && parts.length === 2)      return await deleteEvent(parts[1], event);
         if (method === 'GET'  && parts[0] === 'events' && parts[2] === 'full')       return await getEventFull(parts[1], event);
         if (method === 'GET'  && parts[0] === 'events' && parts[2] === 'my-songs')   return await getMySOungs(parts[1], event);
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'guests')     return await addGuests(parts[1], body, event);
