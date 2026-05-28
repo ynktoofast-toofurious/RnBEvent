@@ -131,6 +131,8 @@ function sanitizeCustomization(body) {
     if (ee) out.eventEmoji = ee;
     if (ALLOWED_ICON_STYLES.includes(body.iconStyle)) out.iconStyle = body.iconStyle;
     if (ALLOWED_THEMES.includes(body.theme))          out.theme     = body.theme;
+    const fontVal = String(body.font || '').slice(0, 24).toLowerCase();
+    if (/^[a-z]+$/.test(fontVal) && fontVal.length <= 24)             out.font      = fontVal;
 
     if (body.fieldIcons && typeof body.fieldIcons === 'object') {
         const fi = {};
@@ -541,8 +543,8 @@ async function updateEvent(eventId, body, event) {
     await ddb.send(new UpdateCommand({
         TableName: T.EVENTS,
         Key: { eventId },
-        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u, eventEmoji=:ee, iconStyle=:is, theme=:th, fieldIcons=:fi, customLayout=:cl, addons=:ad, requireVerify=:rv, showGuests=:sg, playlistEnabled=:pl',
-        ExpressionAttributeNames:  { '#st': 'status' },
+        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u, eventEmoji=:ee, iconStyle=:is, theme=:th, #fnt=:ft, fieldIcons=:fi, customLayout=:cl, addons=:ad, requireVerify=:rv, showGuests=:sg, playlistEnabled=:pl',
+        ExpressionAttributeNames:  { '#st': 'status', '#fnt': 'font' },
         ExpressionAttributeValues: {
             ':n': eventName, ':t': eventType, ':d': eventDate, ':tm': eventTime,
             ':v': venue, ':desc': description, ':img': coverImageUrl || null,
@@ -550,8 +552,10 @@ async function updateEvent(eventId, body, event) {
             ':ee': customization.eventEmoji || null,
             ':is': customization.iconStyle  || null,
             ':th': customization.theme      || null,
+            ':ft': customization.font       || null,
             ':fi': customization.fieldIcons || null,
             ':cl': customization.customLayout || null,
+            ':ad': Array.isArray(customization.addons) ? customization.addons : [],
             ':rv': customization.requireVerify === false ? false : true,
             ':sg': customization.showGuests    === false ? false : true,
             ':pl': customization.playlistEnabled === false ? false : true
@@ -597,6 +601,7 @@ async function getEvent(eventId) {
         eventEmoji:     it.eventEmoji  || null,
         iconStyle:      it.iconStyle   || null,
         theme:          it.theme       || null,
+        font:           it.font        || null,
         fieldIcons:     it.fieldIcons  || null,
         customLayout:   it.customLayout|| null,
         addons:         Array.isArray(it.addons) ? it.addons : [],
@@ -810,19 +815,28 @@ async function verifyGoogleIdToken(idToken) {
     } catch { return null; }
 }
 
-/* Look up an existing guest's cached profile by googleId (member-rsvps scan).
-   Used for silent re-auth so returning Google guests skip the phone/postal form. */
+/* Look up an existing guest's cached profile by googleId (paginated member-rsvps scan).
+   Used for silent re-auth so returning Google guests skip the phone/postal form.
+   NOTE: do NOT use Scan Limit:1 here — DynamoDB applies Limit BEFORE the FilterExpression,
+   so a Limit of 1 returns 0 items as soon as the first row in the table doesn't match. */
 async function findGuestByGoogleId(googleId) {
     if (!googleId) return null;
+    let lastKey;
+    let pages = 0;
     try {
-        const r = await ddb.send(new ScanCommand({
-            TableName: T.MEMBER_RSVPS,
-            FilterExpression: 'googleId = :g',
-            ExpressionAttributeValues: { ':g': googleId },
-            Limit: 1
-        }));
-        return (r.Items && r.Items[0]) || null;
-    } catch { return null; }
+        do {
+            const r = await ddb.send(new ScanCommand({
+                TableName: T.MEMBER_RSVPS,
+                FilterExpression: 'googleId = :g',
+                ExpressionAttributeValues: { ':g': googleId },
+                ExclusiveStartKey: lastKey
+            }));
+            if (r.Items && r.Items.length) return r.Items[0];
+            lastKey = r.LastEvaluatedKey;
+            pages++;
+        } while (lastKey && pages < 10);
+    } catch { /* fall through */ }
+    return null;
 }
 
 /* POST /guest/google-lookup ── verify Google token, return cached profile (no RSVP write).

@@ -37,64 +37,14 @@
     <!-- Main event content (shown after load) -->
     <div id="ev-main" class="ev-page hidden">
 
-        <!-- Hero -->
-        <section class="ev-hero" id="ev-hero">
-            <img class="ev-hero__img" id="ev-cover-img" src="" alt="Event cover" onerror="this.style.display='none'">
-            <div class="ev-hero__overlay"></div>
-            <div class="ev-hero__content">
-                <p class="ev-hero__type" id="ev-type"></p>
-                <h1 class="ev-hero__title" id="ev-name">Event Name</h1>
-                <div class="ev-hero__meta">
-                    <span class="ev-hero__meta-item" id="ev-date-meta">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                        <span id="ev-date-text"></span>
-                    </span>
-                    <span class="ev-hero__meta-item" id="ev-venue-meta">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                        </svg>
-                        <span id="ev-venue-text"></span>
-                    </span>
-                    <span class="ev-hero__meta-item">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        Hosted by <strong id="ev-host" style="margin-left:4px"></strong>
-                    </span>
-                </div>
-            </div>
-        </section>
+        <main class="ev-body" style="padding:24px 0 64px;background:#0b160b;min-height:calc(100vh - 56px)">
+            <div class="ev-container" style="max-width:640px">
 
-        <!-- Default hero bg when no cover image -->
-        <style>
-            #ev-hero.no-cover { background: linear-gradient(135deg, #1e2e1e 0%, #2c3e2c 60%, #3d5c3d 100%); }
-        </style>
-
-        <main class="ev-body">
-            <div class="ev-container">
-
-                <!-- ── PRE-RSVP VIEW ── -->
-                <div id="view-pre-rsvp">
-                    <div class="ev-card ev-card--gold">
-                        <p class="ev-card__label">You're Invited</p>
-                        <h2 class="ev-card__title">Will you be joining us?</h2>
-                        <p style="font-size:13px;color:#527141;margin-bottom:24px;line-height:1.7">
-                            Accept your invitation to unlock the full event details and add your song requests to the night's playlist.
-                        </p>
-                        <div class="ev-rsvp-actions">
-                            <button class="ev-btn ev-btn--primary" onclick="startRsvp('confirmed')">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:6px"><polyline points="20 6 9 17 4 12"/></svg>
-                                Going
-                            </button>
-                            <button class="ev-btn ev-btn--outline" onclick="startRsvp('declined')">Can't Make It</button>
-                        </div>
-                    </div>
-                </div>
+                <!-- ── INVITATION CARD ── (mirrors the editor's preview exactly) -->
+                <div id="ev-invite-wrap" style="border-radius:8px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.45);background:#0b160b"></div>
 
                 <!-- ── DECLINED VIEW ── -->
-                <div id="view-declined" class="hidden">
+                <div id="view-declined" class="hidden" style="margin-top:24px">
                     <div class="ev-card" style="text-align:center;padding:48px 40px">
                         <div style="font-size:40px;margin-bottom:16px">💐</div>
                         <h2 style="font-size:28px;color:#2c3e2c;margin-bottom:8px">We'll miss you</h2>
@@ -107,44 +57,8 @@
                     </div>
                 </div>
 
-                <!-- ── POST-RSVP CONFIRMED VIEW ── -->
-                <div id="view-confirmed" class="hidden">
-
-                    <!-- Status banner -->
-                    <div class="ev-status-banner ev-status-banner--confirmed">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span>You're confirmed — see you there!</span>
-                    </div>
-
-                    <!-- Full event details (revealed after RSVP) -->
-                    <div class="ev-card">
-                        <p class="ev-card__label">Event Details</p>
-                        <div class="ev-detail-grid" id="ev-full-details">
-                            <div class="ev-detail-item">
-                                <p class="ev-detail-label">Date &amp; Time</p>
-                                <p class="ev-detail-value" id="detail-datetime"></p>
-                            </div>
-                            <div class="ev-detail-item">
-                                <p class="ev-detail-label">Venue</p>
-                                <p class="ev-detail-value" id="detail-venue"></p>
-                            </div>
-                            <div class="ev-detail-item">
-                                <p class="ev-detail-label">Host</p>
-                                <p class="ev-detail-value" id="detail-host"></p>
-                            </div>
-                            <div class="ev-detail-item">
-                                <p class="ev-detail-label">Event Type</p>
-                                <p class="ev-detail-value" id="detail-type"></p>
-                            </div>
-                        </div>
-                        <p class="ev-description" id="detail-description"></p>
-                    </div>
-
-                    <!-- Host's custom add-ons (dress code, parking, registry, etc.) — mirrors event-create.html preview -->
-                    <div class="ev-card" id="ev-addons-card" style="display:none">
-                        <p class="ev-card__label">More Details</p>
-                        <div id="ev-addons-list" class="ev-addons-list"></div>
-                    </div>
+                <!-- ── CONFIRMED EXTRAS (status banner + playlist) ── -->
+                <div id="view-confirmed-extras" class="hidden" style="margin-top:24px">
 
                     <!-- Song requests card -->
                     <div class="ev-card ev-card--green" id="song-card">
@@ -433,58 +347,117 @@
         function renderEventTeaser(ev) {
             document.title = ev.eventName + ' | RNB Events';
             document.getElementById('page-title').textContent = ev.eventName + ' | RNB Events';
+            // Render the invitation card in pre-RSVP mode (RSVP button is active).
+            renderInvitation(ev, 'pre-rsvp');
+        }
 
-            // Hero
-            if (ev.coverImageUrl) {
-                document.getElementById('ev-cover-img').src = ev.coverImageUrl;
+        /* Build the invitation card identical to the editor's "Guest View Preview"
+           so what guests see matches exactly what the host designed.
+           mode: 'pre-rsvp' (active RSVP button) | 'confirmed' (status banner instead). */
+        function renderInvitation(ev, mode) {
+            var wrap = document.getElementById('ev-invite-wrap');
+            if (!wrap) return;
+
+            var theme = ev.theme || 'night';
+            var font  = ev.font  || 'classic';
+            var fi    = ev.fieldIcons || {};
+
+            // Cover photo (optional)
+            var coverHtml = ev.coverImageUrl
+                ? '<img class="inv-cover" src="' + escAttr(ev.coverImageUrl) + '" alt="Event cover" onerror="this.style.display=\'none\'">'
+                : '';
+
+            // Icon (emoji)
+            var iconEmoji = ev.eventEmoji || (fi.title && fi.title.emoji) || '';
+            var iconHtml  = iconEmoji ? '<span class="inv-icon">' + escHtml(iconEmoji) + '</span>' : '';
+
+            // Date/time string
+            var dateStr = formatDate(ev.eventDate, ev.eventTime) || '';
+
+            // Meta rows
+            var metaRows = '';
+            if (dateStr) {
+                metaRows += '<div class="inv-meta-row">'
+                    + '<span class="inv-meta-icon">' + escHtml((fi.date && fi.date.emoji) || '📅') + '</span>'
+                    + '<div class="inv-meta-text"><span class="inv-meta-label">Date &amp; Time</span>' + escHtml(dateStr) + '</div>'
+                    + '</div>';
+            }
+            if (ev.venue) {
+                metaRows += '<div class="inv-meta-row">'
+                    + '<span class="inv-meta-icon">' + escHtml((fi.venue && fi.venue.emoji) || '📍') + '</span>'
+                    + '<div class="inv-meta-text"><span class="inv-meta-label">Location</span>' + escHtml(ev.venue) + '</div>'
+                    + '</div>';
+            }
+            if (ev.creatorName) {
+                metaRows += '<div class="inv-meta-row">'
+                    + '<span class="inv-meta-icon">' + escHtml((fi.host && fi.host.emoji) || '👤') + '</span>'
+                    + '<div class="inv-meta-text"><span class="inv-meta-label">Hosted by</span>' + escHtml(ev.creatorName) + '</div>'
+                    + '</div>';
+            }
+            var metaHtml = metaRows ? '<div class="inv-meta">' + metaRows + '</div>' : '';
+
+            // Description (only on confirmed/full event payload)
+            var descHtml = ev.description
+                ? '<p class="inv-desc">' + escHtml(ev.description) + '</p>'
+                : '';
+
+            // Add-ons (dress code, parking, registry, …)
+            var addonsHtml = '';
+            if (Array.isArray(ev.addons) && ev.addons.length) {
+                addonsHtml = '<div class="inv-addons">';
+                ev.addons.forEach(function(a) {
+                    if (!a || !a.value) return;
+                    var raw = String(a.value);
+                    var valHtml = /^https?:\/\//i.test(raw)
+                        ? '<a href="' + escAttr(raw) + '" target="_blank" rel="noopener">' + escHtml(raw) + '</a>'
+                        : escHtml(raw);
+                    addonsHtml += '<div class="inv-addon-row">'
+                        + '<span class="inv-addon-label">' + escHtml(a.label || 'Note') + '</span>'
+                        + '<span class="inv-addon-val">' + valHtml + '</span>'
+                        + '</div>';
+                });
+                addonsHtml += '</div>';
+            }
+
+            // Action area depends on mode
+            var actionHtml = '';
+            if (mode === 'confirmed') {
+                actionHtml = '<div class="inv-rsvp-wrap" style="margin-top:auto;padding-top:8px">'
+                    + '<div class="inv-rsvp-btn" style="background:rgba(119,163,97,0.18);color:var(--inv-accent2,#a4c195);border:1px solid rgba(119,163,97,0.4);cursor:default">'
+                    +   '✓ You\'re confirmed — see you there'
+                    + '</div>'
+                    + '<button type="button" onclick="changeRsvpToDeclined()" style="background:none;border:none;color:rgba(248,246,242,0.5);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-top:14px;cursor:pointer;display:block;width:100%;text-align:center;font-family:\'Montserrat\',sans-serif">Can\'t make it anymore?</button>'
+                    + '</div>';
             } else {
-                document.getElementById('ev-hero').classList.add('no-cover');
+                actionHtml = '<div class="inv-rsvp-wrap" style="margin-top:auto;padding-top:8px">'
+                    + '<button type="button" class="inv-rsvp-btn" onclick="startRsvp(\'confirmed\')" style="cursor:pointer;border:none;width:100%">RSVP Now</button>'
+                    + '<button type="button" onclick="startRsvp(\'declined\')" style="background:none;border:none;color:rgba(248,246,242,0.5);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-top:14px;cursor:pointer;display:block;width:100%;text-align:center;font-family:\'Montserrat\',sans-serif">Can\'t make it</button>'
+                    + '</div>';
             }
 
-            document.getElementById('ev-type').textContent    = ev.eventType || '';
-            document.getElementById('ev-name').textContent    = ev.eventName;
-            document.getElementById('ev-host').textContent    = ev.creatorName;
-            document.getElementById('ev-date-text').textContent = formatDate(ev.eventDate, ev.eventTime);
-            document.getElementById('ev-venue-text').textContent = ev.venue;
+            var typeHtml = ev.eventType ? '<p class="inv-type">' + escHtml(ev.eventType) + '</p>' : '';
 
-            applyEventCustomization(ev);
+            wrap.innerHTML = '<div class="inv-card" data-theme="' + escAttr(theme) + '" data-font="' + escAttr(font) + '" style="min-height:auto">'
+                + coverHtml
+                + '<div class="inv-body">'
+                +   '<div>' + iconHtml + typeHtml
+                +     '<h1 class="inv-title">' + escHtml(ev.eventName || '') + '</h1>'
+                +     '<div class="inv-divider"></div>'
+                +   '</div>'
+                +   metaHtml
+                +   descHtml
+                +   addonsHtml
+                +   actionHtml
+                + '</div>'
+                + '</div>';
         }
 
-        /* Mirror the editor's visual customization on the public event page so
-           what the host previewed is what guests see. */
-        function applyEventCustomization(ev) {
-            // Theme → body data attribute (CSS hooks in event.css optional)
-            if (ev.theme) document.body.setAttribute('data-event-theme', ev.theme);
-
-            // Headline emoji — prepend to event name if provided
-            var emoji = ev.eventEmoji || (ev.fieldIcons && ev.fieldIcons.title && ev.fieldIcons.title.emoji);
-            if (emoji) {
-                var nameEl = document.getElementById('ev-name');
-                if (nameEl && nameEl.querySelector('.ev-hero__emoji') == null) {
-                    var em = document.createElement('span');
-                    em.className = 'ev-hero__emoji';
-                    em.textContent = emoji + ' ';
-                    em.style.cssText = 'display:inline-block;margin-right:6px';
-                    nameEl.insertBefore(em, nameEl.firstChild);
-                }
-            }
-
-            // Replace SVG meta icons with custom emoji when provided
-            var fi = ev.fieldIcons || {};
-            function swapIcon(metaId, emoji) {
-                if (!emoji) return;
-                var wrap = document.getElementById(metaId);
-                if (!wrap) return;
-                var svg = wrap.querySelector('svg');
-                if (!svg) return;
-                var span = document.createElement('span');
-                span.textContent = emoji;
-                span.style.cssText = 'display:inline-block;font-size:16px;line-height:1;margin-right:2px';
-                svg.replaceWith(span);
-            }
-            if (fi.date  && fi.date.emoji)  swapIcon('ev-date-meta',  fi.date.emoji);
-            if (fi.venue && fi.venue.emoji) swapIcon('ev-venue-meta', fi.venue.emoji);
+        function escHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
+        function escAttr(s) { return escHtml(s); }
 
         /* ── RSVP flow ───────────────────────────────── */
         function startRsvp(status) {
@@ -840,66 +813,31 @@
 
         /* ── View transitions ────────────────────────── */
         function showConfirmedView(ev) {
-            document.getElementById('view-pre-rsvp').classList.add('hidden');
             document.getElementById('view-declined').classList.add('hidden');
-            document.getElementById('view-confirmed').classList.remove('hidden');
-
-            var dt = formatDate(ev.eventDate, ev.eventTime);
-            document.getElementById('detail-datetime').textContent = dt;
-            document.getElementById('detail-venue').textContent    = ev.venue || '';
-            document.getElementById('detail-host').textContent     = ev.creatorName || '';
-            document.getElementById('detail-type').textContent     = ev.eventType || '';
-
-            var desc = document.getElementById('detail-description');
-            if (ev.description) {
-                desc.textContent = ev.description;
-                desc.style.display = '';
-            } else {
-                desc.style.display = 'none';
-            }
-
-            // Render host's custom add-ons (mirrors the editor's invitation preview)
-            renderEventAddons(ev.addons);
-
-            // Hide the song-request card if the host disabled the playlist feature
+            // Re-render the invitation card with confirmed state (description + addons revealed
+            // because /events/:id/full returns the complete record).
+            renderInvitation(ev, 'confirmed');
+            // Reveal song playlist extras below the card.
+            document.getElementById('view-confirmed-extras').classList.remove('hidden');
+            // Hide the song-request card if the host disabled the playlist feature.
             var songCard = document.getElementById('song-card');
             if (songCard) songCard.style.display = (ev.playlistEnabled === false) ? 'none' : '';
         }
 
-        function renderEventAddons(addons) {
-            var card = document.getElementById('ev-addons-card');
-            var list = document.getElementById('ev-addons-list');
-            if (!card || !list) return;
-            if (!Array.isArray(addons) || !addons.length) {
-                card.style.display = 'none';
-                list.innerHTML = '';
-                return;
-            }
-            var defaultLabels = {
-                link: 'Link', playlist: 'Playlist', registry: 'Registry', dresscode: 'Dress code',
-                food: 'Food', parking: 'Parking', accommodations: 'Accommodations', info: 'Additional info'
-            };
-            list.innerHTML = addons.map(function(a) {
-                var label = escHtml(a.label || defaultLabels[a.type] || 'Note');
-                var raw   = String(a.value || '');
-                var val;
-                if (/^https?:\/\//i.test(raw)) {
-                    val = '<a href="' + escHtml(raw) + '" target="_blank" rel="noopener" style="color:#77a361;word-break:break-all">' + escHtml(raw) + '</a>';
-                } else {
-                    val = escHtml(raw).replace(/\n/g, '<br>');
-                }
-                return '<div class="ev-addon-row" style="display:flex;flex-direction:column;gap:4px;padding:12px 0;border-bottom:1px solid #e6ebe2">'
-                    +   '<span class="ev-detail-label" style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#888">' + label + '</span>'
-                    +   '<span class="ev-detail-value" style="font-size:14px;color:#2c3e2c">' + val + '</span>'
-                    + '</div>';
-            }).join('');
-            card.style.display = '';
+        function showDeclinedView() {
+            document.getElementById('view-confirmed-extras').classList.add('hidden');
+            document.getElementById('view-declined').classList.remove('hidden');
+            // Keep the invitation card visible (in pre-rsvp mode so they can change their mind).
+            if (state.event) renderInvitation(state.event, 'pre-rsvp');
         }
 
-        function showDeclinedView() {
-            document.getElementById('view-pre-rsvp').classList.add('hidden');
-            document.getElementById('view-confirmed').classList.add('hidden');
-            document.getElementById('view-declined').classList.remove('hidden');
+        function changeRsvpToDeclined() {
+            state.pendingStatus = 'declined';
+            document.getElementById('auth-method-title').textContent = "Can't make it?";
+            document.getElementById('auth-method-sub').textContent   = "Verify to update your RSVP.";
+            resetAuthModal();
+            document.getElementById('auth-modal').classList.remove('hidden');
+            if (window._gsiReady) initGuestGoogle();
         }
 
         /* ── Song search ─────────────────────────────── */
