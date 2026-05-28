@@ -31,7 +31,7 @@
         <div class="ev-topbar__right">
             <div id="ev-user-greeting" class="ev-user-greeting hidden">
                 <span class="ev-user-greeting__hi">Hi,</span>
-                <span class="ev-user-greeting__name" id="ev-user-name">—</span>
+                <span class="ev-user-greeting__name" id="ev-user-name">�</span>
                 <button class="ev-signout-btn" id="ev-signout-btn" onclick="signOut()" title="Sign out" aria-label="Sign out">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -40,7 +40,7 @@
                     </svg>
                 </button>
             </div>
-            <a href="events.html" class="ev-topbar__link">← My events</a>
+            <a href="events.html" class="ev-topbar__link">? My events</a>
         </div>
     </header>
 
@@ -66,7 +66,7 @@
                 <div class="ev-step-dot" id="step-dot-5">5</div>
             </div>
 
-            <!-- ── STEP 1: Account ── -->
+            <!-- -- STEP 1: Account -- -->
             <div id="panel-1" class="ev-step-panel">
                 <p class="ev-step-panel__label">Step 1 of 5</p>
                 <h2 class="ev-step-panel__title" id="auth-panel-title">Create Account</h2>
@@ -125,7 +125,7 @@
                 </div>
             </div>
 
-            <!-- ── STEP 2: OTP Verify ── -->
+            <!-- -- STEP 2: OTP Verify -- -->
             <div id="panel-2" class="ev-step-panel hidden">
                 <p class="ev-step-panel__label">Step 2 of 5</p>
                 <h2 class="ev-step-panel__title">Verify Your Phone</h2>
@@ -143,7 +143,7 @@
                 <p id="err-2" class="ev-error" style="text-align:center"></p>
 
                 <div class="ev-step-actions">
-                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToStep(1)">← Back</button>
+                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToStep(1)">? Back</button>
                     <button class="ev-btn ev-btn--primary" id="btn-verify-otp" onclick="verifyCreatorOtp()">Verify &amp; Continue</button>
                 </div>
 
@@ -155,7 +155,7 @@
         </div><!-- /ev-container -->
     </main>
 
-    <!-- ── PARTIFUL-STYLE EDITOR (shown after auth) ── -->
+    <!-- -- PARTIFUL-STYLE EDITOR (shown after auth) -- -->
     <div id="panel-editor" class="ev-editor hidden" data-theme="night" data-font="classic">
         <div class="ev-editor__bg" id="editor-bg"></div>
 
@@ -235,9 +235,9 @@
                     <p class="ev-flyout__heading">Visual Effect</p>
                     <div class="ev-flyout__font-list">
                         <button class="ev-font-pill ev-font-pill--active" data-effect="none" onclick="setEffect('none')">None</button>
-                        <button class="ev-font-pill" data-effect="sparkle" onclick="setEffect('sparkle')">✨ Sparkle</button>
-                        <button class="ev-font-pill" data-effect="confetti" onclick="setEffect('confetti')">🎊 Confetti</button>
-                        <button class="ev-font-pill" data-effect="petals" onclick="setEffect('petals')">🌸 Petals</button>
+                        <button class="ev-font-pill" data-effect="sparkle" onclick="setEffect('sparkle')">? Sparkle</button>
+                        <button class="ev-font-pill" data-effect="confetti" onclick="setEffect('confetti')">?? Confetti</button>
+                        <button class="ev-font-pill" data-effect="petals" onclick="setEffect('petals')">?? Petals</button>
                     </div>
                 </div>
 
@@ -264,7 +264,7 @@
                     <div class="ev-editor__left">
                         <div class="ev-editor__title-row">
                             <button type="button" class="ev-icon-chip" id="ed-icon-chip" onclick="toggleIconPicker(event, 'title')" title="Change icon">
-                                <span class="ev-icon-chip__emoji" id="ed-icon-emoji">🎉</span>
+                                <span class="ev-icon-chip__emoji" id="ed-icon-emoji">??</span>
                                 <span class="ev-icon-chip__svg hidden" id="ed-icon-svg" aria-hidden="true"></span>
                             </button>
                             <h1 class="ev-editor__title" contenteditable="true" id="ed-title" data-placeholder="Your Event Name"></h1>
@@ -280,14 +280,14 @@
                                 </div>
                             </div>
                             <div class="ev-icon-picker__grid" id="ed-icon-grid"></div>
-                            <p class="ev-icon-picker__hint">Live preview · changes save automatically</p>
+                            <p class="ev-icon-picker__hint">Live preview � changes save automatically</p>
                         </div>
 
                         <div class="ev-editor__type-row">
                             <input type="hidden" id="ed-type">
                             <button type="button" class="ev-type-trigger" id="ev-type-trigger" onclick="openTypePicker()">
-                                <span id="ev-type-label">Select event type…</span>
-                                <span class="ev-type-trigger__chevron">›</span>
+                                <span id="ev-type-label">Select event type�</span>
+                                <span class="ev-type-trigger__chevron">�</span>
                             </button>
                         </div>
 
@@ -296,56 +296,56 @@
                             <div class="ev-type-modal__sheet">
                                 <div class="ev-type-modal__head">
                                     <span class="ev-type-modal__title">Choose Your Event</span>
-                                    <button type="button" class="ev-type-modal__close" onclick="closeTypePicker()">✕</button>
+                                    <button type="button" class="ev-type-modal__close" onclick="closeTypePicker()">?</button>
                                 </div>
                                 <div class="ev-type-modal__grid">
-                                    <button type="button" class="ev-type-card" data-type="Birthday Party"      onclick="selectEventType('Birthday Party')">      <span class="ev-type-card__emoji">🎂</span><span class="ev-type-card__label">Birthday Party</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Wedding Reception"   onclick="selectEventType('Wedding Reception')">   <span class="ev-type-card__emoji">💍</span><span class="ev-type-card__label">Wedding Reception</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Anniversary"         onclick="selectEventType('Anniversary')">         <span class="ev-type-card__emoji">💑</span><span class="ev-type-card__label">Anniversary</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Sweet 16"            onclick="selectEventType('Sweet 16')">            <span class="ev-type-card__emoji">🌟</span><span class="ev-type-card__label">Sweet 16</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Bridal Shower"       onclick="selectEventType('Bridal Shower')">       <span class="ev-type-card__emoji">👰</span><span class="ev-type-card__label">Bridal Shower</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Baby Shower"         onclick="selectEventType('Baby Shower')">         <span class="ev-type-card__emoji">🍼</span><span class="ev-type-card__label">Baby Shower</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Graduation Party"    onclick="selectEventType('Graduation Party')">    <span class="ev-type-card__emoji">🎓</span><span class="ev-type-card__label">Graduation Party</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Holiday Party"       onclick="selectEventType('Holiday Party')">       <span class="ev-type-card__emoji">🎄</span><span class="ev-type-card__label">Holiday Party</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Corporate Event"     onclick="selectEventType('Corporate Event')">     <span class="ev-type-card__emoji">💼</span><span class="ev-type-card__label">Corporate Event</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Private Dinner"      onclick="selectEventType('Private Dinner')">      <span class="ev-type-card__emoji">🍽️</span><span class="ev-type-card__label">Private Dinner</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Other"               onclick="selectEventType('Other')">               <span class="ev-type-card__emoji">✨</span><span class="ev-type-card__label">Other</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Birthday Party"      onclick="selectEventType('Birthday Party')">      <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Birthday Party</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Wedding Reception"   onclick="selectEventType('Wedding Reception')">   <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Wedding Reception</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Anniversary"         onclick="selectEventType('Anniversary')">         <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Anniversary</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Sweet 16"            onclick="selectEventType('Sweet 16')">            <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Sweet 16</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Bridal Shower"       onclick="selectEventType('Bridal Shower')">       <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Bridal Shower</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Baby Shower"         onclick="selectEventType('Baby Shower')">         <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Baby Shower</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Graduation Party"    onclick="selectEventType('Graduation Party')">    <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Graduation Party</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Holiday Party"       onclick="selectEventType('Holiday Party')">       <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Holiday Party</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Corporate Event"     onclick="selectEventType('Corporate Event')">     <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Corporate Event</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Private Dinner"      onclick="selectEventType('Private Dinner')">      <span class="ev-type-card__emoji">???</span><span class="ev-type-card__label">Private Dinner</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Other"               onclick="selectEventType('Other')">               <span class="ev-type-card__emoji">?</span><span class="ev-type-card__label">Other</span></button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Date & Time -->
                         <div class="ev-editor__field">
-                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-date" onclick="toggleIconPicker(event, 'date')" title="Change icon">📅</button>
+                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-date" onclick="toggleIconPicker(event, 'date')" title="Change icon">??</button>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Date &amp; Time</div>
                                 <div class="ev-editor__field-row">
                                     <input type="date" id="ed-date" class="ev-editor__date-input">
                                     <input type="time" id="ed-time" class="ev-editor__time-input" value="20:00">
                                 </div>
-                                <button class="ev-poll-date-btn" onclick="toggleDatePoll()">Can't decide when? Poll your guests →</button>
+                                <button class="ev-poll-date-btn" onclick="toggleDatePoll()">Can't decide when? Poll your guests ?</button>
                             </div>
                         </div>
 
                         <!-- Date poll options (hidden by default) -->
                         <div class="ev-date-poll hidden" id="ed-date-poll">
-                            <div class="ev-flyout__heading" style="font-size:9px;margin-bottom:8px">DATE OPTIONS — GUESTS WILL VOTE</div>
+                            <div class="ev-flyout__heading" style="font-size:9px;margin-bottom:8px">DATE OPTIONS � GUESTS WILL VOTE</div>
                             <div id="ed-poll-dates"></div>
                             <button class="ev-addon-pill" onclick="addPollDate()" style="margin-top:6px">+ Add date option</button>
                         </div>
 
                         <!-- Host -->
                         <div class="ev-editor__field">
-                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-host" onclick="toggleIconPicker(event, 'host')" title="Change icon">👑</button>
+                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-host" onclick="toggleIconPicker(event, 'host')" title="Change icon">??</button>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Hosted by</div>
-                                <div class="ev-editor__field-val" id="ed-host-display">—</div>
+                                <div class="ev-editor__field-val" id="ed-host-display">�</div>
                             </div>
                         </div>
 
                         <!-- Location -->
                         <div class="ev-editor__field">
-                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-venue" onclick="toggleIconPicker(event, 'venue')" title="Change icon">📍</button>
+                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-venue" onclick="toggleIconPicker(event, 'venue')" title="Change icon">??</button>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Location</div>
                                 <div contenteditable="true" class="ev-editor__inline" id="ed-venue" data-placeholder="Add venue &amp; address"></div>
@@ -354,10 +354,10 @@
 
                         <!-- Description -->
                         <div class="ev-editor__field ev-editor__field--desc">
-                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-desc" onclick="toggleIconPicker(event, 'desc')" title="Change icon">✏️</button>
+                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-desc" onclick="toggleIconPicker(event, 'desc')" title="Change icon">??</button>
                             <div class="ev-editor__field-body" style="width:100%">
                                 <div class="ev-editor__field-label">Details</div>
-                                <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expect…"></div>
+                                <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expect�"></div>
                             </div>
                         </div>
 
@@ -385,7 +385,7 @@
                             </div>
                             <div id="ed-guest-pills" class="ev-guest-pills"></div>
                             <p id="ed-share-hint" class="ev-editor__share-hint hidden">
-                                🔗 Share link: <span id="ed-share-url-text"></span>
+                                ?? Share link: <span id="ed-share-url-text"></span>
                                 <button onclick="copyEditorUrl()" class="ev-editor__copy-btn">COPY</button>
                             </p>
                         </div>
@@ -403,10 +403,10 @@
                                 <div class="ev-editor__cover-upload">
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                                     <p>Add cover photo</p>
-                                    <span>JPG, PNG or WebP · max 5MB</span>
+                                    <span>JPG, PNG or WebP � max 5MB</span>
                                 </div>
                             </div>
-                            <button class="ev-editor__cover-edit hidden" id="ed-cover-edit-btn" onclick="document.getElementById('ed-photo-input').click()">✏ Edit photo</button>
+                            <button class="ev-editor__cover-edit hidden" id="ed-cover-edit-btn" onclick="document.getElementById('ed-photo-input').click()">? Edit photo</button>
                         </div>
                     </div>
 
@@ -419,7 +419,7 @@
         <div class="ev-editor__guest-panel hidden" id="ed-guest-panel">
             <div class="ev-editor__guest-panel-header">
                 <h3>Invite Guests</h3>
-                <button onclick="toggleGuestPanel()">✕</button>
+                <button onclick="toggleGuestPanel()">?</button>
             </div>
 
             <!-- Mode tabs -->
@@ -457,7 +457,7 @@
                                 <option value="@icloud.com">@icloud.com</option>
                                 <option value="@aol.com">@aol.com</option>
                                 <option value="@proton.me">@proton.me</option>
-                                <option value="__custom__">Custom…</option>
+                                <option value="__custom__">Custom�</option>
                             </select>
                             <input id="gp-email-custom" class="gp-input gp-email__custom hidden" type="text" placeholder="@yourdomain.com">
                         </div>
@@ -529,7 +529,7 @@
                     Delete
                 </button>
                 <button class="ev-btn ev-btn--outline ev-btn--sm" id="btn-save-draft" onclick="saveDraft()">Save Draft</button>
-                <button class="ev-btn ev-btn--gold" id="btn-publish" onclick="publishEvent()">Publish Event →</button>
+                <button class="ev-btn ev-btn--gold" id="btn-publish" onclick="publishEvent()">Publish Event ?</button>
             </div>
         </div>
     </div><!-- /panel-editor -->
@@ -553,15 +553,15 @@
             editorTheme: 'night',
             editorFont: 'classic',
             editorEffect: 'none',
-            eventEmoji: '🎉',
+            eventEmoji: '??',
             iconStyle: 'emoji',
             iconTarget: 'title',
             fieldIcons: {
-                title: { emoji: '🎉', style: 'emoji' },
-                date:  { emoji: '📅', style: 'emoji' },
-                host:  { emoji: '👑', style: 'emoji' },
-                venue: { emoji: '📍', style: 'emoji' },
-                desc:  { emoji: '✏️', style: 'emoji' }
+                title: { emoji: '??', style: 'emoji' },
+                date:  { emoji: '??', style: 'emoji' },
+                host:  { emoji: '??', style: 'emoji' },
+                venue: { emoji: '??', style: 'emoji' },
+                desc:  { emoji: '??', style: 'emoji' }
             },
             parsedGuests: [],
             // Undo/redo + autosave
@@ -572,7 +572,7 @@
             historyTimer: null
         };
 
-        /* ── Init ───────────────────────────────────── */
+        /* -- Init ------------------------------------- */
         function _runInit() {
             wireOtpInputs();
             var params = new URLSearchParams(location.search);
@@ -592,9 +592,9 @@
                 setTimeout(function() { loadDraftIntoEditor(draftId); }, 120);
                 return;
             }
-            // Explicit "new" intent (from dashboard “+ Create”)
+            // Explicit "new" intent (from dashboard �+ Create�)
             if (state.creatorToken && params.get('new') === '1') {
-                goToEditor();
+                openTypePickerIntro();
                 return;
             }
             // Smart-creation prefill (from Ruthie.ai wizard on dashboard)
@@ -603,7 +603,7 @@
                 setTimeout(applyRuthiePrefill, 220);
                 return;
             }
-            // Already signed in — send them to the dashboard
+            // Already signed in � send them to the dashboard
             if (state.creatorToken && state.creator) {
                 window.location.replace('events.html');
                 return;
@@ -615,9 +615,9 @@
             _runInit();
         }
 
-        /* ── Step navigation (1-2 only) ─────────────── */
+        /* -- Step navigation (1-2 only) --------------- */
         function goToStep(n) {
-            // Steps 1-2 live in .ev-container; 3+ → editor
+            // Steps 1-2 live in .ev-container; 3+ ? editor
             if (n >= 3) { goToEditor(); return; }
             ['panel-1','panel-2'].forEach(function(id, idx) {
                 document.getElementById(id).classList.toggle('hidden', idx + 1 !== n);
@@ -638,7 +638,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        /* ── Editor ─────────────────────────────────── */
+        /* -- Editor ----------------------------------- */
         function goToEditor() {
             // Hide wizard container, show full-screen editor
             var container = document.querySelector('.ev-container');
@@ -697,22 +697,48 @@
             } catch(_) {}
         }
 
-        /* ── Event type card picker ──────────────────── */
+        /* -- Event type card picker -------------------- */
+        var _typePickerIntroMode = false;
+
         function openTypePicker() {
+            _typePickerIntroMode = false;
             var modal = document.getElementById('ev-type-modal');
             modal.classList.add('open');
             document.body.style.overflow = 'hidden';
-            // Highlight the currently selected card
             var current = document.getElementById('ed-type').value;
             document.querySelectorAll('.ev-type-card').forEach(function(c) {
                 c.classList.toggle('selected', c.dataset.type === current);
             });
         }
+        function openTypePickerIntro() {
+            _typePickerIntroMode = true;
+            // Show the editor shell in the background (greyed) but modal on top
+            var container = document.querySelector('.ev-container');
+            if (container) container.classList.add('hidden');
+            var editor = document.getElementById('panel-editor');
+            editor.classList.remove('hidden');
+            editor.style.filter = 'blur(3px)';
+            editor.style.pointerEvents = 'none';
+            var modal = document.getElementById('ev-type-modal');
+            modal.classList.add('open', 'intro-mode');
+            document.body.style.overflow = 'hidden';
+            document.querySelectorAll('.ev-type-card').forEach(function(c) { c.classList.remove('selected'); });
+            // Hide close button in intro mode � must pick a type
+            var closeBtn = document.querySelector('.ev-type-modal__close');
+            if (closeBtn) closeBtn.style.display = 'none';
+        }
         function closeTypePicker() {
-            document.getElementById('ev-type-modal').classList.remove('open');
+            var modal = document.getElementById('ev-type-modal');
+            modal.classList.remove('open', 'intro-mode');
             document.body.style.overflow = '';
+            var closeBtn = document.querySelector('.ev-type-modal__close');
+            if (closeBtn) closeBtn.style.display = '';
+            var editor = document.getElementById('panel-editor');
+            if (editor) { editor.style.filter = ''; editor.style.pointerEvents = ''; }
         }
         function closeTypePickerBackdrop(e) {
+            // In intro mode the user must pick � clicking backdrop does nothing
+            if (_typePickerIntroMode) return;
             if (e.target === document.getElementById('ev-type-modal')) closeTypePicker();
         }
         function selectEventType(type) {
@@ -724,7 +750,13 @@
             document.querySelectorAll('.ev-type-card').forEach(function(c) {
                 c.classList.toggle('selected', c.dataset.type === type);
             });
-            closeTypePicker();
+            if (_typePickerIntroMode) {
+                closeTypePicker();
+                // Now fully open the editor
+                goToEditor();
+            } else {
+                closeTypePicker();
+            }
         }
 
         function setTheme(name) {
@@ -739,7 +771,7 @@
             });
         }
 
-        /* ── Sidebar flyout ──────────────────────────── */
+        /* -- Sidebar flyout ---------------------------- */
         var _activePanel = null;
         function toggleSidePanel(name) {
             var flyout = document.getElementById('ev-side-flyout');
@@ -768,7 +800,7 @@
             if (name === 'drafts') loadDrafts();
         }
 
-        /* ── Event Settings popup modal ───────────── */
+        /* -- Event Settings popup modal ------------- */
         function openEventSettings() {
             var m = document.getElementById('ev-settings-modal');
             if (!m) return;
@@ -795,7 +827,7 @@
             });
         }
 
-        /* ── Font picker ─────────────────────────────── */
+        /* -- Font picker ------------------------------- */
         function setFont(name) {
             state.editorFont = name;
             document.getElementById('panel-editor').dataset.font = name;
@@ -804,7 +836,7 @@
             });
         }
 
-        /* ── Effect picker ───────────────────────────── */
+        /* -- Effect picker ----------------------------- */
         function setEffect(name) {
             state.editorEffect = name;
             document.querySelectorAll('.ev-font-pill[data-effect]').forEach(function(btn) {
@@ -816,7 +848,7 @@
             }
         }
 
-        /* ── Confetti / Petals canvas burst ─────────── */
+        /* -- Confetti / Petals canvas burst ----------- */
         var _effectCanvas = null, _effectCtx = null, _effectParticles = [], _effectRaf = 0, _effectStop = 0;
         function _ensureEffectCanvas() {
             if (_effectCanvas) return _effectCanvas;
@@ -894,7 +926,7 @@
             }
         }
 
-        /* ── Add-ons / links section ─────────────────── */
+        /* -- Add-ons / links section ------------------- */
         var _addonsExpanded = false;
         function toggleMoreAddons() {
             _addonsExpanded = !_addonsExpanded;
@@ -919,8 +951,8 @@
             row.innerHTML =
                 '<span class="ev-addon-item__label">' + (_addonLabels[type] || type) + '</span>' +
                 '<input class="ev-addon-item__input" type="' + (type === 'link' || type === 'playlist' || type === 'registry' ? 'url' : 'text') + '"' +
-                ' placeholder="' + (type === 'link' ? 'https://' : type === 'playlist' ? 'Spotify / Apple Music URL' : 'Enter details…') + '">' +
-                '<button class="ev-addon-item__remove" onclick="document.getElementById(\'' + id + '\').remove(); if (\'' + type + '\' === \'playlist\') savePlaylistsLocal();">✕</button>';
+                ' placeholder="' + (type === 'link' ? 'https://' : type === 'playlist' ? 'Spotify / Apple Music URL' : 'Enter details�') + '">' +
+                '<button class="ev-addon-item__remove" onclick="document.getElementById(\'' + id + '\').remove(); if (\'' + type + '\' === \'playlist\') savePlaylistsLocal();">?</button>';
             container.appendChild(row);
             var inp = row.querySelector('input');
             inp.focus();
@@ -957,7 +989,7 @@
             } catch(_) {}
         }
 
-        /* ── Date poll ───────────────────────────────── */
+        /* -- Date poll --------------------------------- */
         var _datePollVisible = false;
         function toggleDatePoll() {
             _datePollVisible = !_datePollVisible;
@@ -976,11 +1008,11 @@
             row.id = id;
             row.innerHTML =
                 '<input type="date" id="' + id + '-input">' +
-                '<button class="ev-date-poll__remove" onclick="document.getElementById(\'' + id + '\').remove()" title="Remove">✕</button>';
+                '<button class="ev-date-poll__remove" onclick="document.getElementById(\'' + id + '\').remove()" title="Remove">?</button>';
             container.appendChild(row);
         }
 
-        /* ── Cover photo ─────────────────────────────── */
+        /* -- Cover photo ------------------------------- */
         function editorPhotoSelected(e) {
             var file = e.target.files[0];
             if (!file) return;
@@ -1020,7 +1052,7 @@
             reader.readAsDataURL(file);
         }
 
-        /* ── Guest panel ─────────────────────────────── */
+        /* -- Guest panel ------------------------------- */
         function toggleGuestPanel() {
             var panel = document.getElementById('ed-guest-panel');
             var willOpen = panel.classList.contains('hidden');
@@ -1127,7 +1159,7 @@
             renderPills([], 'gp-single-pills');
         }
 
-        /* ── Bulk / Excel-paste grid ───────────────── */
+        /* -- Bulk / Excel-paste grid ----------------- */
         function gpAddGridRow(data) {
             var body = document.getElementById('gp-grid-body');
             var tr = document.createElement('tr');
@@ -1138,7 +1170,7 @@
               + '<td><input type="text" data-col="last"  placeholder="Last"  autocomplete="off"></td>'
               + '<td><input type="tel"  data-col="phone" placeholder="Phone" autocomplete="off"></td>'
               + '<td><input type="email" data-col="email" placeholder="Email" autocomplete="off"></td>'
-              + '<td><button type="button" class="gp-grid__del" onclick="gpDeleteRow(this)" title="Remove">✕</button></td>';
+              + '<td><button type="button" class="gp-grid__del" onclick="gpDeleteRow(this)" title="Remove">?</button></td>';
             body.appendChild(tr);
             // Wire paste + change
             tr.querySelectorAll('input').forEach(function(inp) {
@@ -1192,7 +1224,7 @@
         function gpHandlePaste(e) {
             var text = (e.clipboardData || window.clipboardData).getData('text');
             if (!text) return;
-            // Detect spreadsheet paste — multiple rows OR tab-separated cells
+            // Detect spreadsheet paste � multiple rows OR tab-separated cells
             var hasRows = /\r?\n/.test(text.trim());
             var hasTabs = /\t/.test(text);
             if (!hasRows && !hasTabs) return; // single-cell paste, let it happen
@@ -1343,9 +1375,9 @@
             }
         }
 
-        /* ── Save Draft / Publish ────────────────────── */
+        /* -- Save Draft / Publish ---------------------- */
         async function saveDraft() {
-            setEditorStatus('Saving…');
+            setEditorStatus('Saving�');
             var ok = await doCreateEvent('draft');
             setEditorStatus(ok ? 'Draft saved' : 'Save failed');
             if (ok) {
@@ -1363,18 +1395,18 @@
             if (!title || title === document.getElementById('ed-title').dataset.placeholder) return showErr('ed-err', 'Add an event name first.');
             if (!date) return showErr('ed-err', 'Set an event date.');
 
-            setBtnLoading('#btn-publish', true, 'Publishing…');
+            setBtnLoading('#btn-publish', true, 'Publishing�');
             var ok = await doCreateEvent('published');
-            setBtnLoading('#btn-publish', false, 'Publish Event →');
+            setBtnLoading('#btn-publish', false, 'Publish Event ?');
 
             if (ok) {
                 setEditorStatus('Published!');
                 showShareHint();
-                showToast('🎉 Event published! Your link is ready.');
+                showToast('?? Event published! Your link is ready.');
             }
         }
 
-        /* ── Core create/update ──────────────────────── */
+        /* -- Core create/update ------------------------ */
         async function doCreateEvent(status) {
             // Upload cover photo if pending
             if (state.pendingPhotoFile && !state.coverImageUrl) {
@@ -1426,7 +1458,7 @@
                         [{ label: 'Open Drafts', primary: true, onClick: function() { closeModal(); toggleSidePanel('drafts'); } }]
                     );
                 } else if (/not found/i.test(res.error) && state.eventId) {
-                    // Underlying draft was deleted — reset and create fresh
+                    // Underlying draft was deleted � reset and create fresh
                     state.eventId = null;
                     state.shareUrl = null;
                     return await doCreateEvent(status);
@@ -1473,14 +1505,14 @@
             navigator.clipboard.writeText(state.shareUrl).then(function() {
                 var btn = document.querySelector('.ev-editor__copy-btn');
                 var orig = btn.textContent;
-                btn.textContent = '✓';
+                btn.textContent = '?';
                 setTimeout(function() { btn.textContent = orig; }, 2000);
             });
         }
 
         async function previewEvent() {
             // Render current editor state as an invitation card in a modal
-            // — no save needed, works entirely client-side.
+            // � no save needed, works entirely client-side.
             var theme  = (document.getElementById('panel-editor').dataset.theme  || 'night');
             var font   = (document.getElementById('panel-editor').dataset.font   || 'classic');
 
@@ -1493,7 +1525,7 @@
             var rawTime   = document.getElementById('ed-time').value   || '';
             var venue     = (document.getElementById('ed-venue').textContent || '').trim()       || 'TBD';
             var desc      = (document.getElementById('ed-description').textContent || '').trim();
-            var host      = (document.getElementById('ed-host-display').textContent || '').trim().replace(/^—$/, '');
+            var host      = (document.getElementById('ed-host-display').textContent || '').trim().replace(/^�$/, '');
 
             // ---- Format date nicely -----------------------------------------
             var dateStr = '', timeStr = '';
@@ -1523,7 +1555,7 @@
             else if (state.coverImageUrl) coverSrc = state.coverImageUrl;
 
             // ---- Icon -------------------------------------------------------
-            var iconEmoji = state.eventEmoji || '🎉';
+            var iconEmoji = state.eventEmoji || '??';
             var iconSvgEl = document.getElementById('ed-icon-svg');
             var iconHtml  = '';
             if (state.iconStyle === 'svg' && iconSvgEl && !iconSvgEl.classList.contains('hidden')) {
@@ -1557,21 +1589,21 @@
             // ---- Build card HTML -------------------------------------------
             var metaHtml = '<div class="inv-meta">';
             if (dateStr || timeStr) {
-                var dtVal = [dateStr, timeStr].filter(Boolean).join(' · ');
+                var dtVal = [dateStr, timeStr].filter(Boolean).join(' � ');
                 metaHtml += '<div class="inv-meta-row">'
-                    + '<span class="inv-meta-icon">📅</span>'
+                    + '<span class="inv-meta-icon">??</span>'
                     + '<div class="inv-meta-text"><span class="inv-meta-label">Date &amp; Time</span>' + dtVal + '</div>'
                     + '</div>';
             }
             if (venue && venue !== 'TBD' || venue === 'TBD') {
                 metaHtml += '<div class="inv-meta-row">'
-                    + '<span class="inv-meta-icon">📍</span>'
+                    + '<span class="inv-meta-icon">??</span>'
                     + '<div class="inv-meta-text"><span class="inv-meta-label">Location</span>' + venue + '</div>'
                     + '</div>';
             }
             if (host) {
                 metaHtml += '<div class="inv-meta-row">'
-                    + '<span class="inv-meta-icon">👑</span>'
+                    + '<span class="inv-meta-icon">??</span>'
                     + '<div class="inv-meta-text"><span class="inv-meta-label">Hosted by</span>' + host + '</div>'
                     + '</div>';
             }
@@ -1589,7 +1621,7 @@
                 + addonsHtml
                 + '<div class="inv-rsvp-wrap">'
                 + '<div class="inv-rsvp-btn">RSVP Now</div>'
-                + '<p class="inv-rsvp-note">Preview only — this button is not active</p>'
+                + '<p class="inv-rsvp-note">Preview only � this button is not active</p>'
                 + '</div>'
                 + '</div>'
                 + '</div>';
@@ -1607,7 +1639,7 @@
             if (e.key === 'Escape') closeInvPreview();
         });
 
-        /* ── Auth forms toggle ───────────────────────── */
+        /* -- Auth forms toggle ------------------------- */
         function showLogin() {
             document.getElementById('form-signup').classList.add('hidden');
             document.getElementById('form-login').classList.remove('hidden');
@@ -1622,7 +1654,7 @@
             document.getElementById('auth-panel-sub').textContent = "Enter your details to get started. We'll verify your phone number next.";
         }
 
-        /* ── Step 1: Signup ──────────────────────────── */
+        /* -- Step 1: Signup ---------------------------- */
         async function submitSignup() {
             clearErr('err-1-signup');
             var name     = document.getElementById('s1-name').value.trim();
@@ -1647,7 +1679,7 @@
             goToStep(2);
         }
 
-        /* ── Step 1: Login ───────────────────────────── */
+        /* -- Step 1: Login ----------------------------- */
         async function submitLogin() {
             clearErr('err-1-login');
             var phone    = document.getElementById('l1-phone').value.trim();
@@ -1668,7 +1700,7 @@
             goToEditor();
         }
 
-        /* ── Step 2: Verify OTP ──────────────────────── */
+        /* -- Step 2: Verify OTP ------------------------ */
         async function verifyCreatorOtp() {
             clearErr('err-2');
             var code = getOtpValue();
@@ -1701,7 +1733,7 @@
             startResendTimer();
         }
 
-        /* ── OTP helpers ─────────────────────────────── */
+        /* -- OTP helpers ------------------------------- */
         function wireOtpInputs() {
             var inputs = document.querySelectorAll('.ev-otp-digit');
             inputs.forEach(function(input, i) {
@@ -1744,7 +1776,7 @@
             }, 1000);
         }
 
-        /* ── API ─────────────────────────────────────── */
+        /* -- API --------------------------------------- */
         async function apiPost(path, data, token) {
             try {
                 var headers = { 'Content-Type': 'application/json' };
@@ -1778,7 +1810,7 @@
             }
         }
 
-        /* ── UI helpers ──────────────────────────────── */
+        /* -- UI helpers -------------------------------- */
         function showErr(id, msg) {
             var el = document.getElementById(id);
             if (el) el.textContent = msg;
@@ -1794,7 +1826,7 @@
             if (!btn) return;
             if (loading) {
                 btn._origText = btn.textContent;
-                btn.innerHTML = '<span class="ev-spinner"></span>' + (label || 'Please wait…');
+                btn.innerHTML = '<span class="ev-spinner"></span>' + (label || 'Please wait�');
                 btn.disabled = true;
             } else {
                 btn.innerHTML = label || btn._origText || 'Continue';
@@ -1809,7 +1841,7 @@
             setTimeout(function() { t.classList.remove('ev-toast--visible'); }, 3000);
         }
 
-        /* ── Modal helpers ──────────────────────────── */
+        /* -- Modal helpers ---------------------------- */
         function showModal(title, body, actions) {
             document.getElementById('ev-modal-title').textContent = title;
             document.getElementById('ev-modal-body').innerHTML    = body;
@@ -1829,7 +1861,7 @@
             document.getElementById('ev-modal').classList.add('ev-modal--hidden');
         }
 
-        /* ── Sign out ──────────────────────────────── */
+        /* -- Sign out -------------------------------- */
         function signOut() {
             showModal(
                 'Sign out?',
@@ -1845,7 +1877,7 @@
             );
         }
 
-        /* ── Drafts list ───────────────────────────── */
+        /* -- Drafts list ----------------------------- */
         var DRAFT_LIMIT = 5;
         async function loadDrafts() {
             var listEl    = document.getElementById('ev-drafts-list');
@@ -1865,7 +1897,7 @@
             }
             listEl.innerHTML = drafts.slice(0, DRAFT_LIMIT).map(function(d) {
                 var safeName = (d.eventName || 'Untitled').replace(/[<>&"']/g, function(c) { return '&#' + c.charCodeAt(0) + ';'; });
-                var date     = d.eventDate || '—';
+                var date     = d.eventDate || '�';
                 return '<div class="ev-draft-card" data-id="' + d.eventId + '">'
                     + '<div class="ev-draft-card__info">'
                         + '<p class="ev-draft-card__name">' + safeName + '</p>'
@@ -1941,7 +1973,7 @@
             );
         }
 
-        /* ── Editor snapshot (for autosave + history) ── */
+        /* -- Editor snapshot (for autosave + history) -- */
         var EDITOR_FIELDS = ['ed-title', 'ed-type', 'ed-date', 'ed-time', 'ed-venue', 'ed-description'];
 
         function getEditorSnapshot() {
@@ -1969,7 +2001,7 @@
             setTimeout(function() { state.isApplyingHistory = false; }, 30);
         }
 
-        /* ── Autosave (debounced) ──────────────────── */
+        /* -- Autosave (debounced) -------------------- */
         var _autosaveInit = false;
         function initEditorAutosave() {
             if (_autosaveInit) return;
@@ -1996,7 +2028,7 @@
             // Minimum viable: need a title to autosave
             if (!title || title === document.getElementById('ed-title').dataset.placeholder) return;
             if (!date || !venue) { setEditorStatus('Add date & venue to enable auto-save'); return; }
-            setEditorStatus('Auto-saving…');
+            setEditorStatus('Auto-saving�');
             var ok = await doCreateEvent('draft');
             if (ok) {
                 var ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -2007,7 +2039,7 @@
             }
         }
 
-        /* ── Undo / Redo ───────────────────────────── */
+        /* -- Undo / Redo ----------------------------- */
         var HISTORY_MAX = 50;
         var _historyInit = false;
         function initEditorHistory() {
@@ -2069,7 +2101,7 @@
             if (r) r.disabled = state.historyIdx >= state.history.length - 1;
         }
 
-        /* ── Google Sign-In ──────────────────────────── */
+        /* -- Google Sign-In ---------------------------- */
         function _realInitGoogleAuth() {
             if (!GOOGLE_CLIENT_ID || !window.google) return;
             google.accounts.id.initialize({
@@ -2130,34 +2162,34 @@
             window.location.href = 'events.html';
         }
 
-        /* ─────────────────────────────────────────────── */
-        /* EVENT ICON PICKER (emoji ⇄ outline SVG)         */
-        /* ─────────────────────────────────────────────── */
+        /* ----------------------------------------------- */
+        /* EVENT ICON PICKER (emoji ? outline SVG)         */
+        /* ----------------------------------------------- */
         var ICON_LIBRARY = [
-            { emoji:'🎉', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-1.4.55a2.79 2.79 0 0 0-1.62 3.06c.1.84-.55 1.62-1.4 1.62h-.38c-.86 0-1.6.61-1.76 1.45L15 21"/><path d="M11 2.31C8.5 3 6.6 5 6.1 7.5"/></svg>' },
-            { emoji:'🎂', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>' },
-            { emoji:'💍', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m7 2 5 5 5-5"/><circle cx="12" cy="15" r="6"/></svg>' },
-            { emoji:'🥂', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M7 10h3m7 0h3"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5V3H7v7a5 5 0 0 0 5 5z"/></svg>' },
-            { emoji:'🍷', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5V3H7v7a5 5 0 0 0 5 5z"/></svg>' },
-            { emoji:'🎓', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>' },
-            { emoji:'🌹', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M12 13v9"/><path d="M9 18c-2 0-4-1-4-3"/><path d="M15 18c2 0 4-1 4-3"/></svg>' },
-            { emoji:'✨', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>' },
-            { emoji:'🎁', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 7 12 8c0-1 1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>' },
-            { emoji:'🎈', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16c4 0 7-4 7-9a7 7 0 0 0-14 0c0 5 3 9 7 9z"/><path d="M12 16v3"/><path d="M9 22h6"/></svg>' },
-            { emoji:'🎵', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' },
-            { emoji:'🕯', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="10" width="8" height="12" rx="1"/><path d="M12 3c1.5 1.5 2 3 2 4a2 2 0 1 1-4 0c0-1 .5-2.5 2-4z"/></svg>' },
-            { emoji:'🏆', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' },
-            { emoji:'👶', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/></svg>' },
-            { emoji:'💐', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><circle cx="16" cy="7" r="3"/><circle cx="12" cy="4" r="3"/><path d="M12 10v12"/><path d="M8 22h8"/></svg>' },
-            { emoji:'🌟', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' },
-            { emoji:'🪩', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="7"/><path d="M5 14h14"/><path d="M12 7v14"/><path d="M7 9.5l10 9"/><path d="M17 9.5l-10 9"/><path d="M12 2v3"/></svg>' },
-            { emoji:'🍾', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v4h-4z"/><path d="M9 6h6l1 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10z"/></svg>' },
-            { emoji:'🎀', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8c0-2 2-4 4-4s5 3 5 6c0-3 3-6 5-6s4 2 4 4-3 4-6 4 6 0 6 4-2 4-4 4-5-3-5-6c0 3-3 6-5 6s-4-2-4-4 3-4 6-4-6 0-6-4z"/></svg>' },
-            { emoji:'🥳', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 11h.01"/><path d="M15 11h.01"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><path d="m3 7 4-4"/></svg>' },
-            { emoji:'🌙', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>' },
-            { emoji:'☀️', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="m17.66 6.34 1.41-1.41"/></svg>' },
-            { emoji:'🔥', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>' },
-            { emoji:'💎', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>' }
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-1.4.55a2.79 2.79 0 0 0-1.62 3.06c.1.84-.55 1.62-1.4 1.62h-.38c-.86 0-1.6.61-1.76 1.45L15 21"/><path d="M11 2.31C8.5 3 6.6 5 6.1 7.5"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m7 2 5 5 5-5"/><circle cx="12" cy="15" r="6"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M7 10h3m7 0h3"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5V3H7v7a5 5 0 0 0 5 5z"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5V3H7v7a5 5 0 0 0 5 5z"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M12 13v9"/><path d="M9 18c-2 0-4-1-4-3"/><path d="M15 18c2 0 4-1 4-3"/></svg>' },
+            { emoji:'?', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 7 12 8c0-1 1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16c4 0 7-4 7-9a7 7 0 0 0-14 0c0 5 3 9 7 9z"/><path d="M12 16v3"/><path d="M9 22h6"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="10" width="8" height="12" rx="1"/><path d="M12 3c1.5 1.5 2 3 2 4a2 2 0 1 1-4 0c0-1 .5-2.5 2-4z"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><circle cx="16" cy="7" r="3"/><circle cx="12" cy="4" r="3"/><path d="M12 10v12"/><path d="M8 22h8"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="7"/><path d="M5 14h14"/><path d="M12 7v14"/><path d="M7 9.5l10 9"/><path d="M17 9.5l-10 9"/><path d="M12 2v3"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v4h-4z"/><path d="M9 6h6l1 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10z"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8c0-2 2-4 4-4s5 3 5 6c0-3 3-6 5-6s4 2 4 4-3 4-6 4 6 0 6 4-2 4-4 4-5-3-5-6c0 3-3 6-5 6s-4-2-4-4 3-4 6-4-6 0-6-4z"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 11h.01"/><path d="M15 11h.01"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><path d="m3 7 4-4"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="m17.66 6.34 1.41-1.41"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>' },
+            { emoji:'??', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>' }
         ];
 
         function toggleIconPicker(e, target) {
@@ -2170,7 +2202,7 @@
             if (isOpen && sameTarget) { p.classList.add('hidden'); return; }
             state.iconTarget = newTarget;
             // Sync style toggle to this target's current style
-            var fi = state.fieldIcons[newTarget] || { emoji:'🎉', style:'emoji' };
+            var fi = state.fieldIcons[newTarget] || { emoji:'??', style:'emoji' };
             document.querySelectorAll('.ev-icon-picker__toggle-btn').forEach(function(b) {
                 b.classList.toggle('active', b.dataset.style === fi.style);
             });
@@ -2218,7 +2250,7 @@
 
         function pickIcon(emoji) {
             var tgt = state.iconTarget || 'title';
-            if (!state.fieldIcons[tgt]) state.fieldIcons[tgt] = { emoji:'🎉', style:'emoji' };
+            if (!state.fieldIcons[tgt]) state.fieldIcons[tgt] = { emoji:'??', style:'emoji' };
             state.fieldIcons[tgt].emoji = emoji;
             if (tgt === 'title') state.eventEmoji = emoji;
             applyIconUI();
@@ -2232,7 +2264,7 @@
         function setIconStyle(style) {
             var s = (style === 'svg') ? 'svg' : 'emoji';
             var tgt = state.iconTarget || 'title';
-            if (!state.fieldIcons[tgt]) state.fieldIcons[tgt] = { emoji:'🎉', style:'emoji' };
+            if (!state.fieldIcons[tgt]) state.fieldIcons[tgt] = { emoji:'??', style:'emoji' };
             state.fieldIcons[tgt].style = s;
             if (tgt === 'title') state.iconStyle = s;
             document.querySelectorAll('.ev-icon-picker__toggle-btn').forEach(function(b) {
@@ -2257,7 +2289,7 @@
             var svgEl   = document.getElementById('ed-icon-svg');
             if (emojiEl && svgEl) {
                 var titleFi = state.fieldIcons.title;
-                emojiEl.textContent = titleFi.emoji || '🎉';
+                emojiEl.textContent = titleFi.emoji || '??';
                 var found = ICON_LIBRARY.find(function(it) { return it.emoji === titleFi.emoji; });
                 svgEl.innerHTML = found ? found.svg : ICON_LIBRARY[0].svg;
                 if (titleFi.style === 'svg') { emojiEl.classList.add('hidden'); svgEl.classList.remove('hidden'); }
@@ -2267,13 +2299,13 @@
             ['date','host','venue','desc'].forEach(function(k) {
                 var btn = document.getElementById('ed-fi-' + k);
                 if (!btn) return;
-                var fi = state.fieldIcons[k] || { emoji:'🎉', style:'emoji' };
+                var fi = state.fieldIcons[k] || { emoji:'??', style:'emoji' };
                 if (fi.style === 'svg') {
                     var found = ICON_LIBRARY.find(function(it) { return it.emoji === fi.emoji; });
                     var svg = found ? found.svg : '';
                     btn.innerHTML = '<span class="ev-fi-svg">' + svg + '</span>';
                 } else {
-                    btn.textContent = fi.emoji || '🎉';
+                    btn.textContent = fi.emoji || '??';
                 }
             });
             // Sync the toggle buttons to active target
@@ -2299,9 +2331,9 @@
             } catch(_) {}
         }
 
-        /* ─────────────────────────────────────────────── */
+        /* ----------------------------------------------- */
         /* DELETE EVENT / DRAFT                            */
-        /* ─────────────────────────────────────────────── */
+        /* ----------------------------------------------- */
         function updateDeleteBtnVisibility() {
             var btn = document.getElementById('btn-delete-event');
             if (!btn) return;
@@ -2313,7 +2345,7 @@
             if (!state.eventId) return;
             var title = (document.getElementById('ed-title').textContent || '').trim() || 'this event';
             if (!confirm('Delete "' + title + '"?\nThis cannot be undone.')) return;
-            setBtnLoading('#btn-delete-event', true, 'Deleting…');
+            setBtnLoading('#btn-delete-event', true, 'Deleting�');
             try {
                 var res = await fetch(RSVP_API + '/events/' + encodeURIComponent(state.eventId), {
                     method:  'DELETE',
@@ -2325,7 +2357,7 @@
                     setBtnLoading('#btn-delete-event', false, 'Delete');
                     return;
                 }
-                showToast('Deleted. Returning to your events…');
+                showToast('Deleted. Returning to your events�');
                 setTimeout(function() { window.location.href = 'events.html'; }, 700);
             } catch (e) {
                 showErr('ed-err', 'Network error. Please try again.');
@@ -2420,7 +2452,7 @@
                             <div class="ev-settings__avatar" id="es-host-avatar">Y</div>
                             <div class="ev-settings__host-info">
                                 <div class="ev-settings__host-name" id="es-host-name">Yannick</div>
-                                <div class="ev-settings__host-meta">Creator · You</div>
+                                <div class="ev-settings__host-meta">Creator � You</div>
                             </div>
                         </div>
                         <div style="display:flex;justify-content:center;margin:14px 0 22px">
@@ -2470,54 +2502,54 @@
                     <section class="ev-settings__section" data-section="questionnaire">
                         <h3 class="ev-settings__h">Questionnaire</h3>
                         <p class="ev-settings__sub">Ask custom questions when guests RSVP</p>
-                        <p class="ev-settings__placeholder">Coming soon — add custom questions like dietary restrictions, +1 details, song requests &amp; more.</p>
+                        <p class="ev-settings__placeholder">Coming soon � add custom questions like dietary restrictions, +1 details, song requests &amp; more.</p>
                     </section>
 
                     <!-- DISPLAY & PRIVACY -->
                     <section class="ev-settings__section" data-section="display">
                         <h3 class="ev-settings__h">Display &amp; Privacy</h3>
                         <p class="ev-settings__sub">Who can see what on your event page</p>
-                        <p class="ev-settings__placeholder">Coming soon — control whether the event is unlisted, password-protected, or fully public.</p>
+                        <p class="ev-settings__placeholder">Coming soon � control whether the event is unlisted, password-protected, or fully public.</p>
                     </section>
 
                     <!-- AUDIENCE -->
                     <section class="ev-settings__section" data-section="audience">
                         <h3 class="ev-settings__h">Audience</h3>
                         <p class="ev-settings__sub">Age and location restrictions</p>
-                        <p class="ev-settings__placeholder">Coming soon — set 21+ events, geofence access, or invitation-only audiences.</p>
+                        <p class="ev-settings__placeholder">Coming soon � set 21+ events, geofence access, or invitation-only audiences.</p>
                     </section>
 
                     <!-- PHOTO ALBUM -->
                     <section class="ev-settings__section" data-section="photos">
                         <h3 class="ev-settings__h">Photo Album</h3>
                         <p class="ev-settings__sub">Shared gallery for your guests</p>
-                        <p class="ev-settings__placeholder">Coming soon — collect photos from every guest into one shared album.</p>
+                        <p class="ev-settings__placeholder">Coming soon � collect photos from every guest into one shared album.</p>
                     </section>
 
                     <!-- COST PER PERSON -->
                     <section class="ev-settings__section" data-section="cost">
                         <h3 class="ev-settings__h">Cost Per Person</h3>
                         <p class="ev-settings__sub">Collect contributions toward the event</p>
-                        <p class="ev-settings__placeholder">Coming soon — request a per-guest contribution at RSVP time.</p>
+                        <p class="ev-settings__placeholder">Coming soon � request a per-guest contribution at RSVP time.</p>
                     </section>
 
                     <!-- AUTO-REMINDERS -->
                     <section class="ev-settings__section" data-section="reminders">
                         <h3 class="ev-settings__h">Auto-Reminders</h3>
                         <p class="ev-settings__sub">Automated nudges before the event</p>
-                        <p class="ev-settings__placeholder">Coming soon — schedule SMS &amp; email reminders 1 week, 1 day, and 1 hour before.</p>
+                        <p class="ev-settings__placeholder">Coming soon � schedule SMS &amp; email reminders 1 week, 1 day, and 1 hour before.</p>
                     </section>
                 </main>
             </div>
         </div>
     </div>
 
-    <!-- ── Invitation Preview Modal ──────────────────────────────── -->
+    <!-- -- Invitation Preview Modal -------------------------------- -->
     <div id="inv-preview-overlay" class="inv-preview-overlay hidden" onclick="if(event.target===this)closeInvPreview()">
         <div class="inv-preview-dialog" id="inv-preview-dialog">
             <div class="inv-preview-topbar">
-                <span class="inv-preview-badge">👁 Guest View Preview</span>
-                <button class="inv-preview-close" onclick="closeInvPreview()" aria-label="Close preview">✕</button>
+                <span class="inv-preview-badge">?? Guest View Preview</span>
+                <button class="inv-preview-close" onclick="closeInvPreview()" aria-label="Close preview">?</button>
             </div>
             <div class="inv-preview-frame" id="inv-preview-frame">
                 <!-- dynamically populated by previewEvent() -->
