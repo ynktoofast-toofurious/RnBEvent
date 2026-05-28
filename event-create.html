@@ -253,7 +253,26 @@
 
                     <!-- LEFT: all event fields -->
                     <div class="ev-editor__left">
-                        <h1 class="ev-editor__title" contenteditable="true" id="ed-title" data-placeholder="Your Event Name"></h1>
+                        <div class="ev-editor__title-row">
+                            <button type="button" class="ev-icon-chip" id="ed-icon-chip" onclick="toggleIconPicker(event)" title="Change icon">
+                                <span class="ev-icon-chip__emoji" id="ed-icon-emoji">🎉</span>
+                                <span class="ev-icon-chip__svg hidden" id="ed-icon-svg" aria-hidden="true"></span>
+                            </button>
+                            <h1 class="ev-editor__title" contenteditable="true" id="ed-title" data-placeholder="Your Event Name"></h1>
+                        </div>
+
+                        <!-- Icon picker popover -->
+                        <div class="ev-icon-picker hidden" id="ed-icon-picker">
+                            <div class="ev-icon-picker__head">
+                                <strong>Event icon</strong>
+                                <div class="ev-icon-picker__toggle" role="tablist">
+                                    <button type="button" class="ev-icon-picker__toggle-btn active" data-style="emoji" onclick="setIconStyle('emoji')">Emoji</button>
+                                    <button type="button" class="ev-icon-picker__toggle-btn" data-style="svg" onclick="setIconStyle('svg')">Outline</button>
+                                </div>
+                            </div>
+                            <div class="ev-icon-picker__grid" id="ed-icon-grid"></div>
+                            <p class="ev-icon-picker__hint">Live preview · changes save automatically</p>
+                        </div>
 
                         <div class="ev-editor__type-row">
                             <select id="ed-type" class="ev-editor__type-select">
@@ -402,6 +421,10 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                 </button>
                 <span class="ev-footer-divider"></span>
+                <button class="ev-btn ev-btn--danger-ghost ev-btn--sm hidden" id="btn-delete-event" onclick="deleteCurrentEvent()" title="Delete this event">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Delete
+                </button>
                 <button class="ev-btn ev-btn--outline ev-btn--sm" id="btn-save-draft" onclick="saveDraft()">Save Draft</button>
                 <button class="ev-btn ev-btn--gold" id="btn-publish" onclick="publishEvent()">Publish Event →</button>
             </div>
@@ -427,6 +450,8 @@
             editorTheme: 'night',
             editorFont: 'classic',
             editorEffect: 'none',
+            eventEmoji: '🎉',
+            iconStyle: 'emoji',
             parsedGuests: [],
             // Undo/redo + autosave
             history: [],
@@ -831,6 +856,8 @@
                 venue:        document.getElementById('ed-venue').textContent.trim(),
                 description:  document.getElementById('ed-description').textContent.trim(),
                 coverImageUrl: state.coverImageUrl,
+                eventEmoji:   state.eventEmoji,
+                iconStyle:    state.iconStyle,
                 requireVerify: document.getElementById('ed-rsvp-verify').checked,
                 showGuests:    document.getElementById('ed-rsvp-showguests').checked,
                 playlist:      document.getElementById('ed-rsvp-playlist').checked,
@@ -868,6 +895,7 @@
                 state.eventId  = res.eventId;
                 state.shareUrl = res.shareUrl || (window.location.origin + '/event/' + res.eventId);
             }
+            updateDeleteBtnVisibility && updateDeleteBtnVisibility();
             return true;
         }
 
@@ -1206,6 +1234,9 @@
             if (ev.description) document.getElementById('ed-description').textContent = ev.description;
             if (ev.theme)       setTheme(ev.theme);
             if (ev.coverImageUrl) state.coverImageUrl = ev.coverImageUrl;
+            if (ev.eventEmoji)    state.eventEmoji   = ev.eventEmoji;
+            if (ev.iconStyle)     state.iconStyle    = ev.iconStyle;
+            applyIconUI();
             // Reset history with this loaded state
             state.history = [];
             state.historyIdx = -1;
@@ -1213,6 +1244,7 @@
             if (typeof updateHistoryButtons === 'function') updateHistoryButtons();
             showToast('Draft loaded \u2014 edits will save here.');
             setEditorStatus('Loaded draft');
+            updateDeleteBtnVisibility && updateDeleteBtnVisibility();
             // Close any open flyout
             var flyout = document.getElementById('ev-side-flyout');
             if (flyout) flyout.classList.add('hidden');
@@ -1423,6 +1455,150 @@
             window.location.href = 'events.html';
         }
 
+        /* ─────────────────────────────────────────────── */
+        /* EVENT ICON PICKER (emoji ⇄ outline SVG)         */
+        /* ─────────────────────────────────────────────── */
+        var ICON_LIBRARY = [
+            { emoji:'🎉', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-1.4.55a2.79 2.79 0 0 0-1.62 3.06c.1.84-.55 1.62-1.4 1.62h-.38c-.86 0-1.6.61-1.76 1.45L15 21"/><path d="M11 2.31C8.5 3 6.6 5 6.1 7.5"/></svg>' },
+            { emoji:'🎂', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>' },
+            { emoji:'💍', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m7 2 5 5 5-5"/><circle cx="12" cy="15" r="6"/></svg>' },
+            { emoji:'🥂', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M7 10h3m7 0h3"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5V3H7v7a5 5 0 0 0 5 5z"/></svg>' },
+            { emoji:'🍷', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5V3H7v7a5 5 0 0 0 5 5z"/></svg>' },
+            { emoji:'🎓', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>' },
+            { emoji:'🌹', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M12 13v9"/><path d="M9 18c-2 0-4-1-4-3"/><path d="M15 18c2 0 4-1 4-3"/></svg>' },
+            { emoji:'✨', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>' },
+            { emoji:'🎁', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 7 12 8c0-1 1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>' },
+            { emoji:'🎈', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16c4 0 7-4 7-9a7 7 0 0 0-14 0c0 5 3 9 7 9z"/><path d="M12 16v3"/><path d="M9 22h6"/></svg>' },
+            { emoji:'🎵', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' },
+            { emoji:'🕯', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="10" width="8" height="12" rx="1"/><path d="M12 3c1.5 1.5 2 3 2 4a2 2 0 1 1-4 0c0-1 .5-2.5 2-4z"/></svg>' },
+            { emoji:'🏆', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' },
+            { emoji:'👶', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/></svg>' },
+            { emoji:'💐', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><circle cx="16" cy="7" r="3"/><circle cx="12" cy="4" r="3"/><path d="M12 10v12"/><path d="M8 22h8"/></svg>' },
+            { emoji:'🌟', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' },
+            { emoji:'🪩', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="7"/><path d="M5 14h14"/><path d="M12 7v14"/><path d="M7 9.5l10 9"/><path d="M17 9.5l-10 9"/><path d="M12 2v3"/></svg>' },
+            { emoji:'🍾', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v4h-4z"/><path d="M9 6h6l1 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10z"/></svg>' },
+            { emoji:'🎀', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8c0-2 2-4 4-4s5 3 5 6c0-3 3-6 5-6s4 2 4 4-3 4-6 4 6 0 6 4-2 4-4 4-5-3-5-6c0 3-3 6-5 6s-4-2-4-4 3-4 6-4-6 0-6-4z"/></svg>' },
+            { emoji:'🥳', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 11h.01"/><path d="M15 11h.01"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><path d="m3 7 4-4"/></svg>' },
+            { emoji:'🌙', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>' },
+            { emoji:'☀️', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="m17.66 6.34 1.41-1.41"/></svg>' },
+            { emoji:'🔥', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>' },
+            { emoji:'💎', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>' }
+        ];
+
+        function toggleIconPicker(e) {
+            if (e) e.stopPropagation();
+            var p = document.getElementById('ed-icon-picker');
+            if (!p) return;
+            if (p.classList.contains('hidden')) {
+                renderIconGrid();
+                p.classList.remove('hidden');
+                // Close on outside click (once)
+                setTimeout(function() {
+                    document.addEventListener('click', _outsidePickerClose, { once: true });
+                }, 0);
+            } else {
+                p.classList.add('hidden');
+            }
+        }
+        function _outsidePickerClose(e) {
+            if (e.target.closest('#ed-icon-picker') || e.target.closest('#ed-icon-chip')) {
+                document.addEventListener('click', _outsidePickerClose, { once: true });
+                return;
+            }
+            document.getElementById('ed-icon-picker').classList.add('hidden');
+        }
+
+        function renderIconGrid() {
+            var grid = document.getElementById('ed-icon-grid');
+            grid.innerHTML = ICON_LIBRARY.map(function(it) {
+                var visual = state.iconStyle === 'svg'
+                    ? '<span class="ev-icon-picker__svg">' + it.svg + '</span>'
+                    : '<span class="ev-icon-picker__emoji">' + it.emoji + '</span>';
+                var active = (it.emoji === state.eventEmoji) ? ' active' : '';
+                return '<button type="button" class="ev-icon-picker__cell' + active + '" data-emoji="' + it.emoji + '" onclick="pickIcon(\'' + it.emoji + '\')">' + visual + '</button>';
+            }).join('');
+        }
+
+        function pickIcon(emoji) {
+            state.eventEmoji = emoji;
+            applyIconUI();
+            renderIconGrid();
+            if (typeof pushHistory === 'function') pushHistory();
+            clearTimeout(state.autosaveTimer);
+            state.autosaveTimer = setTimeout(function() { autoSaveDraft && autoSaveDraft(); }, 800);
+        }
+
+        function setIconStyle(style) {
+            state.iconStyle = style === 'svg' ? 'svg' : 'emoji';
+            document.querySelectorAll('.ev-icon-picker__toggle-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.style === state.iconStyle);
+            });
+            applyIconUI();
+            renderIconGrid();
+            if (typeof pushHistory === 'function') pushHistory();
+            clearTimeout(state.autosaveTimer);
+            state.autosaveTimer = setTimeout(function() { autoSaveDraft && autoSaveDraft(); }, 800);
+        }
+
+        function applyIconUI() {
+            var emojiEl = document.getElementById('ed-icon-emoji');
+            var svgEl   = document.getElementById('ed-icon-svg');
+            if (!emojiEl || !svgEl) return;
+            emojiEl.textContent = state.eventEmoji || '🎉';
+            var found = ICON_LIBRARY.find(function(it) { return it.emoji === state.eventEmoji; });
+            svgEl.innerHTML = found ? found.svg : ICON_LIBRARY[0].svg;
+            if (state.iconStyle === 'svg') {
+                emojiEl.classList.add('hidden');
+                svgEl.classList.remove('hidden');
+            } else {
+                emojiEl.classList.remove('hidden');
+                svgEl.classList.add('hidden');
+            }
+            // Sync the toggle buttons
+            document.querySelectorAll('.ev-icon-picker__toggle-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.style === state.iconStyle);
+            });
+        }
+
+        /* ─────────────────────────────────────────────── */
+        /* DELETE EVENT / DRAFT                            */
+        /* ─────────────────────────────────────────────── */
+        function updateDeleteBtnVisibility() {
+            var btn = document.getElementById('btn-delete-event');
+            if (!btn) return;
+            if (state.eventId) btn.classList.remove('hidden');
+            else btn.classList.add('hidden');
+        }
+
+        async function deleteCurrentEvent() {
+            if (!state.eventId) return;
+            var title = (document.getElementById('ed-title').textContent || '').trim() || 'this event';
+            if (!confirm('Delete "' + title + '"?\nThis cannot be undone.')) return;
+            setBtnLoading('#btn-delete-event', true, 'Deleting…');
+            try {
+                var res = await fetch(RSVP_API + '/events/' + encodeURIComponent(state.eventId), {
+                    method:  'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + state.creatorToken }
+                });
+                var data = await res.json();
+                if (!res.ok || data.error) {
+                    showErr('ed-err', data.error || 'Could not delete. Please try again.');
+                    setBtnLoading('#btn-delete-event', false, 'Delete');
+                    return;
+                }
+                showToast('Deleted. Returning to your events…');
+                setTimeout(function() { window.location.href = 'events.html'; }, 700);
+            } catch (e) {
+                showErr('ed-err', 'Network error. Please try again.');
+                setBtnLoading('#btn-delete-event', false, 'Delete');
+            }
+        }
+
+        // Apply icon UI as soon as DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            applyIconUI();
+            updateDeleteBtnVisibility();
+        });
     </script>
 
     <!-- Google auth loading overlay -->

@@ -381,6 +381,8 @@ async function createEvent(body, event) {
     const eventDate   = String(body.eventDate || '').slice(0, 10);
     const eventTime   = sanitizeText(body.eventTime, 10);
     const coverImageUrl = sanitizeUrl(body.coverImageUrl);
+    const eventEmoji  = sanitizeText(body.eventEmoji, 8);
+    const iconStyle   = body.iconStyle === 'svg' ? 'svg' : 'emoji';
 
     if (!eventName || eventName.length < 2) return respond(400, { error: 'Event name required' });
     if (!eventDate || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return respond(400, { error: 'Valid date required (YYYY-MM-DD)' });
@@ -436,6 +438,8 @@ async function createEvent(body, event) {
             venue,
             description,
             coverImageUrl,
+            eventEmoji,
+            iconStyle,
             status,
             urthedj_sessionId,
             createdAt:         new Date().toISOString()
@@ -461,6 +465,8 @@ async function updateEvent(eventId, body, event) {
     const eventDate   = String(body.eventDate || '').slice(0, 10);
     const eventTime   = sanitizeText(body.eventTime, 10);
     const coverImageUrl = sanitizeUrl(body.coverImageUrl);
+    const eventEmoji  = sanitizeText(body.eventEmoji, 8);
+    const iconStyle   = body.iconStyle === 'svg' ? 'svg' : 'emoji';
     const newStatus   = body.status === 'draft' ? 'draft' : 'published';
 
     if (!eventName || eventName.length < 2) return respond(400, { error: 'Event name required' });
@@ -470,11 +476,12 @@ async function updateEvent(eventId, body, event) {
     await ddb.send(new UpdateCommand({
         TableName: T.EVENTS,
         Key: { eventId },
-        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u',
+        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, eventEmoji=:em, iconStyle=:is, #st=:s, updatedAt=:u',
         ExpressionAttributeNames:  { '#st': 'status' },
         ExpressionAttributeValues: {
             ':n': eventName, ':t': eventType, ':d': eventDate, ':tm': eventTime,
             ':v': venue, ':desc': description, ':img': coverImageUrl || null,
+            ':em': eventEmoji || null, ':is': iconStyle,
             ':s': newStatus, ':u': new Date().toISOString()
         }
     }));
