@@ -125,6 +125,195 @@
         }
         .dash-tab.is-active .dash-tab__count { background:rgba(0,0,0,0.12); color:#1a1a1a; }
 
+        /* ── Launch Your Party: slide-in panel + backdrop ── */
+        .lp-overlay { position:fixed; inset:0; z-index:9000; display:flex; justify-content:flex-end; }
+        .lp-overlay.lp-overlay--hidden { pointer-events:none; }
+        .lp-overlay.lp-overlay--hidden .lp-backdrop { opacity:0; }
+        .lp-overlay.lp-overlay--hidden .lp-panel { transform:translateX(100%); }
+        .lp-backdrop {
+            position:absolute; inset:0;
+            background:rgba(8,14,10,0.55);
+            backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+            opacity:1; transition:opacity .25s ease;
+        }
+        .lp-panel {
+            position:relative;
+            width:min(440px, 100vw);
+            height:100%;
+            background:linear-gradient(180deg, rgba(28,38,26,0.98), rgba(18,24,18,0.98));
+            border-left:1px solid rgba(184,154,94,0.3);
+            box-shadow:-30px 0 60px rgba(0,0,0,0.55);
+            display:flex; flex-direction:column;
+            padding:22px 22px 26px;
+            transform:translateX(0); transition:transform .32s cubic-bezier(0.2, 0.8, 0.2, 1.05);
+            overflow:hidden;
+        }
+        .lp-panel__head { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+        .lp-panel__title {
+            margin:0; flex:1;
+            font-family:'Cormorant Garamond', serif; font-weight:500; font-size:24px;
+            color:#f3ede0; letter-spacing:0.5px;
+        }
+        .lp-back, .lp-close {
+            width:34px; height:34px; border-radius:50%;
+            background:rgba(255,255,255,0.05);
+            border:1px solid rgba(184,154,94,0.25);
+            color:#d4b876; cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center;
+            transition:all .15s;
+        }
+        .lp-back:hover, .lp-close:hover { background:rgba(184,154,94,0.16); color:#f3ede0; border-color:rgba(212,184,118,0.6); }
+        .lp-back.lp-back--hidden { display:none; }
+        .lp-panel__sub {
+            margin:0 0 18px;
+            font-family:'Montserrat', sans-serif;
+            font-size:12px; letter-spacing:0.6px; color:rgba(243,237,224,0.55);
+        }
+        .lp-panel__body { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px; }
+        .lp-panel__body::-webkit-scrollbar { width:5px; }
+        .lp-panel__body::-webkit-scrollbar-thumb { background:rgba(184,154,94,0.25); border-radius:3px; }
+
+        .lp-card {
+            display:flex; align-items:center; gap:14px;
+            background:rgba(255,255,255,0.04);
+            border:1px solid rgba(184,154,94,0.18);
+            border-radius:14px;
+            padding:12px 14px;
+            cursor:pointer; text-align:left; width:100%;
+            color:#f3ede0; font-family:inherit;
+            transition:all .15s;
+        }
+        .lp-card:hover { background:rgba(184,154,94,0.12); border-color:rgba(212,184,118,0.5); transform:translateY(-1px); }
+        .lp-card__cover {
+            width:54px; height:54px; flex-shrink:0;
+            border-radius:10px;
+            background-size:cover; background-position:center;
+            background:linear-gradient(135deg, #b89a5e, #77a361);
+            display:flex; align-items:center; justify-content:center;
+            font-family:'Cormorant Garamond', serif; font-size:22px; font-weight:600; color:#1a1f1c;
+        }
+        .lp-card__body { flex:1; min-width:0; }
+        .lp-card__name {
+            margin:0 0 2px;
+            font-family:'Cormorant Garamond', serif;
+            font-size:18px; font-weight:500;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .lp-card__meta {
+            margin:0;
+            font-family:'Montserrat', sans-serif;
+            font-size:11px; letter-spacing:0.6px; color:rgba(243,237,224,0.55);
+            text-transform:uppercase;
+        }
+        .lp-card__chev {
+            color:#d4b876; flex-shrink:0;
+            opacity:0.7; transition:transform .15s;
+        }
+        .lp-card:hover .lp-card__chev { transform:translateX(3px); opacity:1; }
+
+        .lp-empty {
+            text-align:center;
+            padding:32px 18px;
+            background:rgba(255,255,255,0.03);
+            border:1px dashed rgba(184,154,94,0.3);
+            border-radius:14px;
+            color:rgba(243,237,224,0.6); font-size:13px; line-height:1.6;
+        }
+        .lp-empty strong { color:#d4b876; font-weight:600; }
+
+        .lp-plist {
+            display:flex; align-items:center; gap:12px;
+            background:rgba(255,255,255,0.04);
+            border:1px solid rgba(184,154,94,0.2);
+            border-radius:14px;
+            padding:14px 16px;
+            text-decoration:none; color:#f3ede0;
+            transition:all .15s;
+        }
+        .lp-plist:hover { background:rgba(184,154,94,0.14); border-color:rgba(212,184,118,0.55); transform:translateY(-1px); }
+        .lp-plist__svc {
+            width:44px; height:44px; flex-shrink:0;
+            border-radius:11px;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:700; font-size:15px;
+        }
+        .lp-plist__svc--spotify { background:#1DB954; color:#000; }
+        .lp-plist__svc--apple   { background:linear-gradient(135deg, #fc3c44, #fa233b); color:#fff; }
+        .lp-plist__svc--youtube { background:#ff0033; color:#fff; }
+        .lp-plist__svc--other   { background:rgba(184,154,94,0.4); color:#1a1f1c; }
+        .lp-plist__body { flex:1; min-width:0; }
+        .lp-plist__svc-name {
+            margin:0 0 2px;
+            font-family:'Montserrat', sans-serif;
+            font-size:10px; letter-spacing:1.4px;
+            color:rgba(243,237,224,0.55); text-transform:uppercase;
+        }
+        .lp-plist__url {
+            margin:0;
+            font-family:'Cormorant Garamond', serif;
+            font-size:16px; font-weight:500;
+            color:#f3ede0;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .lp-plist__ext { color:#d4b876; flex-shrink:0; }
+
+        /* Persistent mini player */
+        .lp-mini {
+            position:fixed; bottom:18px; right:18px;
+            z-index:8500;
+            display:flex; align-items:center; gap:12px;
+            padding:10px 14px 10px 10px;
+            background:linear-gradient(135deg, rgba(18,28,18,0.96), rgba(28,38,26,0.96));
+            border:1px solid rgba(212,184,118,0.5);
+            border-radius:999px;
+            box-shadow:0 18px 40px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(184,154,94,0.15) inset;
+            max-width:340px;
+            animation:lpMiniIn .35s cubic-bezier(0.2, 0.8, 0.2, 1.05) both;
+        }
+        .lp-mini.lp-mini--hidden { display:none; }
+        @keyframes lpMiniIn { from { opacity:0; transform:translateY(20px) scale(0.92); } to { opacity:1; transform:none; } }
+        .lp-mini__art {
+            width:38px; height:38px; flex-shrink:0;
+            border-radius:50%;
+            background:linear-gradient(135deg, #b89a5e, #77a361);
+            color:#1a1f1c; border:0; cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center;
+            box-shadow:0 0 0 0 rgba(184,154,94,0.7);
+            animation:lpPulse 2s ease-out infinite;
+        }
+        @keyframes lpPulse {
+            0% { box-shadow:0 0 0 0 rgba(184,154,94,0.6); }
+            70% { box-shadow:0 0 0 16px rgba(184,154,94,0); }
+            100% { box-shadow:0 0 0 0 rgba(184,154,94,0); }
+        }
+        .lp-mini__info { flex:1; min-width:0; overflow:hidden; }
+        .lp-mini__line1 {
+            margin:0;
+            font-family:'Montserrat', sans-serif;
+            font-size:9px; letter-spacing:1.4px;
+            text-transform:uppercase;
+            color:rgba(243,237,224,0.55);
+        }
+        .lp-mini__line2 {
+            margin:0;
+            font-family:'Cormorant Garamond', serif;
+            font-size:15px; font-weight:500;
+            color:#f3ede0;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .lp-mini__open, .lp-mini__stop {
+            width:30px; height:30px; flex-shrink:0;
+            border-radius:50%;
+            display:inline-flex; align-items:center; justify-content:center;
+            background:rgba(255,255,255,0.06);
+            border:1px solid rgba(184,154,94,0.3);
+            color:#d4b876;
+            cursor:pointer; text-decoration:none;
+            transition:all .15s;
+        }
+        .lp-mini__open:hover { background:rgba(184,154,94,0.2); color:#f3ede0; }
+        .lp-mini__stop:hover { background:rgba(220,80,80,0.2); color:#ffb0b0; border-color:rgba(220,80,80,0.5); }
+
         .dash-tab--launch {
             background:linear-gradient(135deg, rgba(119,163,97,0.18), rgba(184,154,94,0.18));
             border-color:rgba(212,184,118,0.5);
@@ -547,10 +736,6 @@
 
         <!-- Right rail: vertical thumbnails -->
         <aside class="dash-thumbs" id="dash-grid">
-            <a class="dash-card--new" href="event-create.html?new=1">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>New event</span>
-            </a>
             <div class="dash-skel"></div>
             <div class="dash-skel"></div>
         </aside>
@@ -569,6 +754,41 @@
         <button class="dash-popover__item dash-popover__item--danger" data-action="delete">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
             <span>Delete</span>
+        </button>
+    </div>
+
+    <!-- ── LAUNCH YOUR PARTY: slide-in right panel + backdrop ── -->
+    <div class="lp-overlay lp-overlay--hidden" id="lp-overlay">
+        <div class="lp-backdrop" onclick="closeLaunchPanel()"></div>
+        <aside class="lp-panel" id="lp-panel" role="dialog" aria-modal="true" aria-labelledby="lp-title">
+            <header class="lp-panel__head">
+                <button class="lp-back lp-back--hidden" id="lp-back" onclick="lpGoBack()" title="Back" aria-label="Back">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <h2 class="lp-panel__title" id="lp-title">Launch your party</h2>
+                <button class="lp-close" onclick="closeLaunchPanel()" title="Close" aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </header>
+            <p class="lp-panel__sub" id="lp-sub">Pick which upcoming party you want to launch.</p>
+            <div class="lp-panel__body" id="lp-body"></div>
+        </aside>
+    </div>
+
+    <!-- Persistent mini-player (after the user has launched a playlist) -->
+    <div class="lp-mini lp-mini--hidden" id="lp-mini">
+        <button class="lp-mini__art" onclick="openLaunchPanel(true)" title="Open launch panel">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </button>
+        <div class="lp-mini__info">
+            <p class="lp-mini__line1" id="lp-mini-line1">Now playing</p>
+            <p class="lp-mini__line2" id="lp-mini-line2">—</p>
+        </div>
+        <a class="lp-mini__open" id="lp-mini-open" href="#" target="_blank" rel="noopener" title="Open">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+        <button class="lp-mini__stop" onclick="stopPlayingNow()" title="Stop">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
         </button>
     </div>
 
@@ -689,8 +909,188 @@
         }
 
         function launchParty() {
-            // urTheDJ — DJ-driven live party experience (separate Next.js app)
-            window.open('https://urthedj.vercel.app', '_blank', 'noopener');
+            openLaunchPanel(false);
+        }
+
+        /* ── Launch Your Party (in-site panel) ─────────────────────────── */
+        var lpState = { view: 'idle', eventId: null, eventName: '', playlist: null };
+
+        function openLaunchPanel(skipResume) {
+            var overlay = document.getElementById('lp-overlay');
+            overlay.classList.remove('lp-overlay--hidden');
+            // If currently playing, resume that view
+            var saved = _lpReadSaved();
+            if (saved && !skipResume && lpState.view === 'idle') {
+                lpState = { view: 'playing', eventId: saved.eventId, eventName: saved.eventName, playlist: saved.playlist };
+            }
+            lpRender();
+        }
+        function closeLaunchPanel() {
+            document.getElementById('lp-overlay').classList.add('lp-overlay--hidden');
+        }
+        function lpGoBack() {
+            if (lpState.view === 'playlists') { lpState.view = 'parties'; lpState.eventId = null; lpRender(); return; }
+            closeLaunchPanel();
+        }
+        function lpRender() {
+            var titleEl = document.getElementById('lp-title');
+            var subEl   = document.getElementById('lp-sub');
+            var body    = document.getElementById('lp-body');
+            var back    = document.getElementById('lp-back');
+            if (lpState.view === 'idle' || lpState.view === 'parties') {
+                lpState.view = 'parties';
+                titleEl.textContent = 'Launch your party';
+                subEl.textContent   = 'Pick which upcoming party you want to launch.';
+                back.classList.add('lp-back--hidden');
+                lpRenderParties(body);
+            } else if (lpState.view === 'playlists') {
+                titleEl.textContent = lpState.eventName || 'Choose a playlist';
+                subEl.textContent   = 'Open a playlist in your music app to start the vibe.';
+                back.classList.remove('lp-back--hidden');
+                lpRenderPlaylists(body);
+            } else if (lpState.view === 'playing') {
+                titleEl.textContent = 'Now playing';
+                subEl.textContent   = 'Your party is live. Stop when the night is over.';
+                back.classList.add('lp-back--hidden');
+                lpRenderPlaying(body);
+            }
+        }
+        function lpRenderParties(body) {
+            var upcoming = allEvents.filter(function(ev) {
+                if (ev.status !== 'published') return false;
+                if (!ev.eventDate) return true;
+                var d = new Date(ev.eventDate + 'T' + (ev.eventTime || '23:59') + ':00');
+                return isNaN(d.getTime()) ? true : d.getTime() >= Date.now() - 12*3600*1000;
+            });
+            if (!upcoming.length) {
+                body.innerHTML = '<div class="lp-empty">No upcoming published parties yet.<br><strong>Publish an event</strong> to launch it from here.</div>';
+                return;
+            }
+            body.innerHTML = upcoming.map(function(ev) {
+                var initial = ((ev.eventName || 'E')[0] || 'E').toUpperCase();
+                var cover = ev.coverImageUrl
+                    ? '<div class="lp-card__cover" style="background-image:url(\'' + escapeHtml(ev.coverImageUrl) + '\')"></div>'
+                    : '<div class="lp-card__cover">' + escapeHtml(initial) + '</div>';
+                return '<button type="button" class="lp-card" onclick="lpPickEvent(\'' + ev.eventId + '\')">'
+                    + cover
+                    + '<div class="lp-card__body">'
+                        + '<p class="lp-card__name">' + escapeHtml(ev.eventName || 'Untitled event') + '</p>'
+                        + '<p class="lp-card__meta">' + escapeHtml(formatDate(ev.eventDate, ev.eventTime) || 'TBD') + '</p>'
+                    + '</div>'
+                    + '<svg class="lp-card__chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
+                + '</button>';
+            }).join('');
+        }
+        function lpPickEvent(eventId) {
+            var ev = allEvents.find(function(e) { return e.eventId === eventId; });
+            if (!ev) return;
+            lpState.eventId   = eventId;
+            lpState.eventName = ev.eventName || 'Your party';
+            lpState.view      = 'playlists';
+            lpRender();
+        }
+        function _readPlaylistsForEvent(eventId) {
+            try {
+                var raw = localStorage.getItem('rnb_playlists_' + eventId);
+                if (!raw) return [];
+                var list = JSON.parse(raw);
+                return Array.isArray(list) ? list : [];
+            } catch(_) { return []; }
+        }
+        function _detectService(url) {
+            if (/spotify\.com/i.test(url))                    return { key:'spotify',  name:'Spotify',       cls:'lp-plist__svc--spotify', mark:'S' };
+            if (/music\.apple\.com/i.test(url))               return { key:'apple',    name:'Apple Music',   cls:'lp-plist__svc--apple',   mark:'A' };
+            if (/(music\.)?youtube\.com|youtu\.be/i.test(url))return { key:'youtube',  name:'YouTube Music', cls:'lp-plist__svc--youtube', mark:'YT' };
+            return                                                  { key:'other',    name:'Playlist',      cls:'lp-plist__svc--other',   mark:'♪' };
+        }
+        var _lpRenderedPlaylists = [];
+        function lpRenderPlaylists(body) {
+            var lists = _readPlaylistsForEvent(lpState.eventId);
+            _lpRenderedPlaylists = lists;
+            if (!lists.length) {
+                body.innerHTML = '<div class="lp-empty">No playlists yet for <strong>' + escapeHtml(lpState.eventName) + '</strong>.<br>Open this event in the editor and add one via <strong>+ Playlist</strong>.</div>';
+                return;
+            }
+            body.innerHTML = lists.map(function(pl, i) {
+                var svc = _detectService(pl.url || '');
+                var display = (pl.url || '').replace(/^https?:\/\/(www\.)?/, '');
+                return '<a href="#" class="lp-plist" onclick="event.preventDefault(); lpStartPlaying(' + i + ')">'
+                    + '<div class="lp-plist__svc ' + svc.cls + '">' + svc.mark + '</div>'
+                    + '<div class="lp-plist__body">'
+                        + '<p class="lp-plist__svc-name">' + svc.name + '</p>'
+                        + '<p class="lp-plist__url">' + escapeHtml(display) + '</p>'
+                    + '</div>'
+                    + '<svg class="lp-plist__ext" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+                + '</a>';
+            }).join('');
+        }
+        function lpStartPlaying(index) {
+            var playlist = _lpRenderedPlaylists[index];
+            if (!playlist) return;
+            lpState.playlist = playlist;
+            lpState.view = 'playing';
+            _lpWriteSaved({ eventId: lpState.eventId, eventName: lpState.eventName, playlist: playlist, startedAt: Date.now() });
+            try { window.open(playlist.url, '_blank', 'noopener'); } catch(_) {}
+            _renderMiniPlayer();
+            closeLaunchPanel();
+        }
+        function lpRenderPlaying(body) {
+            var pl = lpState.playlist || {};
+            var svc = _detectService(pl.url || '');
+            body.innerHTML =
+                '<div class="lp-plist" style="cursor:default">'
+                    + '<div class="lp-plist__svc ' + svc.cls + '">' + svc.mark + '</div>'
+                    + '<div class="lp-plist__body">'
+                        + '<p class="lp-plist__svc-name">' + escapeHtml(lpState.eventName || 'Your party') + ' \u00b7 ' + svc.name + '</p>'
+                        + '<p class="lp-plist__url">' + escapeHtml((pl.url || '').replace(/^https?:\/\/(www\.)?/, '')) + '</p>'
+                    + '</div>'
+                + '</div>'
+                + '<a href="' + escapeHtml(pl.url || '#') + '" target="_blank" rel="noopener" class="lp-plist" style="margin-top:6px">'
+                    + '<div class="lp-plist__svc ' + svc.cls + '">\u25b6</div>'
+                    + '<div class="lp-plist__body"><p class="lp-plist__svc-name">Open in</p><p class="lp-plist__url">' + svc.name + '</p></div>'
+                    + '<svg class="lp-plist__ext" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+                + '</a>'
+                + '<button type="button" class="dash-tab dash-tab--launch" style="margin:18px 0 0;width:100%;justify-content:center;background:linear-gradient(135deg, rgba(220,80,80,0.2), rgba(220,80,80,0.32));border-color:rgba(220,80,80,0.5);color:#ffb0b0" onclick="stopPlayingNow()">'
+                    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>'
+                    + '<span>Stop the party</span>'
+                + '</button>';
+        }
+        function stopPlayingNow() {
+            _lpClearSaved();
+            lpState = { view: 'idle', eventId: null, eventName: '', playlist: null };
+            _renderMiniPlayer();
+            closeLaunchPanel();
+        }
+        function _lpReadSaved() {
+            try { var raw = localStorage.getItem('rnb_launch_now'); return raw ? JSON.parse(raw) : null; } catch(_) { return null; }
+        }
+        function _lpWriteSaved(obj) { try { localStorage.setItem('rnb_launch_now', JSON.stringify(obj)); } catch(_) {} }
+        function _lpClearSaved()    { try { localStorage.removeItem('rnb_launch_now'); } catch(_) {} }
+        function _renderMiniPlayer() {
+            var mini = document.getElementById('lp-mini');
+            var saved = _lpReadSaved();
+            if (!saved) { mini.classList.add('lp-mini--hidden'); return; }
+            mini.classList.remove('lp-mini--hidden');
+            document.getElementById('lp-mini-line1').textContent = (saved.eventName || 'Your party').toUpperCase();
+            var svc = _detectService((saved.playlist && saved.playlist.url) || '');
+            document.getElementById('lp-mini-line2').textContent = svc.name;
+            var openLink = document.getElementById('lp-mini-open');
+            openLink.href = (saved.playlist && saved.playlist.url) || '#';
+        }
+        function _lpResumePrompt() {
+            var saved = _lpReadSaved();
+            if (!saved) return;
+            // On page load, ask: still playing or stopped?
+            setTimeout(function() {
+                var msg = 'Is your party "' + (saved.eventName || 'event') + '" still going?\n\nClick OK if the music is still playing, or Cancel to stop and reset.';
+                var stillPlaying = window.confirm(msg);
+                if (stillPlaying) {
+                    lpState = { view:'playing', eventId: saved.eventId, eventName: saved.eventName, playlist: saved.playlist };
+                    _renderMiniPlayer();
+                } else {
+                    stopPlayingNow();
+                }
+            }, 350);
         }
 
         function formatDate(dateStr, timeStr) {
@@ -721,13 +1121,6 @@
             var grid = document.getElementById('dash-grid');
             var events = filterEvents(activeTab);
             var html = '';
-            // New event tile always at top (except past)
-            if (activeTab !== 'past') {
-                html += '<a class="dash-card--new" href="event-create.html?new=1">'
-                    + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
-                    + '<span>New event</span>'
-                    + '</a>';
-            }
             events.forEach(function(ev) {
                 var datePill = formatDate(ev.eventDate, ev.eventTime);
                 var cover = ev.coverImageUrl
@@ -758,6 +1151,13 @@
                     search:   'Type to search your events.'
                 }[activeTab] || '';
                 html += '<div class="dash-thumbs__empty">' + emptyMsg + '</div>';
+            }
+            // New event tile at the BOTTOM (except past)
+            if (activeTab !== 'past') {
+                html += '<a class="dash-card--new" href="event-create.html?new=1">'
+                    + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+                    + '<span>New event</span>'
+                    + '</a>';
             }
             grid.innerHTML = html;
             // Wire ellipsis menu buttons
@@ -918,6 +1318,8 @@
             ta.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
             });
+            // Show mini player if a launch is saved + ask confirmation
+            if (_lpReadSaved()) { _renderMiniPlayer(); _lpResumePrompt(); }
         });
     </script>
 

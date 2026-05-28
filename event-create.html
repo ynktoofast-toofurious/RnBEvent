@@ -9,6 +9,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500;700;800&family=Dancing+Script:wght@400;600&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="event.css">
+    <script>
+        // Guard against GSI script firing onload before our inline scripts parse.
+        // Stub queues until the real initGoogleAuth() is defined further down.
+        window._gsiLoaded = false;
+        function initGoogleAuth() {
+            window._gsiLoaded = true;
+            if (typeof window._realInitGoogleAuth === 'function') window._realInitGoogleAuth();
+        }
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleAuth()"></script>
 </head>
 <body>
@@ -672,12 +681,41 @@
                 '<span class="ev-addon-item__label">' + (_addonLabels[type] || type) + '</span>' +
                 '<input class="ev-addon-item__input" type="' + (type === 'link' || type === 'playlist' || type === 'registry' ? 'url' : 'text') + '"' +
                 ' placeholder="' + (type === 'link' ? 'https://' : type === 'playlist' ? 'Spotify / Apple Music URL' : 'Enter details…') + '">' +
-                '<button class="ev-addon-item__remove" onclick="document.getElementById(\'' + id + '\').remove()">✕</button>';
+                '<button class="ev-addon-item__remove" onclick="document.getElementById(\'' + id + '\').remove(); if (\'' + type + '\' === \'playlist\') savePlaylistsLocal();">✕</button>';
             container.appendChild(row);
-            row.querySelector('input').focus();
+            var inp = row.querySelector('input');
+            inp.focus();
+            inp.dataset.addonType = type;
+            if (type === 'playlist') {
+                inp.addEventListener('blur', savePlaylistsLocal);
+                inp.addEventListener('input', function() {
+                    clearTimeout(state._playlistTimer);
+                    state._playlistTimer = setTimeout(savePlaylistsLocal, 600);
+                });
+            }
             // Hide the button that was clicked
             var map = { dresscode:'ap-dresscode', food:'ap-food', parking:'ap-parking', accommodations:'ap-accom', info:'ap-info' };
             // For the always-visible ones (link, playlist, registry, dresscode) hide after adding
+        }
+
+        function _playlistsKey() { return 'rnb_playlists_' + (state.eventId || '_new'); }
+        function savePlaylistsLocal() {
+            try {
+                var inputs = document.querySelectorAll('#ed-addon-items input[data-addon-type="playlist"]');
+                var list = [];
+                inputs.forEach(function(inp) {
+                    var url = (inp.value || '').trim();
+                    if (!url) return;
+                    var label = '';
+                    if (/spotify\.com/i.test(url))               label = 'Spotify';
+                    else if (/music\.apple\.com/i.test(url))     label = 'Apple Music';
+                    else if (/music\.youtube\.com|youtube\.com/i.test(url)) label = 'YouTube Music';
+                    else if (/soundcloud\.com/i.test(url))       label = 'SoundCloud';
+                    else                                         label = 'Playlist';
+                    list.push({ url: url, label: label });
+                });
+                localStorage.setItem(_playlistsKey(), JSON.stringify(list));
+            } catch(_) {}
         }
 
         /* ── Date poll ───────────────────────────────── */
@@ -911,6 +949,11 @@
                     if (tmp) {
                         localStorage.setItem('rnb_field_icons_' + state.eventId, tmp);
                         localStorage.removeItem('rnb_field_icons__new');
+                    }
+                    var tmpPl = localStorage.getItem('rnb_playlists__new');
+                    if (tmpPl) {
+                        localStorage.setItem('rnb_playlists_' + state.eventId, tmpPl);
+                        localStorage.removeItem('rnb_playlists__new');
                     }
                 } catch(_) {}
             }
@@ -1418,7 +1461,7 @@
         }
 
         /* ── Google Sign-In ──────────────────────────── */
-        function initGoogleAuth() {
+        function _realInitGoogleAuth() {
             if (!GOOGLE_CLIENT_ID || !window.google) return;
             google.accounts.id.initialize({
                 client_id:   GOOGLE_CLIENT_ID,
@@ -1427,6 +1470,9 @@
                 cancel_on_tap_outside: true
             });
         }
+        window._realInitGoogleAuth = _realInitGoogleAuth;
+        // If GSI loaded before this script ran, run init now.
+        if (window._gsiLoaded) _realInitGoogleAuth();
 
         function signInWithGoogle() {
             if (!GOOGLE_CLIENT_ID) {

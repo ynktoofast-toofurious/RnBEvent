@@ -1118,8 +1118,6 @@ async function sendInviteEmail(toEmail, guestName, ev) {
 async function notifyCreatorOfRsvp(ev, guestName, status) {
     if (!ev.creatorEmail) return;
     const html = emailBase(`
-        if (method === 'POST' && parts[0] === 'events' && parts[2] === 'update')     return await updateEvent(parts[1], body, event);
-        if (method === 'DELETE' && parts[0] === 'events' && parts.length === 2)      return await deleteEvent(parts[1], event);
       <h2>New RSVP</h2>
       <p><strong>${guestName}</strong> just ${status === 'confirmed' ? 'confirmed their attendance' : 'declined'} for <strong>${ev.eventName}</strong>.</p>
       <div class="detail">
@@ -1172,6 +1170,8 @@ exports.handler = async (event) => {
         if (method === 'GET'  && parts[0] === 'events' && parts[2] === 'my-songs')   return await getMySOungs(parts[1], event);
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'guests')     return await addGuests(parts[1], body, event);
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'songs')      return await addSong(parts[1], body, event);
+        if (method === 'POST' && parts[0] === 'events' && parts[2] === 'update')     return await updateEvent(parts[1], body, event);
+        if (method === 'DELETE' && parts[0] === 'events' && parts.length === 2)      return await deleteEvent(parts[1], event);
         if (method === 'DELETE' && parts[0] === 'events' && parts[2] === 'songs' && parts[3]) return await removeSong(parts[1], parts[3], event);
         if (method === 'GET'  && parts[0] === 'events' && parts[2] === 'admin')      return await getEventAdmin(parts[1], event);
         if (method === 'PUT'  && parts[0] === 'events' && parts[2] === 'seating')    return await updateSeating(parts[1], body, event);
