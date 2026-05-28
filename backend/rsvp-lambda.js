@@ -121,7 +121,7 @@ function sanitizeUrl(raw) {
 /* Sanitize the visual-customization payload sent from event-create.html.
    Caps every string; rejects non-whitelisted theme/iconStyle values; keeps fieldIcons
    to a known shape; clamps customLayout positions to numeric coords. */
-const ALLOWED_THEMES      = ['night','royal','candy','linen','ivory','sage','plum','copper'];
+const ALLOWED_THEMES      = ['night','gold','velvet','neon','dawn','royal','candy','linen','ivory','sage','plum','copper'];
 const ALLOWED_ICON_STYLES = ['emoji','svg'];
 const ICON_FIELD_KEYS     = ['title','date','venue','host','desc'];
 const ALLOWED_ADDON_TYPES = ['link','playlist','registry','dresscode','food','parking','accommodations','info'];
