@@ -1435,26 +1435,133 @@
         }
 
         async function previewEvent() {
-            if (state.eventId) {
-                window.open(state.shareUrl || '/event/' + state.eventId, '_blank');
-                return;
+            // Render current editor state as an invitation card in a modal
+            // — no save needed, works entirely client-side.
+            var theme  = (document.getElementById('panel-editor').dataset.theme  || 'night');
+            var font   = (document.getElementById('panel-editor').dataset.font   || 'classic');
+
+            var titleEl = document.getElementById('ed-title');
+            var eventName = (titleEl.textContent || '').trim();
+            if (!eventName || eventName === titleEl.dataset.placeholder) eventName = 'Your Event Name';
+
+            var eventType = document.getElementById('ed-type').value || '';
+            var rawDate   = document.getElementById('ed-date').value   || '';
+            var rawTime   = document.getElementById('ed-time').value   || '';
+            var venue     = (document.getElementById('ed-venue').textContent || '').trim()       || 'TBD';
+            var desc      = (document.getElementById('ed-description').textContent || '').trim();
+            var host      = (document.getElementById('ed-host-display').textContent || '').trim().replace(/^—$/, '');
+
+            // ---- Format date nicely -----------------------------------------
+            var dateStr = '', timeStr = '';
+            if (rawDate) {
+                try {
+                    var parts = rawDate.split('-');
+                    var dt = new Date(+parts[0], +parts[1]-1, +parts[2]);
+                    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                    dateStr = days[dt.getDay()] + ', ' + months[dt.getMonth()] + ' ' + dt.getDate() + ', ' + dt.getFullYear();
+                } catch(_) { dateStr = rawDate; }
             }
-            // Auto-save a draft, then open preview
-            var title = document.getElementById('ed-title').textContent.trim();
-            if (!title || title === document.getElementById('ed-title').dataset.placeholder) {
-                showToast('Add an event name first.');
-                return;
+            if (rawTime) {
+                try {
+                    var hp = rawTime.split(':');
+                    var h = +hp[0], m = hp[1] || '00';
+                    var ampm = h >= 12 ? 'PM' : 'AM';
+                    var hh = h % 12 || 12;
+                    timeStr = hh + ':' + m + ' ' + ampm;
+                } catch(_) { timeStr = rawTime; }
             }
-            setEditorStatus('Preparing preview…');
-            var ok = await doCreateEvent('draft');
-            if (ok) {
-                setEditorStatus('Draft saved');
-                window.open(state.shareUrl || '/event/' + state.eventId, '_blank');
-                loadDrafts();
+
+            // ---- Cover photo ------------------------------------------------
+            var coverImgEl = document.getElementById('ed-cover-img');
+            var coverSrc = '';
+            if (coverImgEl && !coverImgEl.classList.contains('hidden') && coverImgEl.src) coverSrc = coverImgEl.src;
+            else if (state.coverImageUrl) coverSrc = state.coverImageUrl;
+
+            // ---- Icon -------------------------------------------------------
+            var iconEmoji = state.eventEmoji || '🎉';
+            var iconSvgEl = document.getElementById('ed-icon-svg');
+            var iconHtml  = '';
+            if (state.iconStyle === 'svg' && iconSvgEl && !iconSvgEl.classList.contains('hidden')) {
+                iconHtml = '<span class="inv-icon" style="display:block;font-size:48px">' + iconSvgEl.innerHTML + '</span>';
             } else {
-                setEditorStatus('Preview failed');
+                iconHtml = '<span class="inv-icon">' + iconEmoji + '</span>';
             }
+
+            // ---- Add-ons ----------------------------------------------------
+            var addonsHtml = '';
+            var addonInputs = document.querySelectorAll('#ed-addon-items .ev-addon-item');
+            if (addonInputs.length) {
+                addonsHtml = '<div class="inv-addons">';
+                addonInputs.forEach(function(item) {
+                    var label = (item.querySelector('.ev-addon-item__label') || {}).textContent || '';
+                    var inp   = item.querySelector('input');
+                    var val   = inp ? (inp.value || '').trim() : '';
+                    if (!val) return;
+                    var valHtml = val;
+                    if (/^https?:\/\//i.test(val)) {
+                        valHtml = '<a href="' + val.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener">' + val + '</a>';
+                    }
+                    addonsHtml += '<div class="inv-addon-row">'
+                        + '<span class="inv-addon-label">' + label + '</span>'
+                        + '<span class="inv-addon-val">' + valHtml + '</span>'
+                        + '</div>';
+                });
+                addonsHtml += '</div>';
+            }
+
+            // ---- Build card HTML -------------------------------------------
+            var metaHtml = '<div class="inv-meta">';
+            if (dateStr || timeStr) {
+                var dtVal = [dateStr, timeStr].filter(Boolean).join(' · ');
+                metaHtml += '<div class="inv-meta-row">'
+                    + '<span class="inv-meta-icon">📅</span>'
+                    + '<div class="inv-meta-text"><span class="inv-meta-label">Date &amp; Time</span>' + dtVal + '</div>'
+                    + '</div>';
+            }
+            if (venue && venue !== 'TBD' || venue === 'TBD') {
+                metaHtml += '<div class="inv-meta-row">'
+                    + '<span class="inv-meta-icon">📍</span>'
+                    + '<div class="inv-meta-text"><span class="inv-meta-label">Location</span>' + venue + '</div>'
+                    + '</div>';
+            }
+            if (host) {
+                metaHtml += '<div class="inv-meta-row">'
+                    + '<span class="inv-meta-icon">👑</span>'
+                    + '<div class="inv-meta-text"><span class="inv-meta-label">Hosted by</span>' + host + '</div>'
+                    + '</div>';
+            }
+            metaHtml += '</div>';
+
+            var html = '<div class="inv-card" data-theme="' + theme + '" data-font="' + font + '">'
+                + (coverSrc ? '<img class="inv-cover" src="' + coverSrc + '" alt="Event cover">' : '')
+                + '<div class="inv-body">'
+                + iconHtml
+                + (eventType ? '<p class="inv-type">' + eventType + '</p>' : '')
+                + '<h1 class="inv-title">' + eventName + '</h1>'
+                + '<div class="inv-divider"></div>'
+                + metaHtml
+                + (desc ? '<p class="inv-desc">' + desc.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>' : '')
+                + addonsHtml
+                + '<div class="inv-rsvp-wrap">'
+                + '<div class="inv-rsvp-btn">RSVP Now</div>'
+                + '<p class="inv-rsvp-note">Preview only — this button is not active</p>'
+                + '</div>'
+                + '</div>'
+                + '</div>';
+
+            document.getElementById('inv-preview-frame').innerHTML = html;
+            document.getElementById('inv-preview-overlay').classList.remove('hidden');
         }
+
+        function closeInvPreview() {
+            document.getElementById('inv-preview-overlay').classList.add('hidden');
+        }
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeInvPreview();
+        });
 
         /* ── Auth forms toggle ───────────────────────── */
         function showLogin() {
@@ -2351,6 +2458,19 @@
                         <p class="ev-settings__placeholder">Coming soon — schedule SMS &amp; email reminders 1 week, 1 day, and 1 hour before.</p>
                     </section>
                 </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Invitation Preview Modal ──────────────────────────────── -->
+    <div id="inv-preview-overlay" class="inv-preview-overlay hidden" onclick="if(event.target===this)closeInvPreview()">
+        <div class="inv-preview-dialog" id="inv-preview-dialog">
+            <div class="inv-preview-topbar">
+                <span class="inv-preview-badge">👁 Guest View Preview</span>
+                <button class="inv-preview-close" onclick="closeInvPreview()" aria-label="Close preview">✕</button>
+            </div>
+            <div class="inv-preview-frame" id="inv-preview-frame">
+                <!-- dynamically populated by previewEvent() -->
             </div>
         </div>
     </div>

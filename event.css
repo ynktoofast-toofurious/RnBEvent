@@ -3213,3 +3213,215 @@ button.ev-fi-btn .ev-fi-svg svg { width: 18px; height: 18px; }
     font-size:11px; letter-spacing:0.8px; color:rgba(243,237,224,0.55);
     align-self:center;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   INVITATION PREVIEW MODAL
+═══════════════════════════════════════════════════════════ */
+.inv-preview-overlay {
+    position: fixed; inset: 0;
+    z-index: 10000;
+    background: rgba(0,0,0,0.72);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(3px);
+    transition: opacity 0.25s;
+}
+.inv-preview-overlay.hidden { display: none; }
+
+.inv-preview-dialog {
+    width: min(680px, 100%);
+    max-height: calc(100dvh - 32px);
+    display: flex; flex-direction: column;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.65);
+}
+
+/* Topbar */
+.inv-preview-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: #1a1a1a;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+}
+.inv-preview-badge {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; font-weight: 500; letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: #d4b876;
+}
+.inv-preview-close {
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,0.5); font-size: 16px; line-height: 1;
+    padding: 4px 6px; border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+.inv-preview-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+/* Scrollable frame */
+.inv-preview-frame {
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.inv-preview-frame::-webkit-scrollbar { width: 5px; }
+.inv-preview-frame::-webkit-scrollbar-track { background: transparent; }
+.inv-preview-frame::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+/* ── The invitation card ── */
+.inv-card {
+    min-height: 100%;
+    display: flex; flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* theme backgrounds */
+.inv-card[data-theme="night"] { background: radial-gradient(ellipse at 25% 20%, #1e3d1e 0%, #0b160b 55%), radial-gradient(ellipse at 75% 80%, #2c3e2c 0%, #0b160b 60%); }
+.inv-card[data-theme="gold"]  { background: radial-gradient(ellipse at 25% 20%, #3a2800 0%, #160f00 55%), radial-gradient(ellipse at 75% 80%, #4a3800 0%, #160f00 60%); }
+.inv-card[data-theme="velvet"]{ background: radial-gradient(ellipse at 25% 20%, #2a0a35 0%, #0f0010 55%), radial-gradient(ellipse at 75% 80%, #3a1045 0%, #0f0010 60%); }
+.inv-card[data-theme="neon"]  { background: radial-gradient(ellipse at 20% 30%, #001525 0%, #000510 55%), radial-gradient(ellipse at 80% 70%, #050015 0%, #000510 60%); }
+.inv-card[data-theme="dawn"]  { background: radial-gradient(ellipse at 25% 20%, #2a0a20 0%, #180010 55%), radial-gradient(ellipse at 75% 80%, #3a1028 0%, #180010 60%); }
+
+/* theme accent colours applied via CSS custom property */
+.inv-card[data-theme="night"] { --inv-accent: #d4b876; --inv-accent2: #77a361; }
+.inv-card[data-theme="gold"]  { --inv-accent: #d4b876; --inv-accent2: #c8a84b; }
+.inv-card[data-theme="velvet"]{ --inv-accent: #c87ed4; --inv-accent2: #9e4fb8; }
+.inv-card[data-theme="neon"]  { --inv-accent: #00d4ff; --inv-accent2: #00a3c8; }
+.inv-card[data-theme="dawn"]  { --inv-accent: #e87ea0; --inv-accent2: #c05878; }
+
+/* cover photo */
+.inv-cover {
+    width: 100%; max-height: 280px;
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
+}
+
+/* body */
+.inv-body {
+    padding: 36px 40px 48px;
+    display: flex; flex-direction: column; gap: 0;
+    flex: 1;
+}
+@media (max-width: 500px) { .inv-body { padding: 24px 20px 36px; } }
+
+/* icon row */
+.inv-icon {
+    font-size: 44px; line-height: 1;
+    margin-bottom: 16px;
+    display: block;
+}
+
+/* event type badge */
+.inv-type {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 9px; font-weight: 500;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: var(--inv-accent);
+    margin-bottom: 12px;
+}
+
+/* event name — font-family set inline by the renderer */
+.inv-title {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 300;
+    color: #f8f6f2;
+    line-height: 1.15;
+    margin: 0 0 24px;
+}
+.inv-card[data-font="modern"]  .inv-title { font-family: 'Montserrat', sans-serif; font-size: clamp(18px, 3.5vw, 28px); font-weight: 500; letter-spacing: 3px; text-transform: uppercase; }
+.inv-card[data-font="script"]  .inv-title { font-family: 'Dancing Script', cursive; font-size: clamp(32px, 6vw, 56px); }
+.inv-card[data-font="elegant"] .inv-title { font-family: 'Playfair Display', serif; font-style: italic; }
+.inv-card[data-font="bold"]    .inv-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: clamp(20px, 4vw, 36px); letter-spacing: 2px; text-transform: uppercase; }
+.inv-card[data-font="minimal"] .inv-title { font-family: Georgia, serif; font-weight: 300; font-style: italic; }
+.inv-card[data-font="classic"] .inv-title { font-family: 'Cormorant Garamond', serif; }
+
+/* divider */
+.inv-divider {
+    width: 48px; height: 1px;
+    background: var(--inv-accent);
+    margin: 0 0 24px;
+    opacity: 0.7;
+}
+
+/* meta rows (date/time, venue, host) */
+.inv-meta { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.inv-meta-row {
+    display: flex; align-items: flex-start; gap: 12px;
+}
+.inv-meta-icon {
+    font-size: 15px; line-height: 1; flex-shrink: 0;
+    margin-top: 1px; opacity: 0.75;
+}
+.inv-meta-text {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px; font-weight: 300;
+    color: rgba(248,246,242,0.88); line-height: 1.5;
+}
+.inv-meta-label {
+    font-size: 9px; font-weight: 500; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--inv-accent);
+    display: block; margin-bottom: 2px;
+}
+
+/* description */
+.inv-desc {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px; font-weight: 300;
+    color: rgba(248,246,242,0.72);
+    line-height: 1.75; white-space: pre-wrap;
+    margin-bottom: 24px;
+}
+
+/* add-ons */
+.inv-addons { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+.inv-addon-row {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 10px 14px;
+}
+.inv-addon-label {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; font-weight: 500; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--inv-accent);
+    flex-shrink: 0; min-width: 80px;
+}
+.inv-addon-val {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px; font-weight: 300;
+    color: rgba(248,246,242,0.82);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1;
+}
+.inv-addon-val a { color: var(--inv-accent); text-decoration: none; }
+.inv-addon-val a:hover { text-decoration: underline; }
+
+/* RSVP button */
+.inv-rsvp-wrap {
+    margin-top: auto; padding-top: 8px;
+}
+.inv-rsvp-btn {
+    display: block; width: 100%;
+    padding: 16px 24px;
+    background: var(--inv-accent);
+    color: #0b160b;
+    border: none; border-radius: 3px; cursor: default;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 2.5px; text-transform: uppercase;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.inv-rsvp-note {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; font-weight: 300;
+    color: rgba(248,246,242,0.35);
+    text-align: center;
+    margin-top: 10px;
+    letter-spacing: 0.5px;
+}
