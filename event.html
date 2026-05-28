@@ -425,6 +425,44 @@
             document.getElementById('ev-host').textContent    = ev.creatorName;
             document.getElementById('ev-date-text').textContent = formatDate(ev.eventDate, ev.eventTime);
             document.getElementById('ev-venue-text').textContent = ev.venue;
+
+            applyEventCustomization(ev);
+        }
+
+        /* Mirror the editor's visual customization on the public event page so
+           what the host previewed is what guests see. */
+        function applyEventCustomization(ev) {
+            // Theme → body data attribute (CSS hooks in event.css optional)
+            if (ev.theme) document.body.setAttribute('data-event-theme', ev.theme);
+
+            // Headline emoji — prepend to event name if provided
+            var emoji = ev.eventEmoji || (ev.fieldIcons && ev.fieldIcons.title && ev.fieldIcons.title.emoji);
+            if (emoji) {
+                var nameEl = document.getElementById('ev-name');
+                if (nameEl && nameEl.querySelector('.ev-hero__emoji') == null) {
+                    var em = document.createElement('span');
+                    em.className = 'ev-hero__emoji';
+                    em.textContent = emoji + ' ';
+                    em.style.cssText = 'display:inline-block;margin-right:6px';
+                    nameEl.insertBefore(em, nameEl.firstChild);
+                }
+            }
+
+            // Replace SVG meta icons with custom emoji when provided
+            var fi = ev.fieldIcons || {};
+            function swapIcon(metaId, emoji) {
+                if (!emoji) return;
+                var wrap = document.getElementById(metaId);
+                if (!wrap) return;
+                var svg = wrap.querySelector('svg');
+                if (!svg) return;
+                var span = document.createElement('span');
+                span.textContent = emoji;
+                span.style.cssText = 'display:inline-block;font-size:16px;line-height:1;margin-right:2px';
+                svg.replaceWith(span);
+            }
+            if (fi.date  && fi.date.emoji)  swapIcon('ev-date-meta',  fi.date.emoji);
+            if (fi.venue && fi.venue.emoji) swapIcon('ev-venue-meta', fi.venue.emoji);
         }
 
         /* ── RSVP flow ───────────────────────────────── */

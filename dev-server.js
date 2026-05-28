@@ -24,6 +24,17 @@ const MIME_TYPES = {
 
 const server = http.createServer((req, res) => {
   let url = decodeURIComponent(req.url.split('?')[0]);
+  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?') + 1) : '';
+
+  // Mirror Netlify rewrite: /event/:id  →  /event.html?id=:id
+  const eventMatch = url.match(/^\/event\/([A-Za-z0-9_-]+)\/?$/);
+  if (eventMatch) {
+    const id = eventMatch[1];
+    const target = '/event.html?id=' + encodeURIComponent(id) + (qs ? '&' + qs : '');
+    res.writeHead(302, { Location: target });
+    res.end();
+    return;
+  }
 
   // Try the exact file first
   let filePath = path.join(ROOT, url);

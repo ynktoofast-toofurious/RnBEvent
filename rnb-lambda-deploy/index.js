@@ -117,6 +117,57 @@ function sanitizeUrl(raw) {
     return /^https?:\/\//i.test(u) ? u : '';
 }
 
+/* Sanitize the visual-customization payload sent from event-create.html.
+   Caps every string; rejects non-whitelisted theme/iconStyle values; keeps fieldIcons
+   to a known shape; clamps customLayout positions to numeric coords. */
+const ALLOWED_THEMES      = ['night','royal','candy','linen','ivory','sage','plum','copper'];
+const ALLOWED_ICON_STYLES = ['emoji','svg'];
+const ICON_FIELD_KEYS     = ['title','date','venue','host','desc'];
+function sanitizeCustomization(body) {
+    const out = {};
+    const ee = String(body.eventEmoji || '').slice(0, 16);
+    if (ee) out.eventEmoji = ee;
+    if (ALLOWED_ICON_STYLES.includes(body.iconStyle)) out.iconStyle = body.iconStyle;
+    if (ALLOWED_THEMES.includes(body.theme))          out.theme     = body.theme;
+
+    if (body.fieldIcons && typeof body.fieldIcons === 'object') {
+        const fi = {};
+        for (const k of ICON_FIELD_KEYS) {
+            const v = body.fieldIcons[k];
+            if (!v || typeof v !== 'object') continue;
+            const emoji = String(v.emoji || '').slice(0, 16);
+            const style = ALLOWED_ICON_STYLES.includes(v.style) ? v.style : 'emoji';
+            if (emoji) fi[k] = { emoji, style };
+        }
+        if (Object.keys(fi).length) out.fieldIcons = fi;
+    }
+
+    if (body.customLayout && typeof body.customLayout === 'object') {
+        const cl = {};
+        let count = 0;
+        for (const [key, pos] of Object.entries(body.customLayout)) {
+            if (count++ > 20) break;
+            if (!pos || typeof pos !== 'object') continue;
+            const safeKey = String(key).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32);
+            if (!safeKey) continue;
+            cl[safeKey] = {
+                left: Math.max(-2000, Math.min(2000, Number(pos.left) || 0)),
+                top:  Math.max(-2000, Math.min(2000, Number(pos.top)  || 0)),
+                width: pos.width != null ? Math.max(20, Math.min(2000, Number(pos.width) || 0)) : undefined
+            };
+        }
+        if (Object.keys(cl).length) out.customLayout = cl;
+    }
+
+    if (typeof body.requireVerify   === 'boolean') out.requireVerify   = body.requireVerify;
+    if (typeof body.showGuests      === 'boolean') out.showGuests      = body.showGuests;
+    // Frontend sends `playlist`; normalize to playlistEnabled (DynamoDB-safe)
+    if (typeof body.playlist        === 'boolean') out.playlistEnabled = body.playlist;
+    if (typeof body.playlistEnabled === 'boolean') out.playlistEnabled = body.playlistEnabled;
+
+    return out;
+}
+
 /* ── Auth helpers ────────────────────────────────── */
 
 async function getCreatorFromToken(event) {
@@ -381,6 +432,7 @@ async function createEvent(body, event) {
     const eventDate   = String(body.eventDate || '').slice(0, 10);
     const eventTime   = sanitizeText(body.eventTime, 10);
     const coverImageUrl = sanitizeUrl(body.coverImageUrl);
+    const customization = sanitizeCustomization(body);
 
     if (!eventName || eventName.length < 2) return respond(400, { error: 'Event name required' });
     if (!eventDate || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return respond(400, { error: 'Valid date required (YYYY-MM-DD)' });
@@ -438,6 +490,7 @@ async function createEvent(body, event) {
             coverImageUrl,
             status,
             urthedj_sessionId,
+            ...customization,
             createdAt:         new Date().toISOString()
         }
     }));
@@ -461,6 +514,7 @@ async function updateEvent(eventId, body, event) {
     const eventDate   = String(body.eventDate || '').slice(0, 10);
     const eventTime   = sanitizeText(body.eventTime, 10);
     const coverImageUrl = sanitizeUrl(body.coverImageUrl);
+    const customization = sanitizeCustomization(body);
     const newStatus   = body.status === 'draft' ? 'draft' : 'published';
 
     if (!eventName || eventName.length < 2) return respond(400, { error: 'Event name required' });
@@ -470,12 +524,20 @@ async function updateEvent(eventId, body, event) {
     await ddb.send(new UpdateCommand({
         TableName: T.EVENTS,
         Key: { eventId },
-        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u',
+        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u, eventEmoji=:ee, iconStyle=:is, theme=:th, fieldIcons=:fi, customLayout=:cl, requireVerify=:rv, showGuests=:sg, playlistEnabled=:pl',
         ExpressionAttributeNames:  { '#st': 'status' },
         ExpressionAttributeValues: {
             ':n': eventName, ':t': eventType, ':d': eventDate, ':tm': eventTime,
             ':v': venue, ':desc': description, ':img': coverImageUrl || null,
-            ':s': newStatus, ':u': new Date().toISOString()
+            ':s': newStatus, ':u': new Date().toISOString(),
+            ':ee': customization.eventEmoji || null,
+            ':is': customization.iconStyle  || null,
+            ':th': customization.theme      || null,
+            ':fi': customization.fieldIcons || null,
+            ':cl': customization.customLayout || null,
+            ':rv': customization.requireVerify === false ? false : true,
+            ':sg': customization.showGuests    === false ? false : true,
+            ':pl': customization.playlistEnabled === false ? false : true
         }
     }));
 
@@ -502,9 +564,27 @@ async function getEvent(eventId) {
     const res = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
     if (!res?.Item) return respond(404, { error: 'Event not found' });
 
-    // Return teaser fields only — full details require RSVP
-    const { eventId: id, eventName, creatorName, eventDate, eventTime, venue, coverImageUrl, eventType } = res.Item;
-    return respond(200, { eventId: id, eventName, creatorName, eventDate, eventTime, venue, coverImageUrl, eventType });
+    // Return teaser fields + visual customization so event.html can render the same look the host previewed.
+    // Full sensitive details (description, address, internal IDs) still require RSVP via /events/:id/full.
+    const it = res.Item;
+    return respond(200, {
+        eventId:        it.eventId,
+        eventName:      it.eventName,
+        creatorName:    it.creatorName,
+        eventDate:      it.eventDate,
+        eventTime:      it.eventTime,
+        venue:          it.venue,
+        coverImageUrl:  it.coverImageUrl,
+        eventType:      it.eventType,
+        eventEmoji:     it.eventEmoji  || null,
+        iconStyle:      it.iconStyle   || null,
+        theme:          it.theme       || null,
+        fieldIcons:     it.fieldIcons  || null,
+        customLayout:   it.customLayout|| null,
+        requireVerify:  it.requireVerify !== false,
+        showGuests:     it.showGuests    !== false,
+        playlistEnabled: it.playlistEnabled !== false
+    });
 }
 
 /* GET /events/:id/full ── full details (confirmed guests only) */
