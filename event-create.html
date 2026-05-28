@@ -31,7 +31,7 @@
         <div class="ev-topbar__right">
             <div id="ev-user-greeting" class="ev-user-greeting hidden">
                 <span class="ev-user-greeting__hi">Hi,</span>
-                <span class="ev-user-greeting__name" id="ev-user-name">—</span>
+                <span class="ev-user-greeting__name" id="ev-user-name">ï¿½</span>
                 <button class="ev-signout-btn" id="ev-signout-btn" onclick="signOut()" title="Sign out" aria-label="Sign out">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -280,14 +280,14 @@
                                 </div>
                             </div>
                             <div class="ev-icon-picker__grid" id="ed-icon-grid"></div>
-                            <p class="ev-icon-picker__hint">Live preview · changes save automatically</p>
+                            <p class="ev-icon-picker__hint">Live preview ï¿½ changes save automatically</p>
                         </div>
 
                         <div class="ev-editor__type-row">
                             <input type="hidden" id="ed-type">
                             <button type="button" class="ev-type-trigger" id="ev-type-trigger" onclick="openTypePicker()">
-                                <span id="ev-type-label">Select event type…</span>
-                                <span class="ev-type-trigger__chevron">›</span>
+                                <span id="ev-type-label">Select event typeï¿½</span>
+                                <span class="ev-type-trigger__chevron">ï¿½</span>
                             </button>
                         </div>
 
@@ -329,7 +329,7 @@
 
                         <!-- Date poll options (hidden by default) -->
                         <div class="ev-date-poll hidden" id="ed-date-poll">
-                            <div class="ev-flyout__heading" style="font-size:9px;margin-bottom:8px">DATE OPTIONS — GUESTS WILL VOTE</div>
+                            <div class="ev-flyout__heading" style="font-size:9px;margin-bottom:8px">DATE OPTIONS ï¿½ GUESTS WILL VOTE</div>
                             <div id="ed-poll-dates"></div>
                             <button class="ev-addon-pill" onclick="addPollDate()" style="margin-top:6px">+ Add date option</button>
                         </div>
@@ -339,7 +339,7 @@
                             <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-host" onclick="toggleIconPicker(event, 'host')" title="Change icon">??</button>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Hosted by</div>
-                                <div class="ev-editor__field-val" id="ed-host-display">—</div>
+                                <div class="ev-editor__field-val" id="ed-host-display">ï¿½</div>
                             </div>
                         </div>
 
@@ -357,7 +357,7 @@
                             <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-desc" onclick="toggleIconPicker(event, 'desc')" title="Change icon">??</button>
                             <div class="ev-editor__field-body" style="width:100%">
                                 <div class="ev-editor__field-label">Details</div>
-                                <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expect…"></div>
+                                <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expectï¿½"></div>
                             </div>
                         </div>
 
@@ -403,7 +403,7 @@
                                 <div class="ev-editor__cover-upload">
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                                     <p>Add cover photo</p>
-                                    <span>JPG, PNG or WebP · max 5MB</span>
+                                    <span>JPG, PNG or WebP ï¿½ max 5MB</span>
                                 </div>
                             </div>
                             <button class="ev-editor__cover-edit hidden" id="ed-cover-edit-btn" onclick="document.getElementById('ed-photo-input').click()">? Edit photo</button>
@@ -457,7 +457,7 @@
                                 <option value="@icloud.com">@icloud.com</option>
                                 <option value="@aol.com">@aol.com</option>
                                 <option value="@proton.me">@proton.me</option>
-                                <option value="__custom__">Custom…</option>
+                                <option value="__custom__">Customï¿½</option>
                             </select>
                             <input id="gp-email-custom" class="gp-input gp-email__custom hidden" type="text" placeholder="@yourdomain.com">
                         </div>
@@ -592,7 +592,7 @@
                 setTimeout(function() { loadDraftIntoEditor(draftId); }, 120);
                 return;
             }
-            // Explicit "new" intent (from dashboard “+ Create”)
+            // Explicit "new" intent (from dashboard ï¿½+ Createï¿½)
             if (state.creatorToken && params.get('new') === '1') {
                 openTypePickerIntro();
                 return;
@@ -603,7 +603,7 @@
                 setTimeout(applyRuthiePrefill, 220);
                 return;
             }
-            // Already signed in — send them to the dashboard
+            // Already signed in ï¿½ send them to the dashboard
             if (state.creatorToken && state.creator) {
                 window.location.replace('events.html');
                 return;
@@ -712,32 +712,30 @@
         }
         function openTypePickerIntro() {
             _typePickerIntroMode = true;
-            // Show the editor shell in the background (greyed) but modal on top
+            // Show the editor shell in the background but keep it non-interactive via the modal backdrop
             var container = document.querySelector('.ev-container');
             if (container) container.classList.add('hidden');
             var editor = document.getElementById('panel-editor');
             editor.classList.remove('hidden');
-            editor.style.filter = 'blur(3px)';
-            editor.style.pointerEvents = 'none';
+            // Move modal to <body> so it's never clipped by the editor's stacking context
             var modal = document.getElementById('ev-type-modal');
+            document.body.appendChild(modal);
             modal.classList.add('open', 'intro-mode');
             document.body.style.overflow = 'hidden';
             document.querySelectorAll('.ev-type-card').forEach(function(c) { c.classList.remove('selected'); });
-            // Hide close button in intro mode — must pick a type
-            var closeBtn = document.querySelector('.ev-type-modal__close');
+            // Hide close button in intro mode â€” must pick a type
+            var closeBtn = modal.querySelector('.ev-type-modal__close');
             if (closeBtn) closeBtn.style.display = 'none';
         }
         function closeTypePicker() {
             var modal = document.getElementById('ev-type-modal');
             modal.classList.remove('open', 'intro-mode');
             document.body.style.overflow = '';
-            var closeBtn = document.querySelector('.ev-type-modal__close');
+            var closeBtn = modal.querySelector('.ev-type-modal__close');
             if (closeBtn) closeBtn.style.display = '';
-            var editor = document.getElementById('panel-editor');
-            if (editor) { editor.style.filter = ''; editor.style.pointerEvents = ''; }
         }
         function closeTypePickerBackdrop(e) {
-            // In intro mode the user must pick — clicking backdrop does nothing
+            // In intro mode the user must pick ï¿½ clicking backdrop does nothing
             if (_typePickerIntroMode) return;
             if (e.target === document.getElementById('ev-type-modal')) closeTypePicker();
         }
@@ -951,7 +949,7 @@
             row.innerHTML =
                 '<span class="ev-addon-item__label">' + (_addonLabels[type] || type) + '</span>' +
                 '<input class="ev-addon-item__input" type="' + (type === 'link' || type === 'playlist' || type === 'registry' ? 'url' : 'text') + '"' +
-                ' placeholder="' + (type === 'link' ? 'https://' : type === 'playlist' ? 'Spotify / Apple Music URL' : 'Enter details…') + '">' +
+                ' placeholder="' + (type === 'link' ? 'https://' : type === 'playlist' ? 'Spotify / Apple Music URL' : 'Enter detailsï¿½') + '">' +
                 '<button class="ev-addon-item__remove" onclick="document.getElementById(\'' + id + '\').remove(); if (\'' + type + '\' === \'playlist\') savePlaylistsLocal();">?</button>';
             container.appendChild(row);
             var inp = row.querySelector('input');
@@ -1224,7 +1222,7 @@
         function gpHandlePaste(e) {
             var text = (e.clipboardData || window.clipboardData).getData('text');
             if (!text) return;
-            // Detect spreadsheet paste — multiple rows OR tab-separated cells
+            // Detect spreadsheet paste ï¿½ multiple rows OR tab-separated cells
             var hasRows = /\r?\n/.test(text.trim());
             var hasTabs = /\t/.test(text);
             if (!hasRows && !hasTabs) return; // single-cell paste, let it happen
@@ -1377,7 +1375,7 @@
 
         /* -- Save Draft / Publish ---------------------- */
         async function saveDraft() {
-            setEditorStatus('Saving…');
+            setEditorStatus('Savingï¿½');
             var ok = await doCreateEvent('draft');
             setEditorStatus(ok ? 'Draft saved' : 'Save failed');
             if (ok) {
@@ -1395,7 +1393,7 @@
             if (!title || title === document.getElementById('ed-title').dataset.placeholder) return showErr('ed-err', 'Add an event name first.');
             if (!date) return showErr('ed-err', 'Set an event date.');
 
-            setBtnLoading('#btn-publish', true, 'Publishing…');
+            setBtnLoading('#btn-publish', true, 'Publishingï¿½');
             var ok = await doCreateEvent('published');
             setBtnLoading('#btn-publish', false, 'Publish Event ?');
 
@@ -1458,7 +1456,7 @@
                         [{ label: 'Open Drafts', primary: true, onClick: function() { closeModal(); toggleSidePanel('drafts'); } }]
                     );
                 } else if (/not found/i.test(res.error) && state.eventId) {
-                    // Underlying draft was deleted — reset and create fresh
+                    // Underlying draft was deleted ï¿½ reset and create fresh
                     state.eventId = null;
                     state.shareUrl = null;
                     return await doCreateEvent(status);
@@ -1512,7 +1510,7 @@
 
         async function previewEvent() {
             // Render current editor state as an invitation card in a modal
-            // — no save needed, works entirely client-side.
+            // ï¿½ no save needed, works entirely client-side.
             var theme  = (document.getElementById('panel-editor').dataset.theme  || 'night');
             var font   = (document.getElementById('panel-editor').dataset.font   || 'classic');
 
@@ -1525,7 +1523,7 @@
             var rawTime   = document.getElementById('ed-time').value   || '';
             var venue     = (document.getElementById('ed-venue').textContent || '').trim()       || 'TBD';
             var desc      = (document.getElementById('ed-description').textContent || '').trim();
-            var host      = (document.getElementById('ed-host-display').textContent || '').trim().replace(/^—$/, '');
+            var host      = (document.getElementById('ed-host-display').textContent || '').trim().replace(/^ï¿½$/, '');
 
             // ---- Format date nicely -----------------------------------------
             var dateStr = '', timeStr = '';
@@ -1589,7 +1587,7 @@
             // ---- Build card HTML -------------------------------------------
             var metaHtml = '<div class="inv-meta">';
             if (dateStr || timeStr) {
-                var dtVal = [dateStr, timeStr].filter(Boolean).join(' · ');
+                var dtVal = [dateStr, timeStr].filter(Boolean).join(' ï¿½ ');
                 metaHtml += '<div class="inv-meta-row">'
                     + '<span class="inv-meta-icon">??</span>'
                     + '<div class="inv-meta-text"><span class="inv-meta-label">Date &amp; Time</span>' + dtVal + '</div>'
@@ -1621,7 +1619,7 @@
                 + addonsHtml
                 + '<div class="inv-rsvp-wrap">'
                 + '<div class="inv-rsvp-btn">RSVP Now</div>'
-                + '<p class="inv-rsvp-note">Preview only — this button is not active</p>'
+                + '<p class="inv-rsvp-note">Preview only ï¿½ this button is not active</p>'
                 + '</div>'
                 + '</div>'
                 + '</div>';
@@ -1826,7 +1824,7 @@
             if (!btn) return;
             if (loading) {
                 btn._origText = btn.textContent;
-                btn.innerHTML = '<span class="ev-spinner"></span>' + (label || 'Please wait…');
+                btn.innerHTML = '<span class="ev-spinner"></span>' + (label || 'Please waitï¿½');
                 btn.disabled = true;
             } else {
                 btn.innerHTML = label || btn._origText || 'Continue';
@@ -1897,7 +1895,7 @@
             }
             listEl.innerHTML = drafts.slice(0, DRAFT_LIMIT).map(function(d) {
                 var safeName = (d.eventName || 'Untitled').replace(/[<>&"']/g, function(c) { return '&#' + c.charCodeAt(0) + ';'; });
-                var date     = d.eventDate || '—';
+                var date     = d.eventDate || 'ï¿½';
                 return '<div class="ev-draft-card" data-id="' + d.eventId + '">'
                     + '<div class="ev-draft-card__info">'
                         + '<p class="ev-draft-card__name">' + safeName + '</p>'
@@ -2028,7 +2026,7 @@
             // Minimum viable: need a title to autosave
             if (!title || title === document.getElementById('ed-title').dataset.placeholder) return;
             if (!date || !venue) { setEditorStatus('Add date & venue to enable auto-save'); return; }
-            setEditorStatus('Auto-saving…');
+            setEditorStatus('Auto-savingï¿½');
             var ok = await doCreateEvent('draft');
             if (ok) {
                 var ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -2345,7 +2343,7 @@
             if (!state.eventId) return;
             var title = (document.getElementById('ed-title').textContent || '').trim() || 'this event';
             if (!confirm('Delete "' + title + '"?\nThis cannot be undone.')) return;
-            setBtnLoading('#btn-delete-event', true, 'Deleting…');
+            setBtnLoading('#btn-delete-event', true, 'Deletingï¿½');
             try {
                 var res = await fetch(RSVP_API + '/events/' + encodeURIComponent(state.eventId), {
                     method:  'DELETE',
@@ -2357,7 +2355,7 @@
                     setBtnLoading('#btn-delete-event', false, 'Delete');
                     return;
                 }
-                showToast('Deleted. Returning to your events…');
+                showToast('Deleted. Returning to your eventsï¿½');
                 setTimeout(function() { window.location.href = 'events.html'; }, 700);
             } catch (e) {
                 showErr('ed-err', 'Network error. Please try again.');
@@ -2452,7 +2450,7 @@
                             <div class="ev-settings__avatar" id="es-host-avatar">Y</div>
                             <div class="ev-settings__host-info">
                                 <div class="ev-settings__host-name" id="es-host-name">Yannick</div>
-                                <div class="ev-settings__host-meta">Creator · You</div>
+                                <div class="ev-settings__host-meta">Creator ï¿½ You</div>
                             </div>
                         </div>
                         <div style="display:flex;justify-content:center;margin:14px 0 22px">
@@ -2502,42 +2500,42 @@
                     <section class="ev-settings__section" data-section="questionnaire">
                         <h3 class="ev-settings__h">Questionnaire</h3>
                         <p class="ev-settings__sub">Ask custom questions when guests RSVP</p>
-                        <p class="ev-settings__placeholder">Coming soon — add custom questions like dietary restrictions, +1 details, song requests &amp; more.</p>
+                        <p class="ev-settings__placeholder">Coming soon ï¿½ add custom questions like dietary restrictions, +1 details, song requests &amp; more.</p>
                     </section>
 
                     <!-- DISPLAY & PRIVACY -->
                     <section class="ev-settings__section" data-section="display">
                         <h3 class="ev-settings__h">Display &amp; Privacy</h3>
                         <p class="ev-settings__sub">Who can see what on your event page</p>
-                        <p class="ev-settings__placeholder">Coming soon — control whether the event is unlisted, password-protected, or fully public.</p>
+                        <p class="ev-settings__placeholder">Coming soon ï¿½ control whether the event is unlisted, password-protected, or fully public.</p>
                     </section>
 
                     <!-- AUDIENCE -->
                     <section class="ev-settings__section" data-section="audience">
                         <h3 class="ev-settings__h">Audience</h3>
                         <p class="ev-settings__sub">Age and location restrictions</p>
-                        <p class="ev-settings__placeholder">Coming soon — set 21+ events, geofence access, or invitation-only audiences.</p>
+                        <p class="ev-settings__placeholder">Coming soon ï¿½ set 21+ events, geofence access, or invitation-only audiences.</p>
                     </section>
 
                     <!-- PHOTO ALBUM -->
                     <section class="ev-settings__section" data-section="photos">
                         <h3 class="ev-settings__h">Photo Album</h3>
                         <p class="ev-settings__sub">Shared gallery for your guests</p>
-                        <p class="ev-settings__placeholder">Coming soon — collect photos from every guest into one shared album.</p>
+                        <p class="ev-settings__placeholder">Coming soon ï¿½ collect photos from every guest into one shared album.</p>
                     </section>
 
                     <!-- COST PER PERSON -->
                     <section class="ev-settings__section" data-section="cost">
                         <h3 class="ev-settings__h">Cost Per Person</h3>
                         <p class="ev-settings__sub">Collect contributions toward the event</p>
-                        <p class="ev-settings__placeholder">Coming soon — request a per-guest contribution at RSVP time.</p>
+                        <p class="ev-settings__placeholder">Coming soon ï¿½ request a per-guest contribution at RSVP time.</p>
                     </section>
 
                     <!-- AUTO-REMINDERS -->
                     <section class="ev-settings__section" data-section="reminders">
                         <h3 class="ev-settings__h">Auto-Reminders</h3>
                         <p class="ev-settings__sub">Automated nudges before the event</p>
-                        <p class="ev-settings__placeholder">Coming soon — schedule SMS &amp; email reminders 1 week, 1 day, and 1 hour before.</p>
+                        <p class="ev-settings__placeholder">Coming soon ï¿½ schedule SMS &amp; email reminders 1 week, 1 day, and 1 hour before.</p>
                     </section>
                 </main>
             </div>
