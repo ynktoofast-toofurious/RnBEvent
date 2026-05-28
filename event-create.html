@@ -428,6 +428,61 @@
                         </div>
 
                         <p id="ed-err" class="ev-error" style="margin-top:8px"></p>
+
+                        <!-- Party Features: Montage & Collage -->
+                        <div class="ev-party-features" id="ev-party-features">
+                            <div class="ev-pf__header">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                <span>Party Features</span>
+                                <span class="ev-pf__sub">Add interactive experiences for your guests</span>
+                            </div>
+                            <div class="ev-pf__cards">
+
+                                <!-- MONTAGE -->
+                                <div class="ev-pf__card" id="pf-montage-card">
+                                    <div class="ev-pf__card-top">
+                                        <div class="ev-pf__card-icon">
+                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.26a1 1 0 0 1-1.447.894L15 14"/><rect x="2" y="7" width="13" height="10" rx="2"/></svg>
+                                        </div>
+                                        <div class="ev-pf__card-info">
+                                            <strong>Montage</strong>
+                                            <p>Guests record live video clips &mdash; every angle, every moment. A real-time video wall from every point of view.</p>
+                                        </div>
+                                        <label class="ev-pf__toggle" title="Enable Montage">
+                                            <input type="checkbox" id="pf-montage-toggle" onchange="togglePartyFeature('montage', this.checked)">
+                                            <span class="ev-pf__toggle-track"></span>
+                                        </label>
+                                    </div>
+                                    <div class="ev-pf__retention-notice">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                        Video clips are automatically deleted <strong>3 days after the event</strong>. Download before then.
+                                    </div>
+                                </div>
+
+                                <!-- COLLAGE -->
+                                <div class="ev-pf__card" id="pf-collage-card">
+                                    <div class="ev-pf__card-top">
+                                        <div class="ev-pf__card-icon">
+                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+                                        </div>
+                                        <div class="ev-pf__card-info">
+                                            <strong>Collage</strong>
+                                            <p>A shared photo &amp; video drop box. Guests upload their favorite moments and the host collects everything in one place.</p>
+                                        </div>
+                                        <label class="ev-pf__toggle" title="Enable Collage">
+                                            <input type="checkbox" id="pf-collage-toggle" onchange="togglePartyFeature('collage', this.checked)">
+                                            <span class="ev-pf__toggle-track"></span>
+                                        </label>
+                                    </div>
+                                    <div class="ev-pf__retention-notice">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                        Photos &amp; videos are automatically deleted <strong>3 days after the event</strong>. Download before then.
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
                     </div>
 
                     <!-- RIGHT: cover image -->
@@ -448,60 +503,6 @@
                     </div>
 
                 </div><!-- /ev-editor__body -->
-
-                <!-- Party Features: Montage & Collage -->
-                <div class="ev-party-features" id="ev-party-features">
-                    <div class="ev-pf__header">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <span>Party Features</span>
-                        <span class="ev-pf__sub">Add interactive experiences for your guests</span>
-                    </div>
-                    <div class="ev-pf__cards">
-
-                        <!-- MONTAGE -->
-                        <div class="ev-pf__card" id="pf-montage-card">
-                            <div class="ev-pf__card-top">
-                                <div class="ev-pf__card-icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.26a1 1 0 0 1-1.447.894L15 14"/><rect x="2" y="7" width="13" height="10" rx="2"/></svg>
-                                </div>
-                                <div class="ev-pf__card-info">
-                                    <strong>Montage</strong>
-                                    <p>Guests record live video clips &mdash; every angle, every moment. A real-time video wall from every point of view.</p>
-                                </div>
-                                <label class="ev-pf__toggle" title="Enable Montage">
-                                    <input type="checkbox" id="pf-montage-toggle" onchange="togglePartyFeature('montage', this.checked)">
-                                    <span class="ev-pf__toggle-track"></span>
-                                </label>
-                            </div>
-                            <div class="ev-pf__retention-notice">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                Video clips are automatically deleted <strong>3 days after the event</strong>. Download before then.
-                            </div>
-                        </div>
-
-                        <!-- COLLAGE -->
-                        <div class="ev-pf__card" id="pf-collage-card">
-                            <div class="ev-pf__card-top">
-                                <div class="ev-pf__card-icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
-                                </div>
-                                <div class="ev-pf__card-info">
-                                    <strong>Collage</strong>
-                                    <p>A shared photo &amp; video drop box. Guests upload their favorite moments and the host collects everything in one place.</p>
-                                </div>
-                                <label class="ev-pf__toggle" title="Enable Collage">
-                                    <input type="checkbox" id="pf-collage-toggle" onchange="togglePartyFeature('collage', this.checked)">
-                                    <span class="ev-pf__toggle-track"></span>
-                                </label>
-                            </div>
-                            <div class="ev-pf__retention-notice">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                Photos &amp; videos are automatically deleted <strong>3 days after the event</strong>. Download before then.
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
             </div><!-- /ev-editor__main -->
 
         </div><!-- /ev-editor__content-row -->

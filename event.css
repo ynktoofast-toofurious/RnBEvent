@@ -3564,8 +3564,8 @@ button.ev-fi-btn .ev-fi-svg svg { width: 18px; height: 18px; }
    PARTY FEATURES — Montage & Collage
    ================================================================ */
 .ev-party-features {
-    margin: 0;
-    padding: 18px 24px 14px;
+    margin: 8px 0 0;
+    padding: 18px 0 0;
     border-top: 1px solid rgba(255,255,255,0.06);
 }
 .ev-pf__header {
