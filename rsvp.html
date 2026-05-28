@@ -903,6 +903,7 @@
                 setBtn('btn-send-otp', 'SEND VERIFICATION CODE', false);
                 var subtitle = document.getElementById('otp-subtitle');
                 if (subtitle) subtitle.textContent = 'Enter the 6-digit code we sent to ' + maskEmail(validEmail) + '.';
+                if (typeof gtag === 'function') gtag('event', 'rsvp_otp_sent', { event_category: 'RSVP', event_label: 'otp_sent' });
                 goToStep(2);
                 startResendTimer();
                 document.getElementById('inp-otp').focus();
@@ -1001,6 +1002,7 @@
         
         /* Persist token for this session */
         try { sessionStorage.setItem('rsvp_token', rsvpState.emailHash); } catch(e){}
+        if (typeof gtag === 'function') gtag('event', 'rsvp_verified', { event_category: 'RSVP', event_label: 'email_verified' });
         renderTables();
         updateTotalCount();
         goToStep(3);
@@ -1213,6 +1215,8 @@
         .then(function(r) { return r.json(); })
         .then(function(d) {
             if (d.ok) {
+                var total = rsvpState.tables.reduce(function(n, t) { return n + (t.guests || []).length; }, 0);
+                if (typeof gtag === 'function') gtag('event', 'rsvp_guestlist_saved', { event_category: 'RSVP', event_label: 'guest_list_saved', guest_count: total, value: total });
                 goToStep(4);
                 renderQRStep();
             } else {
@@ -1237,6 +1241,7 @@
     }
 
     function showQRCode(guestUrl) {
+        if (typeof gtag === 'function') gtag('event', 'rsvp_complete', { event_category: 'RSVP', event_label: 'qr_code_shown' });
         var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&format=png&data=' + encodeURIComponent(guestUrl);
         document.getElementById('rsvp-payment-prompt').style.display = 'none';
         var qrDisplay = document.getElementById('rsvp-qr-display');
@@ -1249,6 +1254,7 @@
     }
 
     function rsvpOpenPayment(payBtn) {
+        if (typeof gtag === 'function') gtag('event', 'rsvp_payment_initiated', { event_category: 'RSVP', event_label: 'payment_link_opened' });
         /* show pending note after opening Square link */
         setTimeout(function() {
             var pendingNote = document.getElementById('rsvp-pending-verify');

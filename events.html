@@ -9,6 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="event.css">
+    <!-- GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DK2C6GZWJZ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-DK2C6GZWJZ');
+    </script>
     <style>
         /* ── Dashboard hero ─────────────────────────── */
         body {
@@ -1737,6 +1745,7 @@
         }
         async function startCreateWizard(seed) {
             wizard = { data: seed, lastAsked: null };
+            if (typeof gtag === 'function') gtag('event', 'ruthie_wizard_started', { event_category: 'Ruthie_AI', event_type: seed.eventType || 'unknown' });
             var intro;
             if (seed.eventType && seed.theme && seed.honoree) {
                 intro = 'Beautiful \u2014 a ' + seed.eventType.toLowerCase() + ' for ' + seed.honoree + ' with a ' + seed.theme.toLowerCase() + ' vibe. Let\u2019s lock in the details I\u2019m still missing.';
@@ -1822,6 +1831,7 @@
                 return;
             }
             try { localStorage.setItem('rnb_event_prefill', JSON.stringify(wizard.data)); } catch(_) {}
+            if (typeof gtag === 'function') gtag('event', 'ruthie_wizard_complete', { event_category: 'Ruthie_AI', event_type: wizard.data.eventType || 'unknown' });
             wizard = null;
             setTimeout(function() { window.location.href = 'event-create.html?prefill=1'; }, 700);
         }
@@ -1829,6 +1839,7 @@
         /* ── Guest intake (Ruthie collects guests via chat) ── */
         async function startGuestIntake() {
             guestIntake = { stage: 'collect', current: {}, list: [] };
+            if (typeof gtag === 'function') gtag('event', 'ruthie_intake_started', { event_category: 'Ruthie_AI' });
             await appendChatTyped('Sure \u2014 I\u2019ll collect the guest list with you. Tell me one guest at a time, like:\n\u201cJane Smith, 555-123-4567, jane@gmail.com\u201d\n\nWhen you\u2019re done, say \u201cthat\u2019s all\u201d.');
         }
         async function guestIntakeHandle(text) {
@@ -1840,6 +1851,7 @@
                     return;
                 }
                 try { localStorage.setItem('rnb_guest_intake', JSON.stringify(guestIntake.list)); } catch(_) {}
+                if (typeof gtag === 'function') gtag('event', 'ruthie_intake_complete', { event_category: 'Ruthie_AI', guest_count: guestIntake.list.length, value: guestIntake.list.length });
                 await appendChatTyped('Got ' + guestIntake.list.length + ' guest' + (guestIntake.list.length === 1 ? '' : 's') + '. I\u2019ll drop them into your guest panel \u2014 open an event\u2019s editor and click \u201c+ Invite\u201d to review and send.');
                 guestIntake = null;
                 return;
@@ -1874,11 +1886,15 @@
         }
 
         function sendChatPrompt(text) {
+            if (typeof gtag === 'function') gtag('event', 'ruthie_chip_click', { event_category: 'Ruthie_AI', event_label: text.slice(0, 60) });
             return doSendPrompt(text);
         }
 
         async function doSendPrompt(text) {
             appendChat('user', text);
+            // GA4: classify and track user intent
+            var _intent = wizard ? 'wizard_answer' : guestIntake ? 'guest_intake_reply' : detectCreateIntent(text) ? 'create_event' : detectGuestIntent(text) ? 'guest_intake_start' : 'ai_chat';
+            if (typeof gtag === 'function') gtag('event', 'ruthie_message_sent', { event_category: 'Ruthie_AI', intent_type: _intent, message_length: text.length });
             // Active wizard? Hand the answer to it (but also let it re-extract everything from the message)
             if (wizard) {
                 showTyping();

@@ -228,6 +228,26 @@ img, video {
     transform: translateX(10px);
 }
 
+/* RSVP Now — prominent CTA in hamburger nav */
+.hamburger-nav__rsvp-cta a {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 10px 28px;
+    background: transparent;
+    border: 1.5px solid var(--accent-color, #b89a5e);
+    color: var(--accent-color, #b89a5e) !important;
+    font-size: 13px !important;
+    letter-spacing: 4px !important;
+    font-weight: 600 !important;
+    font-family: 'Montserrat', sans-serif !important;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+.hamburger-nav__rsvp-cta a:hover {
+    background: var(--accent-color, #b89a5e);
+    color: #1a1a1a !important;
+    transform: translateX(4px) !important;
+}
+
 /* Desktop-only: fade in on scroll */
 @media (min-width: 969px) {
     .navbar {
