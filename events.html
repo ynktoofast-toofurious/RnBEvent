@@ -172,6 +172,19 @@
         .lp-panel__body { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px; }
         .lp-panel__body::-webkit-scrollbar { width:5px; }
         .lp-panel__body::-webkit-scrollbar-thumb { background:rgba(184,154,94,0.25); border-radius:3px; }
+        .lp-panel__tabs { display:flex; gap:6px; margin:0 0 14px; }
+        .lp-tab {
+            flex:1;
+            padding:8px 10px;
+            background:rgba(255,255,255,0.04);
+            border:1px solid rgba(184,154,94,0.18);
+            border-radius:999px;
+            color:rgba(243,237,224,0.7);
+            font-family:'Montserrat', sans-serif; font-size:11px; letter-spacing:0.8px; text-transform:uppercase;
+            cursor:pointer; transition:all .15s;
+        }
+        .lp-tab:hover { color:#f3ede0; border-color:rgba(212,184,118,0.45); }
+        .lp-tab.is-active { background:linear-gradient(135deg, rgba(184,154,94,0.3), rgba(184,154,94,0.18)); border-color:rgba(212,184,118,0.65); color:#f3ede0; }
 
         .lp-card {
             display:flex; align-items:center; gap:14px;
@@ -259,7 +272,7 @@
 
         /* Persistent mini player */
         .lp-mini {
-            position:fixed; bottom:18px; right:18px;
+            position:fixed; top:18px; right:18px;
             z-index:8500;
             display:flex; align-items:center; gap:12px;
             padding:10px 14px 10px 10px;
@@ -313,6 +326,123 @@
         }
         .lp-mini__open:hover { background:rgba(184,154,94,0.2); color:#f3ede0; }
         .lp-mini__stop:hover { background:rgba(220,80,80,0.2); color:#ffb0b0; border-color:rgba(220,80,80,0.5); }
+
+        /* ── Footer + plan box ─────────────────────────── */
+        .rnb-footer {
+            margin-top:80px;
+            background:linear-gradient(180deg, rgba(8,14,10,0.6), rgba(8,14,10,0.95));
+            border-top:1px solid rgba(184,154,94,0.2);
+            padding:48px 5vw 24px;
+            color:rgba(243,237,224,0.78);
+            font-family:'Montserrat', sans-serif;
+        }
+        .rnb-footer__inner {
+            display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:40px;
+            max-width:1280px; margin:0 auto;
+        }
+        @media (max-width: 900px) { .rnb-footer__inner { grid-template-columns:1fr; } }
+        .rnb-footer__logo {
+            font-family:'Cormorant Garamond', serif; font-size:22px; font-weight:500;
+            color:#d4b876; letter-spacing:1.2px; margin:0 0 10px;
+        }
+        .rnb-footer__tag { font-size:13px; line-height:1.65; margin:0; max-width:380px; color:rgba(243,237,224,0.65); }
+        .rnb-footer__plan-label, .rnb-footer__up-label {
+            font-size:10px; letter-spacing:1.6px; text-transform:uppercase;
+            color:rgba(243,237,224,0.45); margin:0 0 4px;
+        }
+        .rnb-footer__plan-name {
+            font-family:'Cormorant Garamond', serif; font-size:24px; color:#f3ede0;
+            margin:0 0 14px;
+        }
+        .rnb-footer__usage { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+        .rnb-footer__usage-row { display:flex; justify-content:space-between; font-size:12px; }
+        .rnb-footer__bar { height:5px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+        .rnb-footer__bar-fill {
+            height:100%; width:0%; border-radius:3px;
+            background:linear-gradient(90deg, #b89a5e, #d4b876);
+            transition:width .35s ease;
+        }
+        .rnb-footer__bar-fill.is-full { background:linear-gradient(90deg, #c0414f, #e26572); }
+        .rnb-footer__hint { font-size:11px; color:rgba(243,237,224,0.45); margin:6px 0 0; }
+        .rnb-footer__upgrade {
+            background:linear-gradient(135deg, rgba(184,154,94,0.18), rgba(184,154,94,0.06));
+            border:1px solid rgba(212,184,118,0.35);
+            border-radius:16px;
+            padding:22px 22px 20px;
+        }
+        .rnb-footer__up-price {
+            font-family:'Cormorant Garamond', serif;
+            font-size:38px; font-weight:600; color:#f3ede0;
+            margin:0 0 12px;
+        }
+        .rnb-footer__up-price span { font-size:14px; color:rgba(243,237,224,0.55); font-family:'Montserrat', sans-serif; font-weight:400; }
+        .rnb-footer__up-list {
+            list-style:none; padding:0; margin:0 0 16px;
+            font-size:12px; line-height:1.85; color:rgba(243,237,224,0.7);
+        }
+        .rnb-footer__up-list li::before { content:"✦  "; color:#d4b876; }
+        .rnb-footer__up-btn {
+            display:block; width:100%;
+            padding:11px 16px;
+            background:linear-gradient(135deg, #d4b876, #b89a5e);
+            color:#1a1f1c; font-weight:600; font-size:12px; letter-spacing:1.2px; text-transform:uppercase;
+            border:0; border-radius:999px; cursor:pointer;
+            transition:transform .12s, filter .12s;
+        }
+        .rnb-footer__up-btn:hover { transform:translateY(-1px); filter:brightness(1.08); }
+        .rnb-footer__legal {
+            max-width:1280px; margin:32px auto 0;
+            padding-top:18px; border-top:1px solid rgba(184,154,94,0.12);
+            font-size:11px; letter-spacing:0.8px; color:rgba(243,237,224,0.35); text-align:center;
+        }
+
+        /* ── Paywall modal ── */
+        .paywall { position:fixed; inset:0; z-index:9500; display:flex; align-items:center; justify-content:center; }
+        .paywall.paywall--hidden { display:none; }
+        .paywall__backdrop { position:absolute; inset:0; background:rgba(8,14,10,0.7); backdrop-filter:blur(8px); }
+        .paywall__card {
+            position:relative; width:min(440px, 92vw);
+            background:linear-gradient(180deg, #1c2620, #0f1410);
+            border:1px solid rgba(212,184,118,0.5);
+            border-radius:20px;
+            padding:32px 28px 28px;
+            text-align:center;
+            box-shadow:0 30px 80px rgba(0,0,0,0.6);
+        }
+        .paywall__close {
+            position:absolute; top:12px; right:14px;
+            width:30px; height:30px; border-radius:50%;
+            background:rgba(255,255,255,0.05); border:1px solid rgba(184,154,94,0.25);
+            color:#d4b876; font-size:18px; line-height:1; cursor:pointer;
+        }
+        .paywall__eyebrow { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#d4b876; margin:0 0 6px; }
+        .paywall__title { font-family:'Cormorant Garamond', serif; font-size:30px; font-weight:500; color:#f3ede0; margin:0 0 8px; }
+        .paywall__sub { font-size:13px; color:rgba(243,237,224,0.6); margin:0 0 20px; line-height:1.55; }
+        .paywall__price {
+            font-family:'Cormorant Garamond', serif;
+            font-size:48px; font-weight:600; color:#d4b876;
+            margin:0 0 18px;
+        }
+        .paywall__price span { font-size:16px; font-family:'Montserrat', sans-serif; font-weight:400; color:rgba(243,237,224,0.6); }
+        .paywall__list {
+            list-style:none; padding:0; margin:0 0 22px;
+            text-align:left; font-size:13px; line-height:2; color:rgba(243,237,224,0.8);
+            max-width:280px; margin-inline:auto;
+        }
+        .paywall__list li::before { content:"✦  "; color:#d4b876; }
+        .paywall__cta {
+            display:block; width:100%; padding:14px 18px;
+            background:linear-gradient(135deg, #d4b876, #b89a5e);
+            color:#1a1f1c; font-weight:600; font-size:13px; letter-spacing:1.4px; text-transform:uppercase;
+            border:0; border-radius:999px; cursor:pointer; margin-bottom:10px;
+            transition:transform .12s, filter .12s;
+        }
+        .paywall__cta:hover { transform:translateY(-1px); filter:brightness(1.08); }
+        .paywall__alt {
+            background:transparent; color:rgba(243,237,224,0.6);
+            border:0; padding:8px; font-size:12px; cursor:pointer;
+        }
+        .paywall__small { font-size:11px; color:rgba(243,237,224,0.4); margin:14px 0 0; }
 
         .dash-tab--launch {
             background:linear-gradient(135deg, rgba(119,163,97,0.18), rgba(184,154,94,0.18));
@@ -770,7 +900,11 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </header>
-            <p class="lp-panel__sub" id="lp-sub">Pick which upcoming party you want to launch.</p>
+            <p class="lp-panel__sub" id="lp-sub">Pick a party to start the vibe.</p>
+            <div class="lp-panel__tabs" id="lp-tabs">
+                <button type="button" class="lp-tab is-active" data-role="hosting" onclick="lpSwitchRole('hosting')">Hosted by you</button>
+                <button type="button" class="lp-tab" data-role="attending" onclick="lpSwitchRole('attending')">Invitations</button>
+            </div>
             <div class="lp-panel__body" id="lp-body"></div>
         </aside>
     </div>
@@ -790,6 +924,63 @@
         <button class="lp-mini__stop" onclick="stopPlayingNow()" title="Stop">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
         </button>
+    </div>
+
+    <!-- ── Platform footer ── -->
+    <footer class="rnb-footer">
+        <div class="rnb-footer__inner">
+            <div class="rnb-footer__brand">
+                <p class="rnb-footer__logo">RNB EVENTS RSVP</p>
+                <p class="rnb-footer__tag">A free event-planning platform with elegant invitations, RSVP tracking, and Ruthie.ai — your personal planner assistant.</p>
+            </div>
+            <div class="rnb-footer__plan">
+                <p class="rnb-footer__plan-label">Your plan</p>
+                <p class="rnb-footer__plan-name" id="footer-plan-name">Free</p>
+                <div class="rnb-footer__usage">
+                    <div class="rnb-footer__usage-row">
+                        <span>Events</span><span id="footer-events-count">0 / 12</span>
+                    </div>
+                    <div class="rnb-footer__bar"><div class="rnb-footer__bar-fill" id="footer-events-fill"></div></div>
+                    <div class="rnb-footer__usage-row">
+                        <span>Drafts</span><span id="footer-drafts-count">0 / 5</span>
+                    </div>
+                    <div class="rnb-footer__bar"><div class="rnb-footer__bar-fill" id="footer-drafts-fill"></div></div>
+                </div>
+                <p class="rnb-footer__hint">Delete past events or drafts to free up space.</p>
+            </div>
+            <div class="rnb-footer__upgrade">
+                <p class="rnb-footer__up-label">Unlock unlimited</p>
+                <p class="rnb-footer__up-price">$19.99<span>/mo</span></p>
+                <ul class="rnb-footer__up-list">
+                    <li>Unlimited events & drafts</li>
+                    <li>Priority Ruthie.ai responses</li>
+                    <li>Advanced playlist + guest tools</li>
+                </ul>
+                <button type="button" class="rnb-footer__up-btn" onclick="openPaywall()">Upgrade</button>
+            </div>
+        </div>
+        <p class="rnb-footer__legal">&copy; 2026 RNB Events. All rights reserved.</p>
+    </footer>
+
+    <!-- ── Paywall modal ── -->
+    <div class="paywall paywall--hidden" id="paywall">
+        <div class="paywall__backdrop" onclick="closePaywall()"></div>
+        <div class="paywall__card">
+            <button class="paywall__close" onclick="closePaywall()" aria-label="Close">×</button>
+            <p class="paywall__eyebrow">RNB Events Pro</p>
+            <h2 class="paywall__title" id="paywall-title">Unlock unlimited events</h2>
+            <p class="paywall__sub" id="paywall-sub">You\u2019ve reached the free-plan limit. Upgrade to keep creating without limits.</p>
+            <div class="paywall__price">$19.99<span>/month</span></div>
+            <ul class="paywall__list">
+                <li>Unlimited events &amp; drafts</li>
+                <li>Priority Ruthie.ai access</li>
+                <li>Advanced playlist deep-links</li>
+                <li>Custom branding on invitations</li>
+            </ul>
+            <button class="paywall__cta" onclick="alert('Membership checkout coming soon. Stay tuned!')">Subscribe \u2014 $19.99/mo</button>
+            <button class="paywall__alt" onclick="closePaywall()">Maybe later</button>
+            <p class="paywall__small">Or delete past events / drafts to free space on the Free plan.</p>
+        </div>
     </div>
 
     <script>
@@ -897,7 +1088,63 @@
             else if (upcoming === 1) msg = 'You have <strong>1 upcoming event.</strong>';
             else msg = 'You have <strong>' + upcoming + ' upcoming events.</strong>';
             document.getElementById('dash-summary').innerHTML = msg;
+            updateFooterUsage();
         }
+
+        /* ── Free-plan limits ───────────────────────────── */
+        var FREE_LIMITS = { events: 12, drafts: 5 };
+        function isProUser() { return localStorage.getItem('rnb_pro') === '1'; }
+        function getEventsCount() { return allEvents.filter(function(e){ return e.status === 'published'; }).length; }
+        function getDraftsCount() { return allEvents.filter(function(e){ return e.status === 'draft'; }).length; }
+        function updateFooterUsage() {
+            var ev = getEventsCount(), dr = getDraftsCount();
+            var pro = isProUser();
+            document.getElementById('footer-plan-name').textContent = pro ? 'Pro · Unlimited' : 'Free';
+            document.getElementById('footer-events-count').textContent = pro ? (ev + ' / \u221e') : (ev + ' / ' + FREE_LIMITS.events);
+            document.getElementById('footer-drafts-count').textContent = pro ? (dr + ' / \u221e') : (dr + ' / ' + FREE_LIMITS.drafts);
+            var evPct = pro ? Math.min(100, ev*4) : Math.min(100, (ev / FREE_LIMITS.events) * 100);
+            var drPct = pro ? Math.min(100, dr*8) : Math.min(100, (dr / FREE_LIMITS.drafts) * 100);
+            var evFill = document.getElementById('footer-events-fill');
+            var drFill = document.getElementById('footer-drafts-fill');
+            evFill.style.width = evPct + '%';
+            drFill.style.width = drPct + '%';
+            evFill.classList.toggle('is-full', !pro && ev >= FREE_LIMITS.events);
+            drFill.classList.toggle('is-full', !pro && dr >= FREE_LIMITS.drafts);
+        }
+        function canCreateMore() {
+            if (isProUser()) return { ok: true };
+            if (getEventsCount() >= FREE_LIMITS.events) return { ok: false, kind: 'events' };
+            if (getDraftsCount() >= FREE_LIMITS.drafts) return { ok: false, kind: 'drafts' };
+            return { ok: true };
+        }
+        function guardCreate(e) {
+            var check = canCreateMore();
+            if (check.ok) return true;
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            openPaywall(check.kind);
+            return false;
+        }
+        function openPaywall(kind) {
+            var title = document.getElementById('paywall-title');
+            var sub   = document.getElementById('paywall-sub');
+            if (kind === 'drafts') {
+                title.textContent = 'You\u2019ve hit your draft limit';
+                sub.textContent   = 'Free plan allows ' + FREE_LIMITS.drafts + ' drafts. Delete one or upgrade to Pro for unlimited drafts.';
+            } else if (kind === 'events') {
+                title.textContent = 'You\u2019ve hit your event limit';
+                sub.textContent   = 'Free plan allows ' + FREE_LIMITS.events + ' published events. Delete a past event or upgrade to Pro.';
+            } else {
+                title.textContent = 'Unlock unlimited events';
+                sub.textContent   = 'Upgrade to Pro for unlimited events, drafts, and priority Ruthie.ai responses.';
+            }
+            document.getElementById('paywall').classList.remove('paywall--hidden');
+        }
+        function closePaywall() { document.getElementById('paywall').classList.add('paywall--hidden'); }
+        // Intercept any link/button that leads to event-create.html
+        document.addEventListener('click', function(e) {
+            var a = e.target.closest('a[href^="event-create.html"], a[href="event-create.html"]');
+            if (a && !guardCreate(e)) return;
+        }, true);
 
         function setDashTab(tab) {
             activeTab = tab;
@@ -913,15 +1160,18 @@
         }
 
         /* ── Launch Your Party (in-site panel) ─────────────────────────── */
-        var lpState = { view: 'idle', eventId: null, eventName: '', playlist: null };
+        var lpState = { view: 'idle', role: 'hosting', eventId: null, eventName: '', playlist: null };
 
         function openLaunchPanel(skipResume) {
             var overlay = document.getElementById('lp-overlay');
             overlay.classList.remove('lp-overlay--hidden');
-            // If currently playing, resume that view
             var saved = _lpReadSaved();
             if (saved && !skipResume && lpState.view === 'idle') {
-                lpState = { view: 'playing', eventId: saved.eventId, eventName: saved.eventName, playlist: saved.playlist };
+                lpState.view = 'playing';
+                lpState.role = saved.role || 'hosting';
+                lpState.eventId = saved.eventId;
+                lpState.eventName = saved.eventName;
+                lpState.playlist = saved.playlist;
             }
             lpRender();
         }
@@ -932,38 +1182,59 @@
             if (lpState.view === 'playlists') { lpState.view = 'parties'; lpState.eventId = null; lpRender(); return; }
             closeLaunchPanel();
         }
+        function lpSwitchRole(role) {
+            lpState.role = role;
+            lpState.view = 'parties';
+            lpState.eventId = null;
+            lpRender();
+        }
         function lpRender() {
             var titleEl = document.getElementById('lp-title');
             var subEl   = document.getElementById('lp-sub');
             var body    = document.getElementById('lp-body');
             var back    = document.getElementById('lp-back');
+            var tabs    = document.getElementById('lp-tabs');
             if (lpState.view === 'idle' || lpState.view === 'parties') {
                 lpState.view = 'parties';
                 titleEl.textContent = 'Launch your party';
-                subEl.textContent   = 'Pick which upcoming party you want to launch.';
+                subEl.textContent   = lpState.role === 'hosting'
+                    ? 'Parties you\u2019re hosting. Pick one to start the vibe.'
+                    : 'Parties you\u2019re invited to. Tap one to view its playlists.';
                 back.classList.add('lp-back--hidden');
+                tabs.style.display = '';
+                tabs.querySelectorAll('.lp-tab').forEach(function(b){ b.classList.toggle('is-active', b.dataset.role === lpState.role); });
                 lpRenderParties(body);
             } else if (lpState.view === 'playlists') {
                 titleEl.textContent = lpState.eventName || 'Choose a playlist';
                 subEl.textContent   = 'Open a playlist in your music app to start the vibe.';
                 back.classList.remove('lp-back--hidden');
+                tabs.style.display = 'none';
                 lpRenderPlaylists(body);
             } else if (lpState.view === 'playing') {
                 titleEl.textContent = 'Now playing';
                 subEl.textContent   = 'Your party is live. Stop when the night is over.';
                 back.classList.add('lp-back--hidden');
+                tabs.style.display = 'none';
                 lpRenderPlaying(body);
             }
         }
         function lpRenderParties(body) {
+            var myId = (creator && creator.creatorId) || '';
             var upcoming = allEvents.filter(function(ev) {
                 if (ev.status !== 'published') return false;
+                var isHost = !ev.creatorId || ev.creatorId === myId;
+                if (lpState.role === 'hosting' && !isHost) return false;
+                if (lpState.role === 'attending' && isHost) return false;
                 if (!ev.eventDate) return true;
                 var d = new Date(ev.eventDate + 'T' + (ev.eventTime || '23:59') + ':00');
                 return isNaN(d.getTime()) ? true : d.getTime() >= Date.now() - 12*3600*1000;
             });
             if (!upcoming.length) {
-                body.innerHTML = '<div class="lp-empty">No upcoming published parties yet.<br><strong>Publish an event</strong> to launch it from here.</div>';
+                if (lpState.role === 'attending') {
+                    body.innerHTML = '<div class="lp-empty">No invitations yet.<br>When a host adds you to a guest list, their party will appear here so you can preview the playlists.</div>';
+                } else {
+                    body.innerHTML = '<div class="lp-empty">No upcoming parties you\u2019re hosting.<br><strong>Publish an event</strong> to launch it from here.</div>';
+                }
                 return;
             }
             body.innerHTML = upcoming.map(function(ev) {
@@ -1029,7 +1300,7 @@
             if (!playlist) return;
             lpState.playlist = playlist;
             lpState.view = 'playing';
-            _lpWriteSaved({ eventId: lpState.eventId, eventName: lpState.eventName, playlist: playlist, startedAt: Date.now() });
+            _lpWriteSaved({ role: lpState.role, eventId: lpState.eventId, eventName: lpState.eventName, playlist: playlist, startedAt: Date.now() });
             try { window.open(playlist.url, '_blank', 'noopener'); } catch(_) {}
             _renderMiniPlayer();
             closeLaunchPanel();
@@ -1248,8 +1519,31 @@
             box.scrollTop = box.scrollHeight;
             return div;
         }
+        // Animated typing — appends an AI bubble and types it out char-by-char
+        function appendChatTyped(text, opts) {
+            return new Promise(function(resolve) {
+                var box = document.getElementById('chat-messages');
+                var welcome = box.querySelector('.dash-chat__welcome');
+                if (welcome) welcome.remove();
+                var div = document.createElement('div');
+                div.className = 'dash-chat__msg dash-chat__msg--ai';
+                box.appendChild(div);
+                var i = 0, speed = (opts && opts.speed) || 14;
+                function step() {
+                    if (i >= text.length) { resolve(div); return; }
+                    var n = text[i] === ' ' ? 2 : 1;
+                    div.textContent += text.substr(i, n);
+                    i += n;
+                    box.scrollTop = box.scrollHeight;
+                    setTimeout(step, speed);
+                }
+                step();
+            });
+        }
         function showTyping() {
             var box = document.getElementById('chat-messages');
+            var welcome = box.querySelector('.dash-chat__welcome');
+            if (welcome) welcome.remove();
             var t = document.createElement('div');
             t.className = 'dash-chat__typing';
             t.id = 'chat-typing';
@@ -1263,6 +1557,95 @@
         }
 
         var chatHistory = []; // [{role:'user'|'model', text:''}]
+        // Smart event-creation wizard state
+        var wizard = null; // { step:int, data:{}, fields:[...] }
+        var WIZARD_FIELDS = [
+            { key:'eventName', label:'event name', q:'What should we call your event? (e.g., "Marcus\u2019s Graduation Soir\u00e9e")' },
+            { key:'eventDate', label:'date',       q:'Great. What date is it on? (YYYY-MM-DD, e.g., 2026-06-15)' },
+            { key:'eventTime', label:'time',       q:'And what time does it start? (HH:MM, e.g., 18:00)' },
+            { key:'venue',     label:'venue',      q:'Where will it be hosted? (venue name or address)' },
+            { key:'theme',     label:'theme',      q:'What\u2019s the theme or vibe? (e.g., old school, Belle \u00c9poque, beach chic)' },
+            { key:'dresscode', label:'dress code', q:'Any dress code? (e.g., black tie, smart casual \u2014 type "skip" to omit)' }
+        ];
+        function detectCreateIntent(text) {
+            var t = text.toLowerCase();
+            if (!/create|plan|make|set\s*up|build|throw/.test(t)) return null;
+            if (!/event|party|soir|wedding|gala|gathering|graduation|birthday|reception|brunch|dinner/.test(t)) return null;
+            // crude parameter extraction
+            var data = {};
+            var types = { graduation:'Graduation', wedding:'Wedding', birthday:'Birthday', gala:'Gala', brunch:'Brunch', dinner:'Dinner Party', soir:'Soir\u00e9e', reception:'Reception' };
+            for (var k in types) { if (t.indexOf(k) !== -1) { data._type = types[k]; break; } }
+            var themeMatch = text.match(/theme(?:\s+(?:will\s+be|is|of))?\s+([^.]+?)(?:\.|$)/i) || text.match(/old school|belle\s*\u00e9poque|gatsby|tropical|boho|modern|elegant|vintage/i);
+            if (themeMatch) data.theme = (themeMatch[1] || themeMatch[0]).trim().replace(/^\W+|\W+$/g, '');
+            var monthMatch = text.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i);
+            if (monthMatch) data._monthHint = monthMatch[1];
+            if (/end of (?:the )?month/i.test(text)) data._dateHint = 'end of month';
+            return data;
+        }
+        function wizardNextQuestion() {
+            // find first unfilled field
+            for (var i = 0; i < WIZARD_FIELDS.length; i++) {
+                var f = WIZARD_FIELDS[i];
+                if (!wizard.data[f.key]) return f;
+            }
+            return null;
+        }
+        async function startCreateWizard(seed) {
+            wizard = { data: {} };
+            // seed any parsed values
+            if (seed.theme) wizard.data.theme = seed.theme;
+            if (seed._type) wizard.data._suggestedName = seed._type;
+            var intro;
+            if (seed._type && seed.theme) {
+                intro = 'Love it \u2014 a ' + seed._type.toLowerCase() + ' with an ' + seed.theme + ' vibe. Let\u2019s lock in the details.';
+            } else if (seed._type) {
+                intro = 'Beautiful \u2014 let\u2019s plan that ' + seed._type.toLowerCase() + '. I\u2019ll ask a few quick questions.';
+            } else {
+                intro = 'Let\u2019s plan this together. I\u2019ll ask a few quick questions.';
+            }
+            await appendChatTyped(intro);
+            await new Promise(function(r){ setTimeout(r, 250); });
+            var q = wizardNextQuestion();
+            if (q) await appendChatTyped(q.q);
+        }
+        async function wizardHandleAnswer(answer) {
+            var q = wizardNextQuestion();
+            if (!q) return false;
+            var val = answer.trim();
+            if (val.toLowerCase() === 'skip' && q.key === 'dresscode') {
+                wizard.data[q.key] = '';
+            } else if (q.key === 'eventDate' && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                await appendChatTyped('I need the date in YYYY-MM-DD format. Try again? (e.g., 2026-06-15)');
+                return true;
+            } else if (q.key === 'eventTime' && !/^\d{1,2}:\d{2}$/.test(val)) {
+                await appendChatTyped('Time needs to be HH:MM (24h). Try again? (e.g., 18:00)');
+                return true;
+            } else {
+                wizard.data[q.key] = val;
+            }
+            var nextQ = wizardNextQuestion();
+            if (nextQ) {
+                await appendChatTyped(nextQ.q);
+                return true;
+            }
+            // All collected
+            await appendChatTyped('Perfect \u2014 I\u2019ve got everything I need.');
+            await new Promise(function(r){ setTimeout(r, 250); });
+            await appendChatTyped('Pre-filling your event now. The editor will open with all your details so you can add the finishing touches.');
+            await new Promise(function(r){ setTimeout(r, 600); });
+            var check = canCreateMore();
+            if (!check.ok) {
+                wizard = null;
+                openPaywall(check.kind);
+                await appendChatTyped('Heads up: you\u2019ve hit your free-plan limit. Upgrade or delete an old event to continue.');
+                return true;
+            }
+            // Persist the prefill and open editor
+            try { localStorage.setItem('rnb_event_prefill', JSON.stringify(wizard.data)); } catch(_) {}
+            wizard = null;
+            setTimeout(function() { window.location.href = 'event-create.html?prefill=1'; }, 700);
+            return true;
+        }
 
         async function sendChat() {
             var input = document.getElementById('chat-input');
@@ -1279,6 +1662,23 @@
 
         async function doSendPrompt(text) {
             appendChat('user', text);
+            // If a wizard is active, handle its answer locally
+            if (wizard) {
+                showTyping();
+                await new Promise(function(r){ setTimeout(r, 350); });
+                hideTyping();
+                await wizardHandleAnswer(text);
+                return;
+            }
+            // Detect smart-creation intent
+            var intent = detectCreateIntent(text);
+            if (intent) {
+                showTyping();
+                await new Promise(function(r){ setTimeout(r, 400); });
+                hideTyping();
+                await startCreateWizard(intent);
+                return;
+            }
             chatHistory.push({ role: 'user', text: text });
             showTyping();
             document.getElementById('chat-send').disabled = true;
@@ -1294,14 +1694,14 @@
                 var data = await res.json();
                 hideTyping();
                 if (!res.ok || data.error) {
-                    appendChat('ai', '⚠ ' + (data.error || 'AI service error. Please try again.'));
+                    await appendChatTyped('\u26a0 ' + (data.error || 'AI service error. Please try again.'));
                     return;
                 }
                 chatHistory.push({ role: 'model', text: data.reply });
-                appendChat('ai', data.reply);
+                await appendChatTyped(data.reply);
             } catch (e) {
                 hideTyping();
-                appendChat('ai', '⚠ Network error. Please try again.');
+                await appendChatTyped('\u26a0 Network error. Please try again.');
             } finally {
                 document.getElementById('chat-send').disabled = false;
             }
