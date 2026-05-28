@@ -772,19 +772,6 @@
             });
             var chipEmoji = document.getElementById('ed-icon-emoji');
             if (chipEmoji) chipEmoji.textContent = state.fieldIcons.title.emoji;
-            // Restore saved cover photo if present
-            try {
-                var savedCover = localStorage.getItem('rnb_cover_photo');
-                if (savedCover) {
-                    var img = document.getElementById('ed-cover-img');
-                    if (img && img.classList.contains('hidden')) {
-                        img.src = savedCover;
-                        img.classList.remove('hidden');
-                        document.getElementById('ed-cover-placeholder').classList.add('hidden');
-                        document.getElementById('ed-cover-edit-btn').classList.remove('hidden');
-                    }
-                }
-            } catch(_) {}
         }
 
         // Pre-populate editor fields from Ruthie.ai wizard output
@@ -1193,10 +1180,17 @@
                 img.classList.remove('hidden');
                 document.getElementById('ed-cover-placeholder').classList.add('hidden');
                 document.getElementById('ed-cover-edit-btn').classList.remove('hidden');
-                // Persist so the photo survives a page refresh
-                try { localStorage.setItem('rnb_cover_photo', ev.target.result); } catch(_) {}
             };
             reader.readAsDataURL(file);
+        }
+
+        function showEditorCoverFromUrl(url) {
+            if (!url) return;
+            var img = document.getElementById('ed-cover-img');
+            img.src = url;
+            img.classList.remove('hidden');
+            document.getElementById('ed-cover-placeholder').classList.add('hidden');
+            document.getElementById('ed-cover-edit-btn').classList.remove('hidden');
         }
 
         /* -- Guest panel ------------------------------- */
@@ -1555,21 +1549,35 @@
 
         /* -- Core create/update ------------------------ */
         async function doCreateEvent(status) {
-            // Upload cover photo if pending
-            if (state.pendingPhotoFile && !state.coverImageUrl) {
+            // Upload cover photo if pending (always upload, even when replacing existing cover)
+            if (state.pendingPhotoFile) {
                 var ext = state.pendingPhotoFile.name.split('.').pop().toLowerCase();
-                var urlRes = await apiPost('/events/temp/upload-url', { ext });
-                if (!urlRes.error) {
+                var uploadTargetId = state.eventId || state._newEventUploadKey || ('new-' + Date.now());
+                if (!state.eventId) state._newEventUploadKey = uploadTargetId;
+
+                var urlRes = await apiPost('/events/' + encodeURIComponent(uploadTargetId) + '/upload-url', { ext }, state.creatorToken);
+                if (urlRes.error || !urlRes.uploadUrl || !urlRes.publicUrl) {
+                    showErr('ed-err', urlRes.error || 'Image upload failed. Please try again.');
+                    return false;
+                }
+
+                try {
                     var uploadRes = await fetch(urlRes.uploadUrl, {
                         method: 'PUT',
                         headers: { 'Content-Type': state.pendingPhotoFile.type },
                         body: state.pendingPhotoFile
                     });
-                    if (uploadRes.ok) {
-                        state.coverImageUrl = urlRes.publicUrl;
-                        state.pendingPhotoFile = null;
+                    if (!uploadRes.ok) {
+                        showErr('ed-err', 'Image upload failed. Please try again.');
+                        return false;
                     }
+                } catch (_) {
+                    showErr('ed-err', 'Image upload failed. Please check your connection and retry.');
+                    return false;
                 }
+
+                state.coverImageUrl = urlRes.publicUrl;
+                state.pendingPhotoFile = null;
             }
 
             var payload = {
@@ -1579,7 +1587,6 @@
                 eventTime:    document.getElementById('ed-time').value,
                 venue:        document.getElementById('ed-venue').textContent.trim(),
                 description:  document.getElementById('ed-description').textContent.trim(),
-                coverImageUrl: state.coverImageUrl,
                 eventEmoji:   state.eventEmoji,
                 iconStyle:    state.iconStyle,
                 fieldIcons:   state.fieldIcons,
@@ -1593,6 +1600,9 @@
                 effect:        state.editorEffect,
                 status:        status || 'draft'
             };
+            // Only send coverImageUrl when we actually have one to save.
+            // This prevents accidental null/blank overwrites on existing events.
+            if (state.coverImageUrl) payload.coverImageUrl = state.coverImageUrl;
 
             var res;
             if (state.eventId) {
@@ -2217,7 +2227,10 @@
             if (ev.theme)       setTheme(ev.theme);
             if (ev.font && typeof setFont === 'function')   setFont(ev.font);
             if (ev.effect && typeof setEffect === 'function') setEffect(ev.effect);
-            if (ev.coverImageUrl) state.coverImageUrl = ev.coverImageUrl;
+            if (ev.coverImageUrl) {
+                state.coverImageUrl = ev.coverImageUrl;
+                showEditorCoverFromUrl(ev.coverImageUrl);
+            }
             if (ev.eventEmoji)    { state.eventEmoji   = ev.eventEmoji; state.fieldIcons.title.emoji = ev.eventEmoji; }
             if (ev.iconStyle)     { state.iconStyle    = ev.iconStyle;  state.fieldIcons.title.style = ev.iconStyle; }
             if (ev.fieldIcons && typeof ev.fieldIcons === 'object') {

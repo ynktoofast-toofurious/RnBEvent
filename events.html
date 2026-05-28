@@ -1410,13 +1410,14 @@
                 var badge = ev.status === 'draft'
                     ? '<div class="dash-card__badge dash-card__badge--draft">DRAFT</div>'
                     : '<div class="dash-card__badge dash-card__badge--published">🎉 LIVE</div>';
-                // Host's own dashboard: card always opens the editor. Preview goes through the 3-dot menu.
-                var href = 'event-create.html?draft=' + encodeURIComponent(ev.eventId);
+                var href = ev.status === 'draft'
+                    ? 'event-create.html?draft=' + encodeURIComponent(ev.eventId)
+                    : 'event.html?id=' + encodeURIComponent(ev.eventId);
                 html += '<a class="dash-card" href="' + href + '" data-id="' + ev.eventId + '">'
                     + cover
                     + '<div class="dash-card__shade"></div>'
                     + (datePill ? '<div class="dash-card__date">' + escapeHtml(datePill) + '</div>' : '')
-                    + '<button class="dash-card__menu" data-menu="' + ev.eventId + '" title="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18" r="1.7"/></svg></button>'
+                    + '<button type="button" class="dash-card__menu" data-menu="' + ev.eventId + '" title="More" aria-label="More actions"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18" r="1.7"/></svg></button>'
                     + badge
                     + '<div class="dash-card__title">' + escapeHtml(ev.eventName || 'Untitled event') + '</div>'
                     + '</a>';
@@ -1442,6 +1443,13 @@
             grid.innerHTML = html;
             // Wire ellipsis menu buttons
             grid.querySelectorAll('[data-menu]').forEach(function(btn) {
+                // These guards keep the card anchor from navigating when opening menu.
+                ['pointerdown', 'mousedown', 'touchstart'].forEach(function(evtName) {
+                    btn.addEventListener(evtName, function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }, { passive: false });
+                });
                 btn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
