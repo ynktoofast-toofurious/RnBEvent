@@ -1607,8 +1607,13 @@ textarea.ev-input {
 .ev-editor__title:empty::before { content: attr(data-placeholder); color: rgba(255,255,255,0.3); }
 
 /* Type selector row */
-.ev-editor__type-row { margin-bottom: 4px; }
-.ev-editor__type-select {
+.ev-editor__type-row { margin-bottom: 4px; position: relative; }
+
+/* Trigger button replacing the old <select> */
+.ev-type-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: rgba(255,255,255,0.06);
     border: 1.5px solid rgba(255,255,255,0.1);
     border-radius: 20px;
@@ -1617,12 +1622,117 @@ textarea.ev-input {
     font-family: 'Montserrat', sans-serif;
     letter-spacing: 0.5px;
     padding: 5px 16px;
-    outline: none;
     cursor: pointer;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, color 0.2s;
+    white-space: nowrap;
 }
-.ev-editor__type-select:focus { border-color: rgba(184,154,94,0.4); }
-.ev-editor__type-select option { background: #1a2a1a; color: #fff; }
+.ev-type-trigger:hover { border-color: rgba(184,154,94,0.5); color: rgba(255,255,255,0.85); }
+.ev-type-trigger.has-value { color: rgba(184,154,94,0.9); border-color: rgba(184,154,94,0.35); }
+.ev-type-trigger__chevron { font-size: 16px; line-height: 1; opacity: 0.5; }
+
+/* Modal backdrop */
+.ev-type-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+}
+.ev-type-modal.open { display: flex; }
+
+/* Sheet */
+.ev-type-modal__sheet {
+    background: linear-gradient(160deg, #1b2e1b 0%, #111e11 100%);
+    border: 1px solid rgba(184,154,94,0.22);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 580px;
+    padding: 24px 20px 28px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    animation: evTypeSlidein 0.22s ease;
+}
+@keyframes evTypeSlidein {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Sheet header */
+.ev-type-modal__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.ev-type-modal__title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.88);
+    letter-spacing: 1px;
+}
+.ev-type-modal__close {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.15s;
+}
+.ev-type-modal__close:hover { color: rgba(255,255,255,0.85); }
+
+/* Card grid — horizontal wrap */
+.ev-type-modal__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+@media (max-width: 480px) {
+    .ev-type-modal__grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Individual category card */
+.ev-type-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px 8px 12px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, transform 0.15s;
+}
+.ev-type-card:hover {
+    border-color: rgba(184,154,94,0.55);
+    background: rgba(184,154,94,0.08);
+    transform: translateY(-2px);
+}
+.ev-type-card.selected {
+    border-color: rgba(184,154,94,0.85);
+    background: rgba(184,154,94,0.13);
+}
+.ev-type-card__emoji {
+    font-size: 26px;
+    line-height: 1;
+}
+.ev-type-card__label {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    text-transform: uppercase;
+    line-height: 1.3;
+}
 
 /* Poll date link */
 .ev-poll-date-btn {

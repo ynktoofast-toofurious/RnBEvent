@@ -284,20 +284,34 @@
                         </div>
 
                         <div class="ev-editor__type-row">
-                            <select id="ed-type" class="ev-editor__type-select">
-                                <option value="">Select type…</option>
-                                <option>Birthday Party</option>
-                                <option>Wedding Reception</option>
-                                <option>Anniversary</option>
-                                <option>Sweet 16</option>
-                                <option>Bridal Shower</option>
-                                <option>Baby Shower</option>
-                                <option>Graduation Party</option>
-                                <option>Holiday Party</option>
-                                <option>Corporate Event</option>
-                                <option>Private Dinner</option>
-                                <option>Other</option>
-                            </select>
+                            <input type="hidden" id="ed-type">
+                            <button type="button" class="ev-type-trigger" id="ev-type-trigger" onclick="openTypePicker()">
+                                <span id="ev-type-label">Select event type…</span>
+                                <span class="ev-type-trigger__chevron">›</span>
+                            </button>
+                        </div>
+
+                        <!-- Event type card picker modal -->
+                        <div class="ev-type-modal" id="ev-type-modal" onclick="closeTypePickerBackdrop(event)">
+                            <div class="ev-type-modal__sheet">
+                                <div class="ev-type-modal__head">
+                                    <span class="ev-type-modal__title">Choose Your Event</span>
+                                    <button type="button" class="ev-type-modal__close" onclick="closeTypePicker()">✕</button>
+                                </div>
+                                <div class="ev-type-modal__grid">
+                                    <button type="button" class="ev-type-card" data-type="Birthday Party"      onclick="selectEventType('Birthday Party')">      <span class="ev-type-card__emoji">🎂</span><span class="ev-type-card__label">Birthday Party</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Wedding Reception"   onclick="selectEventType('Wedding Reception')">   <span class="ev-type-card__emoji">💍</span><span class="ev-type-card__label">Wedding Reception</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Anniversary"         onclick="selectEventType('Anniversary')">         <span class="ev-type-card__emoji">💑</span><span class="ev-type-card__label">Anniversary</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Sweet 16"            onclick="selectEventType('Sweet 16')">            <span class="ev-type-card__emoji">🌟</span><span class="ev-type-card__label">Sweet 16</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Bridal Shower"       onclick="selectEventType('Bridal Shower')">       <span class="ev-type-card__emoji">👰</span><span class="ev-type-card__label">Bridal Shower</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Baby Shower"         onclick="selectEventType('Baby Shower')">         <span class="ev-type-card__emoji">🍼</span><span class="ev-type-card__label">Baby Shower</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Graduation Party"    onclick="selectEventType('Graduation Party')">    <span class="ev-type-card__emoji">🎓</span><span class="ev-type-card__label">Graduation Party</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Holiday Party"       onclick="selectEventType('Holiday Party')">       <span class="ev-type-card__emoji">🎄</span><span class="ev-type-card__label">Holiday Party</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Corporate Event"     onclick="selectEventType('Corporate Event')">     <span class="ev-type-card__emoji">💼</span><span class="ev-type-card__label">Corporate Event</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Private Dinner"      onclick="selectEventType('Private Dinner')">      <span class="ev-type-card__emoji">🍽️</span><span class="ev-type-card__label">Private Dinner</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Other"               onclick="selectEventType('Other')">               <span class="ev-type-card__emoji">✨</span><span class="ev-type-card__label">Other</span></button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Date & Time -->
@@ -681,6 +695,36 @@
                 if (descBits.length) setEditable('ed-description', descBits.join('  \u2022  '));
                 localStorage.removeItem('rnb_event_prefill');
             } catch(_) {}
+        }
+
+        /* ── Event type card picker ──────────────────── */
+        function openTypePicker() {
+            var modal = document.getElementById('ev-type-modal');
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            // Highlight the currently selected card
+            var current = document.getElementById('ed-type').value;
+            document.querySelectorAll('.ev-type-card').forEach(function(c) {
+                c.classList.toggle('selected', c.dataset.type === current);
+            });
+        }
+        function closeTypePicker() {
+            document.getElementById('ev-type-modal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function closeTypePickerBackdrop(e) {
+            if (e.target === document.getElementById('ev-type-modal')) closeTypePicker();
+        }
+        function selectEventType(type) {
+            document.getElementById('ed-type').value = type;
+            var label = document.getElementById('ev-type-label');
+            if (label) label.textContent = type;
+            var trigger = document.getElementById('ev-type-trigger');
+            if (trigger) trigger.classList.add('has-value');
+            document.querySelectorAll('.ev-type-card').forEach(function(c) {
+                c.classList.toggle('selected', c.dataset.type === type);
+            });
+            closeTypePicker();
         }
 
         function setTheme(name) {
@@ -1848,7 +1892,13 @@
             state.shareUrl = ev.shareUrl || (window.location.origin + '/event/' + eventId);
             // Populate fields
             if (ev.eventName)   document.getElementById('ed-title').textContent = ev.eventName;
-            if (ev.eventType)   document.getElementById('ed-type').value = ev.eventType;
+            if (ev.eventType) {
+                document.getElementById('ed-type').value = ev.eventType;
+                var _lbl = document.getElementById('ev-type-label');
+                if (_lbl) _lbl.textContent = ev.eventType;
+                var _trg = document.getElementById('ev-type-trigger');
+                if (_trg) _trg.classList.add('has-value');
+            }
             if (ev.eventDate)   document.getElementById('ed-date').value = ev.eventDate;
             if (ev.eventTime)   document.getElementById('ed-time').value = ev.eventTime;
             if (ev.venue)       document.getElementById('ed-venue').textContent = ev.venue;
