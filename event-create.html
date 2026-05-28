@@ -254,7 +254,7 @@
                     <!-- LEFT: all event fields -->
                     <div class="ev-editor__left">
                         <div class="ev-editor__title-row">
-                            <button type="button" class="ev-icon-chip" id="ed-icon-chip" onclick="toggleIconPicker(event)" title="Change icon">
+                            <button type="button" class="ev-icon-chip" id="ed-icon-chip" onclick="toggleIconPicker(event, 'title')" title="Change icon">
                                 <span class="ev-icon-chip__emoji" id="ed-icon-emoji">🎉</span>
                                 <span class="ev-icon-chip__svg hidden" id="ed-icon-svg" aria-hidden="true"></span>
                             </button>
@@ -293,7 +293,7 @@
 
                         <!-- Date & Time -->
                         <div class="ev-editor__field">
-                            <span class="ev-editor__field-icon">📅</span>
+                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-date" onclick="toggleIconPicker(event, 'date')" title="Change icon">📅</button>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Date &amp; Time</div>
                                 <div class="ev-editor__field-row">
@@ -313,7 +313,7 @@
 
                         <!-- Host -->
                         <div class="ev-editor__field">
-                            <span class="ev-editor__field-icon">👑</span>
+                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-host" onclick="toggleIconPicker(event, 'host')" title="Change icon">👑</button>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Hosted by</div>
                                 <div class="ev-editor__field-val" id="ed-host-display">—</div>
@@ -322,7 +322,7 @@
 
                         <!-- Location -->
                         <div class="ev-editor__field">
-                            <span class="ev-editor__field-icon">📍</span>
+                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-venue" onclick="toggleIconPicker(event, 'venue')" title="Change icon">📍</button>
                             <div class="ev-editor__field-body">
                                 <div class="ev-editor__field-label">Location</div>
                                 <div contenteditable="true" class="ev-editor__inline" id="ed-venue" data-placeholder="Add venue &amp; address"></div>
@@ -331,7 +331,7 @@
 
                         <!-- Description -->
                         <div class="ev-editor__field ev-editor__field--desc">
-                            <span class="ev-editor__field-icon">✏️</span>
+                            <button type="button" class="ev-editor__field-icon ev-fi-btn" id="ed-fi-desc" onclick="toggleIconPicker(event, 'desc')" title="Change icon">✏️</button>
                             <div class="ev-editor__field-body" style="width:100%">
                                 <div class="ev-editor__field-label">Details</div>
                                 <div contenteditable="true" class="ev-editor__textarea" id="ed-description" data-placeholder="Dress code, vibe, what to expect…"></div>
@@ -452,6 +452,14 @@
             editorEffect: 'none',
             eventEmoji: '🎉',
             iconStyle: 'emoji',
+            iconTarget: 'title',
+            fieldIcons: {
+                title: { emoji: '🎉', style: 'emoji' },
+                date:  { emoji: '📅', style: 'emoji' },
+                host:  { emoji: '👑', style: 'emoji' },
+                venue: { emoji: '📍', style: 'emoji' },
+                desc:  { emoji: '✏️', style: 'emoji' }
+            },
             parsedGuests: [],
             // Undo/redo + autosave
             history: [],
@@ -578,11 +586,14 @@
                 _activePanel = null;
                 return;
             }
-            // Show flyout + correct section
+            // Show flyout + correct section (hide all, unhide the chosen one)
             flyout.classList.remove('hidden');
-            document.querySelectorAll('.ev-flyout__section').forEach(function(s) { s.classList.remove('active'); });
+            document.querySelectorAll('.ev-flyout__section').forEach(function(s) {
+                s.classList.add('hidden');
+                s.classList.remove('active');
+            });
             var section = document.getElementById('sp-' + name);
-            if (section) section.classList.add('active');
+            if (section) { section.classList.remove('hidden'); section.classList.add('active'); }
             // Activate sidebar button
             var btn = document.getElementById('sb-btn-' + name);
             if (btn) btn.classList.add('active');
@@ -894,6 +905,14 @@
             if (!state.eventId) {
                 state.eventId  = res.eventId;
                 state.shareUrl = res.shareUrl || (window.location.origin + '/event/' + res.eventId);
+                // Migrate any pre-save field icons under the new eventId key
+                try {
+                    var tmp = localStorage.getItem('rnb_field_icons__new');
+                    if (tmp) {
+                        localStorage.setItem('rnb_field_icons_' + state.eventId, tmp);
+                        localStorage.removeItem('rnb_field_icons__new');
+                    }
+                } catch(_) {}
             }
             updateDeleteBtnVisibility && updateDeleteBtnVisibility();
             return true;
@@ -1234,8 +1253,9 @@
             if (ev.description) document.getElementById('ed-description').textContent = ev.description;
             if (ev.theme)       setTheme(ev.theme);
             if (ev.coverImageUrl) state.coverImageUrl = ev.coverImageUrl;
-            if (ev.eventEmoji)    state.eventEmoji   = ev.eventEmoji;
-            if (ev.iconStyle)     state.iconStyle    = ev.iconStyle;
+            if (ev.eventEmoji)    { state.eventEmoji   = ev.eventEmoji; state.fieldIcons.title.emoji = ev.eventEmoji; }
+            if (ev.iconStyle)     { state.iconStyle    = ev.iconStyle;  state.fieldIcons.title.style = ev.iconStyle; }
+            loadFieldIconsLocal();
             applyIconUI();
             // Reset history with this loaded state
             state.history = [];
@@ -1485,23 +1505,42 @@
             { emoji:'💎', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>' }
         ];
 
-        function toggleIconPicker(e) {
+        function toggleIconPicker(e, target) {
             if (e) e.stopPropagation();
             var p = document.getElementById('ed-icon-picker');
             if (!p) return;
-            if (p.classList.contains('hidden')) {
-                renderIconGrid();
-                p.classList.remove('hidden');
-                // Close on outside click (once)
-                setTimeout(function() {
-                    document.addEventListener('click', _outsidePickerClose, { once: true });
-                }, 0);
-            } else {
-                p.classList.add('hidden');
+            var newTarget = target || 'title';
+            var sameTarget = (state.iconTarget === newTarget);
+            var isOpen = !p.classList.contains('hidden');
+            if (isOpen && sameTarget) { p.classList.add('hidden'); return; }
+            state.iconTarget = newTarget;
+            // Sync style toggle to this target's current style
+            var fi = state.fieldIcons[newTarget] || { emoji:'🎉', style:'emoji' };
+            document.querySelectorAll('.ev-icon-picker__toggle-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.style === fi.style);
+            });
+            renderIconGrid();
+            // Position picker as a fixed popover next to the anchor
+            var anchor = (newTarget === 'title')
+                ? document.getElementById('ed-icon-chip')
+                : document.getElementById('ed-fi-' + newTarget);
+            p.classList.remove('hidden');
+            p.style.position = 'fixed';
+            p.style.zIndex = '9999';
+            if (anchor) {
+                var r = anchor.getBoundingClientRect();
+                var pw = Math.min(420, window.innerWidth - 40);
+                var left = Math.max(20, Math.min(window.innerWidth - pw - 20, r.left));
+                var top = r.bottom + 8;
+                p.style.left = left + 'px';
+                p.style.top  = top + 'px';
             }
+            setTimeout(function() {
+                document.addEventListener('click', _outsidePickerClose, { once: true });
+            }, 0);
         }
         function _outsidePickerClose(e) {
-            if (e.target.closest('#ed-icon-picker') || e.target.closest('#ed-icon-chip')) {
+            if (e.target.closest('#ed-icon-picker') || e.target.closest('#ed-icon-chip') || e.target.closest('.ev-fi-btn')) {
                 document.addEventListener('click', _outsidePickerClose, { once: true });
                 return;
             }
@@ -1510,54 +1549,99 @@
 
         function renderIconGrid() {
             var grid = document.getElementById('ed-icon-grid');
+            if (!grid) return;
+            var fi = state.fieldIcons[state.iconTarget] || { emoji: state.eventEmoji, style: state.iconStyle };
             grid.innerHTML = ICON_LIBRARY.map(function(it) {
-                var visual = state.iconStyle === 'svg'
+                var visual = fi.style === 'svg'
                     ? '<span class="ev-icon-picker__svg">' + it.svg + '</span>'
                     : '<span class="ev-icon-picker__emoji">' + it.emoji + '</span>';
-                var active = (it.emoji === state.eventEmoji) ? ' active' : '';
-                return '<button type="button" class="ev-icon-picker__cell' + active + '" data-emoji="' + it.emoji + '" onclick="pickIcon(\'' + it.emoji + '\')">' + visual + '</button>';
+                var active = (it.emoji === fi.emoji) ? ' active' : '';
+                var safe = it.emoji.replace(/'/g, "\\'");
+                return '<button type="button" class="ev-icon-picker__cell' + active + '" data-emoji="' + it.emoji + '" onclick="pickIcon(\'' + safe + '\')">' + visual + '</button>';
             }).join('');
         }
 
         function pickIcon(emoji) {
-            state.eventEmoji = emoji;
+            var tgt = state.iconTarget || 'title';
+            if (!state.fieldIcons[tgt]) state.fieldIcons[tgt] = { emoji:'🎉', style:'emoji' };
+            state.fieldIcons[tgt].emoji = emoji;
+            if (tgt === 'title') state.eventEmoji = emoji;
             applyIconUI();
             renderIconGrid();
+            saveFieldIconsLocal();
             if (typeof pushHistory === 'function') pushHistory();
             clearTimeout(state.autosaveTimer);
             state.autosaveTimer = setTimeout(function() { autoSaveDraft && autoSaveDraft(); }, 800);
         }
 
         function setIconStyle(style) {
-            state.iconStyle = style === 'svg' ? 'svg' : 'emoji';
+            var s = (style === 'svg') ? 'svg' : 'emoji';
+            var tgt = state.iconTarget || 'title';
+            if (!state.fieldIcons[tgt]) state.fieldIcons[tgt] = { emoji:'🎉', style:'emoji' };
+            state.fieldIcons[tgt].style = s;
+            if (tgt === 'title') state.iconStyle = s;
             document.querySelectorAll('.ev-icon-picker__toggle-btn').forEach(function(b) {
-                b.classList.toggle('active', b.dataset.style === state.iconStyle);
+                b.classList.toggle('active', b.dataset.style === s);
             });
             applyIconUI();
             renderIconGrid();
+            saveFieldIconsLocal();
             if (typeof pushHistory === 'function') pushHistory();
             clearTimeout(state.autosaveTimer);
             state.autosaveTimer = setTimeout(function() { autoSaveDraft && autoSaveDraft(); }, 800);
         }
 
         function applyIconUI() {
+            // Keep title state in sync with fieldIcons.title for backend persistence
+            if (state.fieldIcons && state.fieldIcons.title) {
+                state.eventEmoji = state.fieldIcons.title.emoji || state.eventEmoji;
+                state.iconStyle  = state.fieldIcons.title.style || state.iconStyle;
+            }
+            // Title chip
             var emojiEl = document.getElementById('ed-icon-emoji');
             var svgEl   = document.getElementById('ed-icon-svg');
-            if (!emojiEl || !svgEl) return;
-            emojiEl.textContent = state.eventEmoji || '🎉';
-            var found = ICON_LIBRARY.find(function(it) { return it.emoji === state.eventEmoji; });
-            svgEl.innerHTML = found ? found.svg : ICON_LIBRARY[0].svg;
-            if (state.iconStyle === 'svg') {
-                emojiEl.classList.add('hidden');
-                svgEl.classList.remove('hidden');
-            } else {
-                emojiEl.classList.remove('hidden');
-                svgEl.classList.add('hidden');
+            if (emojiEl && svgEl) {
+                var titleFi = state.fieldIcons.title;
+                emojiEl.textContent = titleFi.emoji || '🎉';
+                var found = ICON_LIBRARY.find(function(it) { return it.emoji === titleFi.emoji; });
+                svgEl.innerHTML = found ? found.svg : ICON_LIBRARY[0].svg;
+                if (titleFi.style === 'svg') { emojiEl.classList.add('hidden'); svgEl.classList.remove('hidden'); }
+                else                        { emojiEl.classList.remove('hidden'); svgEl.classList.add('hidden'); }
             }
-            // Sync the toggle buttons
-            document.querySelectorAll('.ev-icon-picker__toggle-btn').forEach(function(b) {
-                b.classList.toggle('active', b.dataset.style === state.iconStyle);
+            // Field-level icons (date/host/venue/desc)
+            ['date','host','venue','desc'].forEach(function(k) {
+                var btn = document.getElementById('ed-fi-' + k);
+                if (!btn) return;
+                var fi = state.fieldIcons[k] || { emoji:'🎉', style:'emoji' };
+                if (fi.style === 'svg') {
+                    var found = ICON_LIBRARY.find(function(it) { return it.emoji === fi.emoji; });
+                    var svg = found ? found.svg : '';
+                    btn.innerHTML = '<span class="ev-fi-svg">' + svg + '</span>';
+                } else {
+                    btn.textContent = fi.emoji || '🎉';
+                }
             });
+            // Sync the toggle buttons to active target
+            var current = state.fieldIcons[state.iconTarget] || state.fieldIcons.title;
+            document.querySelectorAll('.ev-icon-picker__toggle-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.style === current.style);
+            });
+        }
+
+        function _fieldIconsKey() { return 'rnb_field_icons_' + (state.eventId || '_new'); }
+        function saveFieldIconsLocal() {
+            try { localStorage.setItem(_fieldIconsKey(), JSON.stringify(state.fieldIcons)); } catch(_) {}
+        }
+        function loadFieldIconsLocal() {
+            try {
+                var raw = localStorage.getItem(_fieldIconsKey());
+                if (!raw) return;
+                var saved = JSON.parse(raw);
+                if (!saved || typeof saved !== 'object') return;
+                ['title','date','host','venue','desc'].forEach(function(k) {
+                    if (saved[k] && saved[k].emoji) state.fieldIcons[k] = { emoji: saved[k].emoji, style: saved[k].style === 'svg' ? 'svg' : 'emoji' };
+                });
+            } catch(_) {}
         }
 
         /* ─────────────────────────────────────────────── */
@@ -1596,6 +1680,7 @@
 
         // Apply icon UI as soon as DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
+            loadFieldIconsLocal();
             applyIconUI();
             updateDeleteBtnVisibility();
         });

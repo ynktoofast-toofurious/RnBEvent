@@ -125,6 +125,20 @@
         }
         .dash-tab.is-active .dash-tab__count { background:rgba(0,0,0,0.12); color:#1a1a1a; }
 
+        .dash-tab--launch {
+            background:linear-gradient(135deg, rgba(119,163,97,0.18), rgba(184,154,94,0.18));
+            border-color:rgba(212,184,118,0.5);
+            color:#f0e6c8;
+            margin-left:auto;
+        }
+        .dash-tab--launch:hover {
+            background:linear-gradient(135deg, rgba(119,163,97,0.32), rgba(184,154,94,0.32));
+            color:#fff;
+            border-color:#d4b876;
+            box-shadow:0 6px 18px -8px rgba(184,154,94,0.6);
+        }
+        @media (max-width:680px) { .dash-tab--launch { margin-left:0; } }
+
         /* Search input (hidden until Search tab) */
         .dash-search-wrap { margin-bottom:24px; display:none; }
         .dash-search-wrap.is-open { display:block; }
@@ -482,6 +496,10 @@
             <button class="dash-tab" data-tab="past" onclick="setDashTab('past')">
                 <span>Past events</span><span class="dash-tab__count" data-count="past">0</span>
             </button>
+            <button class="dash-tab dash-tab--launch" data-tab="launch" onclick="launchParty()" title="Launch your party with urTheDJ">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <span>Launch your party</span>
+            </button>
         </div>
 
         <!-- Search input -->
@@ -668,6 +686,11 @@
             });
             document.getElementById('dash-search-wrap').classList.toggle('is-open', tab === 'search');
             renderGrid();
+        }
+
+        function launchParty() {
+            // urTheDJ — DJ-driven live party experience (separate Next.js app)
+            window.open('https://urthedj.vercel.app', '_blank', 'noopener');
         }
 
         function formatDate(dateStr, timeStr) {
