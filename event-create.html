@@ -1590,6 +1590,7 @@
                 playlist:      document.getElementById('ed-rsvp-playlist').checked,
                 theme:         state.editorTheme,
                 font:          state.editorFont,
+                effect:        state.editorEffect,
                 status:        status || 'draft'
             };
 
@@ -2214,6 +2215,8 @@
             if (ev.venue)       document.getElementById('ed-venue').textContent = ev.venue;
             if (ev.description) document.getElementById('ed-description').textContent = ev.description;
             if (ev.theme)       setTheme(ev.theme);
+            if (ev.font && typeof setFont === 'function')   setFont(ev.font);
+            if (ev.effect && typeof setEffect === 'function') setEffect(ev.effect);
             if (ev.coverImageUrl) state.coverImageUrl = ev.coverImageUrl;
             if (ev.eventEmoji)    { state.eventEmoji   = ev.eventEmoji; state.fieldIcons.title.emoji = ev.eventEmoji; }
             if (ev.iconStyle)     { state.iconStyle    = ev.iconStyle;  state.fieldIcons.title.style = ev.iconStyle; }

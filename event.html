@@ -22,9 +22,10 @@
     </header>
 
     <!-- Loading state -->
-    <div id="ev-loading" style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:16px;margin-top:56px">
-        <div class="ev-spinner" style="width:32px;height:32px;border-width:3px;margin:0"></div>
-        <p style="font-size:12px;letter-spacing:2px;color:#a4c195">LOADING EVENT…</p>
+    <div id="ev-loading" style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:18px;margin-top:56px;background:#0b160b">
+        <div class="ev-spinner" style="width:48px;height:48px;border:3px solid rgba(212,184,118,0.15);border-top-color:#d4b876;border-radius:50%;animation:ev-spin 0.9s linear infinite"></div>
+        <p style="font-size:11px;letter-spacing:3px;color:#a4c195;text-transform:uppercase;font-family:'Montserrat',sans-serif">Loading your invitation…</p>
+        <style>@keyframes ev-spin { to { transform: rotate(360deg); } }</style>
     </div>
 
     <!-- Error state -->
@@ -211,7 +212,7 @@
                 </div>
             </div>
 
-            <!-- ── Google: collect phone + country + postal code ── -->
+            <!-- ── Google: collect phone (postal removed — friction with no privacy benefit) ── -->
             <div id="auth-step-google-phone" class="hidden">
                 <p class="ev-modal__label">Almost there</p>
                 <h3 class="ev-modal__title">One quick step</h3>
@@ -220,17 +221,17 @@
                 <div class="ev-form-row">
                     <label class="ev-form-label">Country</label>
                     <select id="guest-country" class="ev-input" onchange="updatePhonePrefix()">
-                        <option value="US|+1|^\d{5}(-\d{4})?$" selected>United States (+1)</option>
-                        <option value="CA|+1|^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$">Canada (+1)</option>
-                        <option value="GB|+44|^[A-Za-z]{1,2}\d[A-Za-z\d]?[ ]?\d[A-Za-z]{2}$">United Kingdom (+44)</option>
-                        <option value="AU|+61|^\d{4}$">Australia (+61)</option>
-                        <option value="FR|+33|^\d{5}$">France (+33)</option>
-                        <option value="DE|+49|^\d{5}$">Germany (+49)</option>
-                        <option value="MX|+52|^\d{5}$">Mexico (+52)</option>
-                        <option value="BR|+55|^\d{5}-?\d{3}$">Brazil (+55)</option>
-                        <option value="IN|+91|^\d{6}$">India (+91)</option>
-                        <option value="JP|+81|^\d{3}-?\d{4}$">Japan (+81)</option>
-                        <option value="OTHER||.*">Other</option>
+                        <option value="US|+1" selected>United States (+1)</option>
+                        <option value="CA|+1">Canada (+1)</option>
+                        <option value="GB|+44">United Kingdom (+44)</option>
+                        <option value="AU|+61">Australia (+61)</option>
+                        <option value="FR|+33">France (+33)</option>
+                        <option value="DE|+49">Germany (+49)</option>
+                        <option value="MX|+52">Mexico (+52)</option>
+                        <option value="BR|+55">Brazil (+55)</option>
+                        <option value="IN|+91">India (+91)</option>
+                        <option value="JP|+81">Japan (+81)</option>
+                        <option value="OTHER|">Other</option>
                     </select>
                 </div>
                 <div class="ev-input-row" style="display:flex;gap:10px">
@@ -242,11 +243,6 @@
                         <label class="ev-form-label">Phone Number</label>
                         <input type="tel" id="guest-google-phone" class="ev-input" placeholder="(716) 555-0000" maxlength="20" autocomplete="tel">
                     </div>
-                </div>
-                <div class="ev-form-row">
-                    <label class="ev-form-label">Postal / ZIP Code</label>
-                    <input type="text" id="guest-postal" class="ev-input" placeholder="e.g. 14201" maxlength="12" autocomplete="postal-code">
-                    <p style="font-size:10.5px;color:#888;margin:4px 0 0">Used to prevent duplicate accounts &mdash; never shared with the host.</p>
                 </div>
 
                 <p id="auth-err-google-phone" class="ev-error"></p>
@@ -580,9 +576,10 @@
 
             var lookup = await apiPost('/guest/google-lookup', { idToken: pendingGoogleProfile.idToken });
 
-            var hasCached = lookup && !lookup.error && lookup.phone && lookup.postal && lookup.country;
+            // Returning guest — cached phone is all we need (postal/country no longer required)
+            var hasCached = lookup && !lookup.error && lookup.found && lookup.phone;
             if (!hasCached) {
-                // First-time guest — show the phone/postal form
+                // First-time guest — ask only for phone
                 loadStep.classList.add('hidden');
                 document.getElementById('auth-step-google-phone').classList.remove('hidden');
                 document.getElementById('google-welcome').textContent =
@@ -646,13 +643,10 @@
         async function submitGooglePhone() {
             document.getElementById('auth-err-google-phone').textContent = '';
             var parts = document.getElementById('guest-country').value.split('|');
-            var country = parts[0], prefix = parts[1] || '', postalRegex = new RegExp(parts[2] || '.*');
+            var country = parts[0], prefix = parts[1] || '';
             var phone   = document.getElementById('guest-google-phone').value.trim();
-            var postal  = document.getElementById('guest-postal').value.trim();
 
             if (!phone)  return showAuthErr('google-phone', 'Phone number is required.');
-            if (!postal) return showAuthErr('google-phone', 'Postal code is required.');
-            if (!postalRegex.test(postal)) return showAuthErr('google-phone', 'Postal code does not match the country format.');
 
             var fullPhone = (prefix ? prefix + ' ' : '') + phone;
 
@@ -662,35 +656,15 @@
                 name:    pendingGoogleProfile.name,
                 email:   pendingGoogleProfile.email,
                 phone:   fullPhone,
-                postal:  postal,
                 country: country,
                 eventId: state.eventId,
                 status:  state.pendingStatus
             });
             setBtnLoading('#btn-google-phone-next', false);
 
-            // Backend may not exist yet — fall back so the guest flow still completes
-            if (res && res.error && /404|not[ -]?found|unknown|cannot post|forbidden/i.test(res.error)) {
-                res = {
-                    guestToken: 'local-google-' + Date.now(),
-                    status:     state.pendingStatus,
-                    event:      state.event,
-                    accountType: 'google'
-                };
-            } else if (res.error) {
-                return showAuthErr('google-phone', res.error);
-            }
-
-            persistGuestSession(res, 'google', {
-                name: pendingGoogleProfile.name,
-                email: pendingGoogleProfile.email,
-                phone: fullPhone,
-                country: country,
-                postal: postal
-            });
+            if (res && res.error) return showAuthErr('google-phone', res.error);
 
             persistGuestSession(res, 'google');
-
             closeAuthModal();
             finishRsvp(res);
         }
@@ -749,10 +723,25 @@
             var name  = document.getElementById('guest-name').value.trim();
             var phone = document.getElementById('guest-phone').value.trim();
 
-            if (!name)  return showAuthErr('phone', 'Please enter your name.');
             if (!phone) return showAuthErr('phone', 'Please enter your phone number.');
 
             setBtnLoading('#btn-send-otp', true);
+
+            // Returning-guest prefill: backend tells us if this phone already has a name on file,
+            // so the user never has to enter the same info twice.
+            try {
+                var pre = await apiPost('/guest/phone-lookup', { phone: phone });
+                if (pre && pre.found && pre.name && !name) {
+                    document.getElementById('guest-name').value = pre.name;
+                    name = pre.name;
+                }
+            } catch(_) {}
+
+            if (!name) {
+                setBtnLoading('#btn-send-otp', false);
+                return showAuthErr('phone', 'Please enter your name.');
+            }
+
             var res = await apiPost('/otp/send', { phone, eventId: state.eventId });
             setBtnLoading('#btn-send-otp', false);
 

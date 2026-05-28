@@ -133,6 +133,8 @@ function sanitizeCustomization(body) {
     if (ALLOWED_THEMES.includes(body.theme))          out.theme     = body.theme;
     const fontVal = String(body.font || '').slice(0, 24).toLowerCase();
     if (/^[a-z]+$/.test(fontVal) && fontVal.length <= 24)             out.font      = fontVal;
+    const effectVal = String(body.effect || '').slice(0, 24).toLowerCase();
+    if (/^[a-z]+$/.test(effectVal) && effectVal.length <= 24)         out.effect    = effectVal;
 
     if (body.fieldIcons && typeof body.fieldIcons === 'object') {
         const fi = {};
@@ -543,7 +545,7 @@ async function updateEvent(eventId, body, event) {
     await ddb.send(new UpdateCommand({
         TableName: T.EVENTS,
         Key: { eventId },
-        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u, eventEmoji=:ee, iconStyle=:is, theme=:th, #fnt=:ft, fieldIcons=:fi, customLayout=:cl, addons=:ad, requireVerify=:rv, showGuests=:sg, playlistEnabled=:pl',
+        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u, eventEmoji=:ee, iconStyle=:is, theme=:th, #fnt=:ft, effect=:ef, fieldIcons=:fi, customLayout=:cl, addons=:ad, requireVerify=:rv, showGuests=:sg, playlistEnabled=:pl',
         ExpressionAttributeNames:  { '#st': 'status', '#fnt': 'font' },
         ExpressionAttributeValues: {
             ':n': eventName, ':t': eventType, ':d': eventDate, ':tm': eventTime,
@@ -553,6 +555,7 @@ async function updateEvent(eventId, body, event) {
             ':is': customization.iconStyle  || null,
             ':th': customization.theme      || null,
             ':ft': customization.font       || null,
+            ':ef': customization.effect     || null,
             ':fi': customization.fieldIcons || null,
             ':cl': customization.customLayout || null,
             ':ad': Array.isArray(customization.addons) ? customization.addons : [],
@@ -602,6 +605,7 @@ async function getEvent(eventId) {
         iconStyle:      it.iconStyle   || null,
         theme:          it.theme       || null,
         font:           it.font        || null,
+        effect:         it.effect      || null,
         fieldIcons:     it.fieldIcons  || null,
         customLayout:   it.customLayout|| null,
         addons:         Array.isArray(it.addons) ? it.addons : [],
@@ -815,20 +819,18 @@ async function verifyGoogleIdToken(idToken) {
     } catch { return null; }
 }
 
-/* Look up an existing guest's cached profile by googleId (paginated member-rsvps scan).
-   Used for silent re-auth so returning Google guests skip the phone/postal form.
-   NOTE: do NOT use Scan Limit:1 here — DynamoDB applies Limit BEFORE the FilterExpression,
-   so a Limit of 1 returns 0 items as soon as the first row in the table doesn't match. */
-async function findGuestByGoogleId(googleId) {
-    if (!googleId) return null;
+/* Generic paginated Scan helper for member-rsvps. DO NOT use Scan Limit—DynamoDB applies
+   Limit BEFORE the FilterExpression, so Limit:1 returns 0 items as soon as the first table
+   row doesn't match. We scan all pages (capped at 10) until a match is found. */
+async function scanMemberRsvps(filterExpr, values) {
     let lastKey;
     let pages = 0;
     try {
         do {
             const r = await ddb.send(new ScanCommand({
                 TableName: T.MEMBER_RSVPS,
-                FilterExpression: 'googleId = :g',
-                ExpressionAttributeValues: { ':g': googleId },
+                FilterExpression: filterExpr,
+                ExpressionAttributeValues: values,
                 ExclusiveStartKey: lastKey
             }));
             if (r.Items && r.Items.length) return r.Items[0];
@@ -839,36 +841,79 @@ async function findGuestByGoogleId(googleId) {
     return null;
 }
 
-/* POST /guest/google-lookup ── verify Google token, return cached profile (no RSVP write).
-   Returns 404 if this Google account has never RSVP'd before. */
+/* Look up an existing guest profile by Google subject ID, falling back to email
+   (handles users who previously RSVP'd via phone using the same Google email). */
+async function findGuestByGoogle(googleId, email) {
+    if (googleId) {
+        const byId = await scanMemberRsvps('googleId = :g', { ':g': googleId });
+        if (byId) return byId;
+    }
+    if (email) {
+        const byEmail = await scanMemberRsvps('guestEmail = :e', { ':e': email });
+        if (byEmail) return byEmail;
+    }
+    return null;
+}
+// Legacy single-arg alias kept for any internal callers.
+async function findGuestByGoogleId(googleId) { return findGuestByGoogle(googleId, null); }
+
+/* Look up an existing guest profile by phone number (Query on member-rsvps PK). */
+async function findGuestByPhone(phone) {
+    if (!phone) return null;
+    try {
+        const r = await ddb.send(new QueryCommand({
+            TableName: T.MEMBER_RSVPS,
+            KeyConditionExpression: 'phone = :p',
+            ExpressionAttributeValues: { ':p': phone },
+            Limit: 1
+        }));
+        return (r.Items && r.Items[0]) || null;
+    } catch { return null; }
+}
+
+/* POST /guest/phone-lookup — prefill the OTP form when a returning guest types their phone.
+   Returns 200 always (never blocks the flow) so the frontend can decide whether to show name. */
+async function guestPhoneLookup(body) {
+    const phone = sanitizePhone(body.phone);
+    if (!phone) return respond(200, { found: false });
+    const existing = await findGuestByPhone(phone);
+    if (!existing) return respond(200, { found: false });
+    return respond(200, {
+        found: true,
+        name:  existing.guestName  || null,
+        email: existing.guestEmail || null
+    });
+}
+
+/* POST /guest/google-lookup — verify Google token, return cached profile (no RSVP write).
+   Returns { found: false } (200) if no prior RSVP — frontend then collects phone only. */
 async function guestGoogleLookup(body) {
     const googleUser = await verifyGoogleIdToken(body.idToken);
     if (!googleUser) return respond(401, { error: 'Invalid Google token' });
     const googleId = String(googleUser.sub || '').slice(0, 64);
+    const email    = sanitizeEmail(googleUser.email);
     if (!googleId) return respond(401, { error: 'Incomplete Google profile' });
 
-    const existing = await findGuestByGoogleId(googleId);
-    if (!existing) return respond(404, { error: 'No prior RSVP for this Google account' });
+    const existing = await findGuestByGoogle(googleId, email);
+    if (!existing) return respond(200, { found: false });
 
     return respond(200, {
-        found:   true,
-        phone:   existing.phone   || null,
-        postal:  existing.postal  || null,
-        country: existing.country || null,
-        name:    existing.guestName || null,
-        email:   existing.guestEmail || null
+        found: true,
+        phone: existing.phone     || null,
+        name:  existing.guestName || null,
+        email: existing.guestEmail|| null
     });
 }
 
-/* POST /guest/google-auth ── Google ID token + phone + postal → guest RSVP */
+/* POST /guest/google-auth — Google ID token + phone → guest RSVP.
+   Postal/country no longer required — they were friction with no privacy benefit.
+   Phone is still required (it's the PK for member-rsvps), but we auto-fill it from cache. */
 async function guestGoogleAuth(body) {
     const idToken    = String(body.idToken || '').trim();
     if (!idToken || idToken.length > 4096) return respond(400, { error: 'Google ID token required' });
 
     let phone        = sanitizePhone(body.phone);
     const eventId    = sanitizeText(body.eventId, 30);
-    let postal       = sanitizeText(body.postal, 20);
-    let country      = sanitizeText(body.country, 8).toUpperCase();
     const rsvpStatus = body.status === 'declined' ? 'declined' : 'confirmed';
 
     if (!eventId) return respond(400, { error: 'Event ID required' });
@@ -882,19 +927,14 @@ async function guestGoogleAuth(body) {
     const guestName = sanitizeText(body.name || googleUser.name || googleUser.given_name || 'Guest', 100);
     if (!googleId || !email) return respond(401, { error: 'Incomplete Google profile' });
 
-    // Silent re-auth: if any field is missing, look up cached profile by googleId in member-rsvps.
-    if (!phone || !postal || !country) {
-        const cached = await findGuestByGoogleId(googleId);
-        if (cached) {
-            phone   = phone   || cached.phone;
-            postal  = postal  || cached.postal  || '';
-            country = country || cached.country || '';
-        }
+    // Silent re-auth: pull phone from any prior member-rsvp row (by googleId OR email).
+    let cached = null;
+    if (!phone) {
+        cached = await findGuestByGoogle(googleId, email);
+        if (cached && cached.phone) phone = cached.phone;
     }
 
-    if (!phone)   return respond(400, { error: 'Valid phone number required' });
-    if (!postal)  return respond(400, { error: 'Postal code required' });
-    if (!country) return respond(400, { error: 'Country required' });
+    if (!phone) return respond(400, { error: 'Phone number required', code: 'NEED_PHONE' });
 
     // Load event
     const evRes = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
@@ -940,8 +980,6 @@ async function guestGoogleAuth(body) {
                 guestName,
                 guestEmail:    email,
                 googleId,
-                postal,
-                country,
                 accountType:   'google',
                 recoveryEmail: email,  // Google email doubles as recovery
                 status:        rsvpStatus,
@@ -1465,6 +1503,7 @@ exports.handler = async (event) => {
         // Guest Google sign-in + recovery email
         if (method === 'POST' && path === '/guest/google-auth')    return await guestGoogleAuth(body);
         if (method === 'POST' && path === '/guest/google-lookup')  return await guestGoogleLookup(body);
+        if (method === 'POST' && path === '/guest/phone-lookup')   return await guestPhoneLookup(body);
         if (method === 'POST' && path === '/guest/recovery-email') return await guestRecoveryEmail(body);
 
         // Member auth + dashboard
