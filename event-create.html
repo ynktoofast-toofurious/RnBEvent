@@ -295,21 +295,58 @@
                         <div class="ev-type-modal" id="ev-type-modal" onclick="closeTypePickerBackdrop(event)">
                             <div class="ev-type-modal__sheet">
                                 <div class="ev-type-modal__head">
+                                    <button type="button" class="ev-type-modal__back" id="ev-type-back" onclick="window.location.href='events.html'" title="Back to dashboard">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                                        Back
+                                    </button>
                                     <span class="ev-type-modal__title">Choose Your Event</span>
-                                    <button type="button" class="ev-type-modal__close" onclick="closeTypePicker()">?</button>
+                                    <button type="button" class="ev-type-modal__close" onclick="closeTypePicker()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                                 </div>
                                 <div class="ev-type-modal__grid">
-                                    <button type="button" class="ev-type-card" data-type="Birthday Party"      onclick="selectEventType('Birthday Party')">      <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Birthday Party</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Wedding Reception"   onclick="selectEventType('Wedding Reception')">   <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Wedding Reception</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Anniversary"         onclick="selectEventType('Anniversary')">         <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Anniversary</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Sweet 16"            onclick="selectEventType('Sweet 16')">            <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Sweet 16</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Bridal Shower"       onclick="selectEventType('Bridal Shower')">       <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Bridal Shower</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Baby Shower"         onclick="selectEventType('Baby Shower')">         <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Baby Shower</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Graduation Party"    onclick="selectEventType('Graduation Party')">    <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Graduation Party</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Holiday Party"       onclick="selectEventType('Holiday Party')">       <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Holiday Party</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Corporate Event"     onclick="selectEventType('Corporate Event')">     <span class="ev-type-card__emoji">??</span><span class="ev-type-card__label">Corporate Event</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Private Dinner"      onclick="selectEventType('Private Dinner')">      <span class="ev-type-card__emoji">???</span><span class="ev-type-card__label">Private Dinner</span></button>
-                                    <button type="button" class="ev-type-card" data-type="Other"               onclick="selectEventType('Other')">               <span class="ev-type-card__emoji">?</span><span class="ev-type-card__label">Other</span></button>
+                                    <button type="button" class="ev-type-card" data-type="Birthday Party" onclick="selectEventType('Birthday Party')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><path d="M12 2v3M8.5 4.5l1.5 2M15.5 4.5l-1.5 2"/><rect x="7" y="10" width="10" height="7" rx="1"/><path d="M12 10v7M7 13h10"/></svg>
+                                        <span class="ev-type-card__label">Birthday Party</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Wedding Reception" onclick="selectEventType('Wedding Reception')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="15" cy="9" r="3"/><path d="M9 12c0 2 1.5 5 3 7 1.5-2 3-5 3-7"/><path d="M6 21h12"/></svg>
+                                        <span class="ev-type-card__label">Wedding Reception</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Anniversary" onclick="selectEventType('Anniversary')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                        <span class="ev-type-card__label">Anniversary</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Sweet 16" onclick="selectEventType('Sweet 16')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                        <span class="ev-type-card__label">Sweet 16</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Bridal Shower" onclick="selectEventType('Bridal Shower')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1.5 0 2.5 1 2.5 2.5S13.5 7 12 7s-2.5-1-2.5-2.5S10.5 2 12 2z"/><path d="M7 22V17c0-2 1-4 5-4s5 2 5 4v5"/><path d="M5 22h14"/><path d="M9 17l-2 5M15 17l2 5"/></svg>
+                                        <span class="ev-type-card__label">Bridal Shower</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Baby Shower" onclick="selectEventType('Baby Shower')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8a2 2 0 0 1 2 2v3H6V4a2 2 0 0 1 2-2z"/><path d="M6 7v6a6 6 0 0 0 12 0V7"/><circle cx="12" cy="13" r="1" fill="currentColor"/><path d="M9.5 11a.5.5 0 1 0 0-1"/><path d="M14.5 11a.5.5 0 1 0 0-1"/></svg>
+                                        <span class="ev-type-card__label">Baby Shower</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Graduation Party" onclick="selectEventType('Graduation Party')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><path d="M6 11.5V17c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/><line x1="22" y1="8.5" x2="22" y2="14"/></svg>
+                                        <span class="ev-type-card__label">Graduation Party</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Holiday Party" onclick="selectEventType('Holiday Party')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.5 5 5.5.8-4 3.9.9 5.4L12 14.5l-4.9 2.6.9-5.4-4-3.9 5.5-.8z"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+                                        <span class="ev-type-card__label">Holiday Party</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Corporate Event" onclick="selectEventType('Corporate Event')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+                                        <span class="ev-type-card__label">Corporate Event</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Private Dinner" onclick="selectEventType('Private Dinner')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 2.2 1.8 4 4 4s4-1.8 4-4V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M17 2v4a4 4 0 0 1-4 4"/><path d="M17 22V10"/></svg>
+                                        <span class="ev-type-card__label">Private Dinner</span>
+                                    </button>
+                                    <button type="button" class="ev-type-card" data-type="Other" onclick="selectEventType('Other')">
+                                        <svg class="ev-type-card__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                        <span class="ev-type-card__label">Other</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>

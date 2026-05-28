@@ -1666,7 +1666,25 @@ textarea.ev-input {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
+    gap: 8px;
 }
+.ev-type-modal__back {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    color: rgba(255,255,255,0.55);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    padding: 4px 12px 4px 8px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+.ev-type-modal__back:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.35); }
 .ev-type-modal__title {
     font-family: 'Cormorant Garamond', serif;
     font-size: 20px;
@@ -1719,9 +1737,15 @@ textarea.ev-input {
     border-color: rgba(184,154,94,0.85);
     background: rgba(184,154,94,0.13);
 }
-.ev-type-card__emoji {
-    font-size: 26px;
-    line-height: 1;
+.ev-type-card__svg {
+    width: 32px;
+    height: 32px;
+    stroke: rgba(184,154,94,0.75);
+    flex-shrink: 0;
+}
+.ev-type-card:hover .ev-type-card__svg,
+.ev-type-card.selected .ev-type-card__svg {
+    stroke: rgba(184,154,94,1);
 }
 .ev-type-card__label {
     font-family: 'Montserrat', sans-serif;
