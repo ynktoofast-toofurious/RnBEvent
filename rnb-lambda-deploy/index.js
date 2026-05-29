@@ -781,7 +781,32 @@ async function saveGuestComment(eventId, body, event) {
         }
     }));
 
-    return respond(200, { ok: true, comment });
+    // Best-effort: forward guest comment into urTheDJ live chat stream when available.
+    let chatForwarded = false;
+    const evRes = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
+    if (evRes?.Item?.urthedj_sessionId && evRes.Item.partyChatEnabled !== false && URTHEDJ_API) {
+        const payload = {
+            sessionId: evRes.Item.urthedj_sessionId,
+            requestedBy: guest.guestName || guest.phone || 'Guest',
+            message: comment,
+            type: 'guest-comment'
+        };
+        for (const path of ['/party/comment', '/party/chat-message']) {
+            try {
+                const r = await fetch(`${URTHEDJ_API}${path}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (r.ok) {
+                    chatForwarded = true;
+                    break;
+                }
+            } catch { /* non-fatal */ }
+        }
+    }
+
+    return respond(200, { ok: true, comment, chatForwarded });
 }
 
 /* GET /search-song?query=... ── urTheDJ-compatible song search with iTunes + catalog fallback */

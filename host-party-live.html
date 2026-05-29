@@ -197,6 +197,49 @@
             background: #0c140d;
         }
 
+        .comment-stream {
+            margin-top: 10px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.02);
+            padding: 10px;
+        }
+
+        .comment-stream__title {
+            margin: 0 0 8px;
+            font-size: 11px;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .comment-stream__list {
+            max-height: 180px;
+            overflow: auto;
+            display: grid;
+            gap: 7px;
+        }
+
+        .comment-item {
+            border: 1px solid rgba(212,184,118,0.14);
+            border-radius: 10px;
+            padding: 8px;
+            background: rgba(12,20,13,0.45);
+        }
+
+        .comment-item__meta {
+            margin: 0 0 4px;
+            font-size: 11px;
+            color: var(--gold);
+        }
+
+        .comment-item__body {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text);
+            line-height: 1.45;
+        }
+
         .hidden { display: none !important; }
 
         .error {
@@ -271,6 +314,14 @@
             </div>
 
             <iframe id="chatFrame" class="chat-frame hidden" title="Party Chat"></iframe>
+
+            <div class="comment-stream">
+                <p class="comment-stream__title">Live Guest Comment Feed</p>
+                <div id="liveCommentFeed" class="comment-stream__list">
+                    <p class="chat-status" style="margin:0">No guest comments yet.</p>
+                </div>
+            </div>
+
             <p id="rightError" class="error hidden"></p>
         </section>
     </main>
@@ -281,6 +332,7 @@
         var token = localStorage.getItem('rnb_creator_token');
         var eventId = new URLSearchParams(window.location.search).get('id') || '';
         var adminData = null;
+        var autoRefreshTimer = null;
 
         if (!token) window.location.href = 'event-create.html';
         if (!eventId) window.location.href = 'events.html';
@@ -389,11 +441,11 @@
             chatToggle.checked = enabled;
 
             if (enabled && chatUrl) {
-                frame.src = chatUrl;
+                if (frame.getAttribute('src') !== chatUrl) frame.src = chatUrl;
                 setVisible('chatFrame', true);
                 openLink.href = chatUrl;
                 setVisible('openChatLink', true);
-                setText('chatStatus', 'Chat is live for guests and host.');
+                setText('chatStatus', 'Chat is live for guests and host. Guest comments appear below in real time.');
                 setVisible('rightError', false);
                 return;
             }
@@ -405,6 +457,45 @@
             } else {
                 setText('chatStatus', 'Chat session is being prepared.');
             }
+        }
+
+        function formatCommentTime(iso) {
+            if (!iso) return '';
+            try {
+                var d = new Date(iso);
+                if (isNaN(d.getTime())) return '';
+                return d.toLocaleString();
+            } catch (_) { return ''; }
+        }
+
+        function renderCommentFeed(data) {
+            var feed = document.getElementById('liveCommentFeed');
+            if (!feed) return;
+            var guests = Array.isArray(data.guests) ? data.guests : [];
+            var comments = guests
+                .filter(function(g) { return g.guestComment && String(g.guestComment).trim(); })
+                .map(function(g) {
+                    return {
+                        guestName: g.guestName || g.guestPhone || 'Guest',
+                        comment: String(g.guestComment || '').trim(),
+                        at: g.guestCommentAt || ''
+                    };
+                })
+                .sort(function(a, b) {
+                    return new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime();
+                });
+
+            if (!comments.length) {
+                feed.innerHTML = '<p class="chat-status" style="margin:0">No guest comments yet.</p>';
+                return;
+            }
+
+            feed.innerHTML = comments.map(function(c) {
+                return '<div class="comment-item">'
+                    + '<p class="comment-item__meta">' + esc(c.guestName) + (c.at ? (' • ' + esc(formatCommentTime(c.at))) : '') + '</p>'
+                    + '<p class="comment-item__body">' + esc(c.comment) + '</p>'
+                    + '</div>';
+            }).join('');
         }
 
         async function setChatEnabled(enabled) {
@@ -430,6 +521,7 @@
                 renderSummary(adminData);
                 renderSongsTable(adminData);
                 renderChat(adminData);
+                renderCommentFeed(adminData);
             } catch (err) {
                 setVisible('leftError', true);
                 setVisible('rightError', true);
@@ -439,6 +531,9 @@
         }
 
         loadAdmin();
+        autoRefreshTimer = setInterval(function() {
+            loadAdmin();
+        }, 7000);
     </script>
 </body>
 </html>
