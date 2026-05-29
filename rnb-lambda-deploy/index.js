@@ -859,9 +859,11 @@ async function addGuests(eventId, body, event) {
 
     const now    = new Date().toISOString();
     const method = body.method === 'bulk' ? 'bulk' : 'manual';
+    const inviteChannel = body.inviteChannel === 'phone' ? 'phone' : 'email';
     const inviteMode = body.inviteMode === 'mass' ? 'mass' : 'individual';
     let added = 0, skipped = 0;
     const emailRecipients = [];
+    const phoneRecipients = [];
 
     const ops = guests.map(async g => {
         const phone      = sanitizePhone(g.phone);
@@ -881,37 +883,93 @@ async function addGuests(eventId, body, event) {
         if (guestEmail) {
             emailRecipients.push({ email: guestEmail, name: guestName });
         }
+        if (phone) {
+            phoneRecipients.push({ phone, name: guestName });
+        }
     });
 
     await Promise.allSettled(ops);
 
     let emailsSent = 0;
     let emailsFailed = 0;
+    let phonesSent = 0;
+    let phonesFailed = 0;
 
-    const uniqueRecipients = [];
+    const uniqueEmailRecipients = [];
     const seen = new Set();
     for (const r of emailRecipients) {
         const key = `${r.email}|${r.name}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        uniqueRecipients.push(r);
+        uniqueEmailRecipients.push(r);
     }
 
-    if (uniqueRecipients.length) {
-        if (inviteMode === 'mass' && uniqueRecipients.length > 1) {
-            const massRes = await sendInviteEmailMass(uniqueRecipients.map(r => r.email), evRes.Item).catch(() => ({ sent: 0, failed: uniqueRecipients.length }));
+    const uniquePhoneRecipients = [];
+    const seenPhones = new Set();
+    for (const r of phoneRecipients) {
+        const key = `${r.phone}|${r.name}`;
+        if (seenPhones.has(key)) continue;
+        seenPhones.add(key);
+        uniquePhoneRecipients.push(r);
+    }
+
+    if (inviteChannel === 'email' && uniqueEmailRecipients.length) {
+        if (inviteMode === 'mass' && uniqueEmailRecipients.length > 1) {
+            const massRes = await sendInviteEmailMass(uniqueEmailRecipients.map(r => r.email), evRes.Item).catch((err) => {
+                console.warn('[invite/email-mass] failed', err && err.message ? err.message : err);
+                return ({ sent: 0, failed: uniqueEmailRecipients.length });
+            });
             emailsSent += massRes.sent || 0;
             emailsFailed += massRes.failed || 0;
         } else {
-            const sendRes = await Promise.allSettled(uniqueRecipients.map(r => sendInviteEmail(r.email, r.name, evRes.Item)));
+            const sendRes = await Promise.allSettled(uniqueEmailRecipients.map(r => sendInviteEmail(r.email, r.name, evRes.Item)));
             sendRes.forEach((it) => {
                 if (it.status === 'fulfilled') emailsSent++;
-                else emailsFailed++;
+                else {
+                    emailsFailed++;
+                    console.warn('[invite/email] failed', it.reason && it.reason.message ? it.reason.message : it.reason);
+                }
             });
         }
     }
 
-    return respond(200, { added, skipped, inviteMode, emailsQueued: uniqueRecipients.length, emailsSent, emailsFailed });
+    if (inviteChannel === 'phone' && uniquePhoneRecipients.length) {
+        const smsRes = await Promise.allSettled(uniquePhoneRecipients.map(r => sendInviteSms(r.phone, r.name, evRes.Item)));
+        smsRes.forEach((it) => {
+            if (it.status === 'fulfilled') phonesSent++;
+            else {
+                phonesFailed++;
+                console.warn('[invite/phone] failed', it.reason && it.reason.message ? it.reason.message : it.reason);
+            }
+        });
+    }
+
+    const channelQueued = inviteChannel === 'phone' ? uniquePhoneRecipients.length : uniqueEmailRecipients.length;
+    const channelSent = inviteChannel === 'phone' ? phonesSent : emailsSent;
+    const channelFailed = inviteChannel === 'phone' ? phonesFailed : emailsFailed;
+
+    if (!channelQueued) {
+        const msg = inviteChannel === 'phone'
+            ? 'No guest phone numbers found for phone invites.'
+            : 'No guest email addresses found for email invites.';
+        return respond(400, { error: msg, added, skipped });
+    }
+
+    return respond(200, {
+        added,
+        skipped,
+        inviteMode,
+        inviteChannel,
+        emailsQueued: uniqueEmailRecipients.length,
+        emailsSent,
+        emailsFailed,
+        phonesQueued: uniquePhoneRecipients.length,
+        phonesSent,
+        phonesFailed,
+        channelQueued,
+        channelSent,
+        channelFailed
+    });
 }
 
 /* POST /otp/send ── send guest RSVP OTP */
@@ -1720,6 +1778,19 @@ async function sendInviteEmailMass(toEmails, ev) {
     }
 
     return { sent, failed };
+}
+
+async function sendInviteSms(phone, guestName, ev) {
+    const dateStr = ev.eventTime ? `${ev.eventDate} at ${ev.eventTime}` : ev.eventDate;
+    const eventUrl = `${SITE_URL}/event/${ev.eventId}`;
+    const msg = `RNB Events: Hi ${guestName}, you're invited to ${ev.eventName} on ${dateStr}. RSVP: ${eventUrl}`;
+    await sns.send(new PublishCommand({
+        PhoneNumber: phone,
+        Message: msg,
+        MessageAttributes: {
+            'AWS.SNS.SMS.SMSType': { DataType: 'String', StringValue: 'Transactional' }
+        }
+    }));
 }
 
 async function notifyCreatorOfRsvp(ev, guestName, status) {

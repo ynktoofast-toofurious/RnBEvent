@@ -3242,6 +3242,8 @@ button.ev-fi-btn .ev-fi-svg svg { width: 18px; height: 18px; }
     border-radius:10px;
     background:rgba(255,255,255,0.02);
 }
+.gp-grid-wrap--single { min-height:0; max-height:180px; }
+.gp-single-queue.hidden { display:none; }
 .gp-grid { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; }
 .gp-grid thead th {
     position:sticky; top:0; z-index:2;

@@ -553,12 +553,27 @@
                         </div>
                     </div>
                 </div>
-                <div id="gp-single-pills" class="ev-guest-pills" style="margin-top:8px"></div>
+                <div class="gp-single-queue hidden" id="gp-single-queue-wrap">
+                    <p class="gp-hint" style="margin-bottom:6px">Queued guests (<span id="gp-single-count">0</span>)</p>
+                    <div class="gp-grid-wrap gp-grid-wrap--single">
+                        <table class="gp-grid">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th style="width:32px"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="gp-single-queue-body"></tbody>
+                        </table>
+                    </div>
+                </div>
                 <p id="ed-err-guests-single" class="ev-error"></p>
                 <p id="ed-success-guests-single" class="ev-success"></p>
                 <div style="display:flex;gap:8px;margin-top:auto">
-                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="gpAddToQueue()">+ Add another</button>
-                    <button class="ev-btn ev-btn--primary" id="btn-add-guests-single" onclick="gpSaveSingle()">Send invites</button>
+                    <button class="ev-btn ev-btn--outline ev-btn--sm" onclick="gpAddToQueue()">+ Add guest</button>
+                    <button class="ev-btn ev-btn--primary hidden" id="btn-add-guests-single" onclick="gpSaveSingle()">Send invites</button>
                 </div>
             </div>
 
@@ -1297,16 +1312,42 @@
         }
 
         var _gpQueue = []; // queued single-mode guests not yet sent
+        function gpRenderSingleQueue() {
+            var body = document.getElementById('gp-single-queue-body');
+            var wrap = document.getElementById('gp-single-queue-wrap');
+            var sendBtn = document.getElementById('btn-add-guests-single');
+            var count = document.getElementById('gp-single-count');
+            if (!body || !wrap || !sendBtn || !count) return;
+            body.innerHTML = _gpQueue.map(function(g, idx) {
+                return '<tr>'
+                    + '<td>' + escHtml(g.name || 'Guest') + '</td>'
+                    + '<td>' + escHtml(g.phone || '-') + '</td>'
+                    + '<td>' + escHtml(g.email || '-') + '</td>'
+                    + '<td><button type="button" class="gp-grid__del" title="Remove" onclick="gpRemoveQueuedGuest(' + idx + ')">×</button></td>'
+                    + '</tr>';
+            }).join('');
+            count.textContent = String(_gpQueue.length);
+            wrap.classList.toggle('hidden', !_gpQueue.length);
+            sendBtn.classList.toggle('hidden', !_gpQueue.length);
+        }
+
+        function gpRemoveQueuedGuest(idx) {
+            if (idx < 0 || idx >= _gpQueue.length) return;
+            _gpQueue.splice(idx, 1);
+            gpRenderSingleQueue();
+        }
+
         function gpAddToQueue() {
             var first = (document.getElementById('gp-first').value || '').trim();
             var last  = (document.getElementById('gp-last').value || '').trim();
             var phone = _normalizePhone(document.getElementById('gp-phone').value);
             var email = gpReadSingleEmail();
-            if (!phone) { showErr('ed-err-guests-single', 'Phone is required.'); return; }
+            if (!phone && !email) { showErr('ed-err-guests-single', 'Add at least a phone or an email.'); return; }
             clearErr('ed-err-guests-single');
+            document.getElementById('ed-success-guests-single').textContent = '';
             var name = (first + ' ' + last).trim() || 'Guest';
             _gpQueue.push({ name: name, phone: phone, email: email || null });
-            renderPills(_gpQueue, 'gp-single-pills');
+            gpRenderSingleQueue();
             // Clear the form for next entry
             ['gp-first','gp-last','gp-phone','gp-email-local','gp-email-custom'].forEach(function(id){ document.getElementById(id).value = ''; });
             document.getElementById('gp-email-domain').value = '@gmail.com';
@@ -1315,20 +1356,8 @@
         }
 
         async function gpSaveSingle() {
-            // Capture current form input if not yet queued
-            var first = (document.getElementById('gp-first').value || '').trim();
-            var last  = (document.getElementById('gp-last').value || '').trim();
-            var phone = _normalizePhone(document.getElementById('gp-phone').value);
-            var email = gpReadSingleEmail();
-            if (phone) {
-                var name = (first + ' ' + last).trim() || 'Guest';
-                _gpQueue.push({ name: name, phone: phone, email: email || null });
-            }
             if (!_gpQueue.length) { showErr('ed-err-guests-single', 'Add at least one guest.'); return; }
-            var queued = _gpQueue.slice();
-            await gpPromptInviteSendMode(queued, 'single');
-            _gpQueue = [];
-            renderPills([], 'gp-single-pills');
+            await gpPromptInviteMethod(_gpQueue.slice(), 'single');
         }
 
         /* -- Bulk / Excel-paste grid ----------------- */
@@ -1502,78 +1531,85 @@
             document.getElementById('ed-success-guests').textContent = '';
             var list = gpReadGrid();
             if (!list.length) { showErr('ed-err-guests', 'Add at least one row with a phone or email.'); return; }
-            await gpPromptInviteSendMode(list.map(function(g){ return { name:g.name, phone:g.phone, email:g.email }; }), 'bulk');
+            await gpPromptInviteMethod(list.map(function(g){ return { name:g.name, phone:g.phone, email:g.email }; }), 'bulk');
         }
 
-        async function gpPromptInviteSendMode(guests, mode) {
+        async function gpPromptInviteMethod(guests, mode) {
             var errId = mode === 'single' ? 'ed-err-guests-single' : 'ed-err-guests';
             clearErr(errId);
             var emails = guests.filter(function(g) { return !!(g.email && String(g.email).trim()); });
-            if (!emails.length) {
-                showErr(errId, 'Add at least one email address to send invites.');
+            var phones = guests.filter(function(g) { return !!(g.phone && String(g.phone).trim()); });
+            if (!emails.length && !phones.length) {
+                showErr(errId, 'Each guest needs a phone or email.');
                 return;
             }
-            var defaultMode = (mode === 'bulk') ? 'mass' : 'individual';
-            var body = 'How would you like to send <strong>' + emails.length + '</strong> email invite' + (emails.length === 1 ? '' : 's') + '?';
-            showModal(
-                'Send Email Invites',
-                body,
-                [
-                    { label: 'Cancel' },
-                    {
-                        label: 'Individual send',
-                        onClick: async function() {
-                            closeModal();
-                            await _gpSendGuests(guests, mode, 'individual');
-                        }
-                    },
-                    {
-                        label: 'Mass send',
-                        primary: true,
-                        onClick: async function() {
-                            closeModal();
-                            await _gpSendGuests(guests, mode, 'mass');
+            var body = 'Choose how to send invites for <strong>' + guests.length + '</strong> guest' + (guests.length === 1 ? '' : 's') + '.';
+            var actions = [{ label: 'Cancel' }];
+            if (emails.length) {
+                actions.push({
+                    label: 'Email',
+                    onClick: async function() {
+                        closeModal();
+                        var out = await _gpSendGuests(guests, mode, 'email');
+                        if (mode === 'single' && out && out.ok) {
+                            if (out.failed > 0 && out.sent === 0) return;
+                            _gpQueue = [];
+                            gpRenderSingleQueue();
                         }
                     }
-                ]
-            );
-            if (defaultMode === 'individual') {
-                // Keep the default CTA visual intent aligned for single-guest mode.
-                var actions = document.getElementById('ev-modal-actions');
-                if (actions && actions.children && actions.children[2] && actions.children[1]) {
-                    actions.children[2].classList.remove('ev-btn--primary');
-                    actions.children[1].classList.add('ev-btn--primary');
-                }
+                });
             }
+            if (phones.length) {
+                actions.push({
+                    label: 'Phone',
+                    primary: true,
+                    onClick: async function() {
+                        closeModal();
+                        var out = await _gpSendGuests(guests, mode, 'phone');
+                        if (mode === 'single' && out && out.ok) {
+                            if (out.failed > 0 && out.sent === 0) return;
+                            _gpQueue = [];
+                            gpRenderSingleQueue();
+                        }
+                    }
+                });
+            }
+            showModal(
+                'Send Invites',
+                body,
+                actions
+            );
         }
 
-        async function _gpSendGuests(guests, mode, inviteMode) {
+        async function _gpSendGuests(guests, mode, inviteChannel) {
             var btnId = mode === 'single' ? 'btn-add-guests-single' : 'btn-add-guests';
             var errId = mode === 'single' ? 'ed-err-guests-single'   : 'ed-err-guests';
             var okId  = mode === 'single' ? 'ed-success-guests-single' : 'ed-success-guests';
             if (!state.eventId) {
                 var ok = await doCreateEvent('draft');
-                if (!ok) return;
+                if (!ok) return { ok: false, sent: 0, failed: 0 };
             }
             setBtnLoading('#' + btnId, true, 'Sending\u2026');
             var res = await apiPost('/events/' + state.eventId + '/guests', {
                 guests: guests,
                 method: mode === 'bulk' ? 'bulk' : 'manual',
-                inviteMode: inviteMode === 'mass' ? 'mass' : 'individual'
+                inviteChannel: inviteChannel === 'phone' ? 'phone' : 'email',
+                inviteMode: inviteChannel === 'email' && mode === 'bulk' ? 'mass' : 'individual'
             }, state.creatorToken);
             setBtnLoading('#' + btnId, false, 'Send invites');
-            if (res.error) { showErr(errId, res.error); return; }
+            if (res.error) { showErr(errId, res.error); return { ok: false, sent: 0, failed: 0 }; }
             var added = res.added || guests.length;
-            var sent = Number(res.emailsSent || 0);
-            var failed = Number(res.emailsFailed || 0);
-            var delivery = (res.inviteMode || inviteMode || 'individual') === 'mass' ? 'mass' : 'individual';
+            var channel = res.inviteChannel || (inviteChannel === 'phone' ? 'phone' : 'email');
+            var sent = Number(res.channelSent || 0);
+            var failed = Number(res.channelFailed || 0);
             var msg = added + ' guest(s) added';
-            msg += ', ' + sent + ' email invite(s) sent via ' + delivery + ' mode';
+            msg += ', ' + sent + ' ' + channel + ' invite(s) sent';
             if (failed > 0) msg += ', ' + failed + ' failed';
             if (res.skipped) msg += ', ' + res.skipped + ' skipped';
             document.getElementById(okId).textContent = msg + '.';
             renderPills(guests, 'ed-guest-pills');
             if (mode === 'bulk') gpClearGrid();
+            return { ok: true, sent: sent, failed: failed };
         }
 
         function renderPills(guests, containerId) {
