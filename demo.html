@@ -1234,14 +1234,62 @@
             max-width: 1200px;
             margin: 0 auto 24px;
             padding: 0 20px;
+            display: flex;
+            justify-content: flex-end;
+            position: relative;
+        }
+
+        .demo-menu-btn {
+            background: #fff;
+            color: #2c3e2c;
+            border: 1px solid #d6e0d0;
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 20px rgba(44,62,44,0.08);
+        }
+
+        .demo-menu-btn:hover {
+            border-color: #77a361;
+        }
+
+        .demo-menu-btn .bars {
+            width: 15px;
+            height: 11px;
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .demo-menu-btn .bars span {
+            display: block;
+            width: 100%;
+            height: 2px;
+            border-radius: 2px;
+            background: #2c3e2c;
         }
 
         .demo-menu-card {
             background: #fff;
             border: 1px solid #e7ebea;
             border-radius: 14px;
-            padding: 16px 18px;
+            padding: 14px 16px;
             box-shadow: 0 8px 30px rgba(44,62,44,0.08);
+            min-width: 260px;
+            position: absolute;
+            top: 52px;
+            right: 20px;
+            z-index: 40;
+        }
+
+        .demo-menu-card.hidden {
+            display: none;
         }
 
         .demo-menu-title {
@@ -1254,16 +1302,54 @@
 
         .demo-menu-list {
             margin: 0;
-            padding-left: 18px;
+            padding: 0;
+            list-style: none;
             color: #2c3e2c;
             font-size: 14px;
-            line-height: 1.7;
+            line-height: 1.5;
         }
 
-        .demo-menu-list a {
+        .demo-menu-item {
+            width: 100%;
+            text-align: left;
+            background: #f8faf7;
+            border: 1px solid #e5ece1;
+            border-radius: 10px;
+            padding: 10px 11px;
+            margin-top: 8px;
+            font-size: 13px;
             color: #2c3e2c;
-            text-decoration: underline;
-            text-underline-offset: 2px;
+            cursor: pointer;
+        }
+
+        .demo-menu-item:first-child {
+            margin-top: 0;
+        }
+
+        .demo-menu-item.active {
+            background: #eef6e9;
+            border-color: #77a361;
+            color: #2b5122;
+            font-weight: 600;
+        }
+
+        .demo-tab-nav {
+            display: none;
+        }
+
+        .demo-rsvp-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 24px;
+        }
+
+        .demo-rsvp-frame {
+            width: 100%;
+            min-height: 820px;
+            border: 1px solid #dce5d8;
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 8px 28px rgba(44,62,44,0.10);
         }
 
         .demo-badge {
@@ -1337,6 +1423,15 @@
 
         @media (max-width: 768px) {
             .demo-tab-btn { padding: 12px 16px; font-size: 13px; }
+            .demo-menu {
+                justify-content: center;
+            }
+            .demo-menu-card {
+                right: 50%;
+                transform: translateX(50%);
+                width: calc(100% - 40px);
+                min-width: 0;
+            }
         }
     </style>
 </head>
@@ -1405,12 +1500,16 @@
         </div>
 
         <div class="demo-menu">
-            <div class="demo-menu-card">
+            <button type="button" class="demo-menu-btn" onclick="toggleDemoMenu()" aria-expanded="false" id="demo-menu-trigger">
+                <span class="bars"><span></span><span></span><span></span></span>
+                Menu
+            </button>
+            <div class="demo-menu-card hidden" id="demo-menu-card">
                 <p class="demo-menu-title">DEMO MENU</p>
                 <ul class="demo-menu-list">
-                    <li>Chat Concierge</li>
-                    <li>3D Venue Builder</li>
-                    <li>RSVP: <a href="http://localhost:5500/events.html" target="_blank" rel="noopener noreferrer">http://localhost:5500/events.html</a></li>
+                    <li><button type="button" class="demo-menu-item active" id="menu-item-chatbot" onclick="openDemoPanel('chatbot')">Chat Concierge</button></li>
+                    <li><button type="button" class="demo-menu-item" id="menu-item-3d" onclick="openDemoPanel('3d')">3D Venue Builder</button></li>
+                    <li><button type="button" class="demo-menu-item" id="menu-item-rsvp" onclick="openDemoPanel('rsvp')">RSVP Live</button></li>
                 </ul>
             </div>
         </div>
@@ -1649,6 +1748,12 @@
                             <div class="text-label-modal-actions"><button class="text-label-modal-cancel" onclick="builderCancelSaveCustomAsset()">Cancel</button><button class="text-label-modal-confirm" onclick="builderConfirmSaveCustomAsset()">Save Asset</button></div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div id="tab-rsvp" class="demo-tab-content">
+                <div class="demo-rsvp-wrap">
+                    <iframe class="demo-rsvp-frame" src="/events.html" title="RSVP Live Demo" loading="lazy"></iframe>
                 </div>
             </div>
         </div>
@@ -1957,11 +2062,43 @@
 
     <!-- Tab Switching -->
     <script>
+        function toggleDemoMenu(forceOpen) {
+            var card = document.getElementById('demo-menu-card');
+            var trigger = document.getElementById('demo-menu-trigger');
+            if (!card || !trigger) return;
+            var shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : card.classList.contains('hidden');
+            card.classList.toggle('hidden', !shouldOpen);
+            trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        }
+
+        function openDemoPanel(tabName) {
+            document.querySelectorAll('.demo-tab-content').forEach(function(t) { t.classList.remove('active'); });
+            var target = document.getElementById('tab-' + tabName);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll('.demo-menu-item').forEach(function(btn) { btn.classList.remove('active'); });
+            var activeBtn = document.getElementById('menu-item-' + tabName);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            toggleDemoMenu(false);
+        }
+
+        document.addEventListener('click', function(e) {
+            var menu = document.getElementById('demo-menu');
+            var card = document.getElementById('demo-menu-card');
+            var trigger = document.getElementById('demo-menu-trigger');
+            if (!card || !trigger) return;
+            if (card.classList.contains('hidden')) return;
+            if (card.contains(e.target) || trigger.contains(e.target)) return;
+            toggleDemoMenu(false);
+        });
+
         function switchTab(buttonEl, tabName) {
-            document.querySelectorAll('.demo-tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.demo-tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + tabName).classList.add('active');
-            if (buttonEl) buttonEl.classList.add('active');
+            openDemoPanel(tabName);
+            if (buttonEl) {
+                document.querySelectorAll('.demo-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                buttonEl.classList.add('active');
+            }
             if (tabName === '3d' && typeof window.switchBuilderWorkspace === 'function') {
                 window.switchBuilderWorkspace(window._activeBuilderWorkspace || 'venue');
             }
