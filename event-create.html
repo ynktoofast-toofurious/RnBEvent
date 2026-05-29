@@ -669,35 +669,64 @@
             historyTimer: null
         };
 
+        var editorBootOverlayActive = false;
+
+        function startEditorBootOverlay() {
+            var msg = '';
+            try {
+                var isPending = sessionStorage.getItem('rnb_editor_transition') === '1';
+                if (!isPending) return;
+                msg = sessionStorage.getItem('rnb_editor_transition_msg') || 'Opening your editor...';
+            } catch(_) { return; }
+            editorBootOverlayActive = true;
+            showAuthOverlay(msg);
+        }
+
+        function finishEditorBootOverlay() {
+            if (!editorBootOverlayActive) return;
+            editorBootOverlayActive = false;
+            try {
+                sessionStorage.removeItem('rnb_editor_transition');
+                sessionStorage.removeItem('rnb_editor_transition_msg');
+            } catch(_) {}
+            hideAuthOverlay();
+        }
+
         /* -- Init ------------------------------------- */
-        function _runInit() {
+        async function _runInit() {
             wireOtpInputs();
+            startEditorBootOverlay();
             var params = new URLSearchParams(location.search);
             // Dev bypass: ?skip=3 jumps straight to editor
             var skipStep = parseInt(params.get('skip'));
             if (skipStep >= 2 && skipStep <= 5) {
                 state.creatorToken = state.creatorToken || 'dev-bypass';
                 state.creator = state.creator || { name: 'Dev User', phone: '+17160000000' };
-                if (skipStep >= 3) { goToEditor(); return; }
+                if (skipStep >= 3) { goToEditor(); finishEditorBootOverlay(); return; }
                 goToStep(skipStep);
+                finishEditorBootOverlay();
                 return;
             }
             // Edit an existing draft (from dashboard)
             var draftId = params.get('draft');
             if (state.creatorToken && draftId) {
                 goToEditor();
-                setTimeout(function() { loadDraftIntoEditor(draftId); }, 120);
+                await loadDraftIntoEditor(draftId);
+                finishEditorBootOverlay();
                 return;
             }
             // Explicit "new" intent (from dashboard �+ Create�)
             if (state.creatorToken && params.get('new') === '1') {
                 openTypePickerIntro();
+                finishEditorBootOverlay();
                 return;
             }
             // Smart-creation prefill (from Ruthie.ai wizard on dashboard)
             if (state.creatorToken && params.get('prefill') === '1') {
                 goToEditor();
-                setTimeout(applyRuthiePrefill, 220);
+                await new Promise(function(resolve) { setTimeout(resolve, 220); });
+                applyRuthiePrefill();
+                finishEditorBootOverlay();
                 return;
             }
             // Already signed in � send them to the dashboard
@@ -705,6 +734,7 @@
                 window.location.replace('events.html');
                 return;
             }
+            finishEditorBootOverlay();
         }
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', _runInit);
@@ -2422,8 +2452,10 @@
                 client_id:   GOOGLE_CLIENT_ID,
                 callback:    handleGoogleCredential,
                 auto_select: false,
-                cancel_on_tap_outside: true
+                cancel_on_tap_outside: true,
+                use_fedcm_for_prompt: true
             });
+            try { google.accounts.id.disableAutoSelect(); } catch(_) {}
         }
         window._realInitGoogleAuth = _realInitGoogleAuth;
         // If GSI loaded before this script ran, run init now.
@@ -2439,6 +2471,10 @@
                 showErr('err-1-signup', 'Google library not loaded. Check your internet connection.');
                 return;
             }
+            try {
+                google.accounts.id.disableAutoSelect();
+                google.accounts.id.cancel();
+            } catch(_) {}
             google.accounts.id.prompt();
         }
 

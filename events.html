@@ -133,6 +133,49 @@
         }
         .dash-tab.is-active .dash-tab__count { background:rgba(0,0,0,0.12); color:#1a1a1a; }
 
+        /* Editor navigation transition */
+        .dash-nav-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(11,22,11,0.86);
+            backdrop-filter: blur(8px);
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+        .dash-nav-overlay--hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .dash-nav-overlay__card {
+            text-align: center;
+            padding: 18px 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(184,154,94,0.28);
+            background: rgba(19,31,20,0.9);
+            box-shadow: 0 16px 46px rgba(0,0,0,0.36);
+        }
+        .dash-nav-overlay__spinner {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            border: 3px solid rgba(212,184,118,0.18);
+            border-top-color: #d4b876;
+            animation: dashSpin 0.75s linear infinite;
+        }
+        .dash-nav-overlay__text {
+            margin: 0;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #d9c896;
+        }
+        @keyframes dashSpin { to { transform: rotate(360deg); } }
+
         /* ── Launch Your Party: slide-in panel + backdrop ── */
         .lp-overlay { position:fixed; inset:0; z-index:9000; display:flex; justify-content:flex-end; }
         .lp-overlay.lp-overlay--hidden { pointer-events:none; }
@@ -1009,12 +1052,35 @@
         </div>
     </div>
 
+    <div class="dash-nav-overlay dash-nav-overlay--hidden" id="dash-nav-overlay" aria-hidden="true">
+        <div class="dash-nav-overlay__card">
+            <div class="dash-nav-overlay__spinner"></div>
+            <p class="dash-nav-overlay__text" id="dash-nav-overlay-text">Opening editor...</p>
+        </div>
+    </div>
+
     <script>
         var RSVP_API = window.RNB_RSVP_API || 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/rsvp';
         var token   = localStorage.getItem('rnb_creator_token');
         var creator = JSON.parse(localStorage.getItem('rnb_creator') || 'null');
         var allEvents = [];
         var activeTab = 'upcoming';
+
+        function showDashNavOverlay(message) {
+            var overlay = document.getElementById('dash-nav-overlay');
+            var text = document.getElementById('dash-nav-overlay-text');
+            if (text) text.textContent = message || 'Opening editor...';
+            if (overlay) overlay.classList.remove('dash-nav-overlay--hidden');
+        }
+
+        function startEditorNavigation(url, message) {
+            try {
+                sessionStorage.setItem('rnb_editor_transition', '1');
+                sessionStorage.setItem('rnb_editor_transition_msg', message || 'Opening editor...');
+            } catch(_) {}
+            showDashNavOverlay(message || 'Opening editor...');
+            window.location.href = url;
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Require auth — bounce to creator login if missing
@@ -1169,7 +1235,12 @@
         // Intercept any link/button that leads to event-create.html
         document.addEventListener('click', function(e) {
             var a = e.target.closest('a[href^="event-create.html"], a[href="event-create.html"]');
-            if (a && !guardCreate(e)) return;
+            if (!a) return;
+            if (a.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            if (!guardCreate(e)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            startEditorNavigation(a.getAttribute('href') || 'event-create.html', 'Opening your editor...');
         }, true);
 
         function setDashTab(tab) {
@@ -1499,7 +1570,7 @@
                     var ev = allEvents.find(function(e) { return e.eventId === id; });
                     if (!ev) return;
                     if (action === 'edit') {
-                        window.location.href = 'event-create.html?draft=' + encodeURIComponent(id);
+                        startEditorNavigation('event-create.html?draft=' + encodeURIComponent(id), 'Loading draft...');
                     } else if (action === 'preview') {
                         window.open('event.html?id=' + encodeURIComponent(id), '_blank');
                     } else if (action === 'delete') {
@@ -1857,7 +1928,7 @@
             try { localStorage.setItem('rnb_event_prefill', JSON.stringify(wizard.data)); } catch(_) {}
             if (typeof gtag === 'function') gtag('event', 'ruthie_wizard_complete', { event_category: 'Ruthie_AI', event_type: wizard.data.eventType || 'unknown' });
             wizard = null;
-            setTimeout(function() { window.location.href = 'event-create.html?prefill=1'; }, 700);
+            setTimeout(function() { startEditorNavigation('event-create.html?prefill=1', 'Applying your party details...'); }, 700);
         }
 
         /* ── Guest intake (Ruthie collects guests via chat) ── */

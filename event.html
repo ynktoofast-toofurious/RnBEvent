@@ -19,6 +19,9 @@
             <img src="RNB Logo Olive.png" alt="RNB Events">
             RNB EVENTS
         </a>
+        <div class="ev-topbar__right">
+            <a id="guest-home-link" href="/" class="ev-topbar__link">Home</a>
+        </div>
     </header>
 
     <!-- Loading state -->
@@ -42,7 +45,7 @@
             <div class="ev-container" style="max-width:640px">
 
                 <!-- ── INVITATION CARD ── (mirrors the editor's preview exactly) -->
-                <div id="ev-invite-wrap" style="border-radius:8px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.45);background:#0b160b"></div>
+                <div id="ev-invite-wrap" style="max-width:640px;margin:0 auto;border-radius:8px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.45);background:#0b160b"></div>
 
                 <!-- ── DECLINED VIEW ── -->
                 <div id="view-declined" class="hidden" style="margin-top:24px">
@@ -377,9 +380,29 @@
             state.eventId = params.get('id') || window.location.pathname.split('/').filter(Boolean).pop();
 
             if (!state.eventId) return showErrorState();
+            syncGuestTopbarLink();
             loadEvent();
             wireGuestOtpInputs();
         })();
+
+        function syncGuestTopbarLink() {
+            var link = document.getElementById('guest-home-link');
+            if (!link) return;
+            var hasCreator = !!localStorage.getItem('rnb_creator_token');
+            var hasMember = !!localStorage.getItem('rnb_member_token');
+            if (hasCreator) {
+                link.href = 'events.html';
+                link.textContent = 'Dashboard';
+                return;
+            }
+            if (hasMember) {
+                link.href = 'my-events.html';
+                link.textContent = 'My Profile';
+                return;
+            }
+            link.href = '/';
+            link.textContent = 'Home';
+        }
 
         /* ── Load event ──────────────────────────────── */
         async function loadEvent() {
@@ -552,7 +575,11 @@
                     document.getElementById('auth-err-method').textContent = 'Google Sign-In is loading. Try again in a moment.';
                     return;
                 }
-                try { google.accounts.id.prompt(); }
+                try {
+                    google.accounts.id.disableAutoSelect();
+                    google.accounts.id.cancel();
+                    google.accounts.id.prompt();
+                }
                 catch(_) { document.getElementById('auth-err-method').textContent = 'Could not open Google Sign-In. Try again.'; }
             }
         }
@@ -600,8 +627,10 @@
                     client_id:   GOOGLE_CLIENT_ID,
                     callback:    handleGuestGoogleCredential,
                     auto_select: false,
-                    cancel_on_tap_outside: true
+                    cancel_on_tap_outside: true,
+                    use_fedcm_for_prompt: true
                 });
+                google.accounts.id.disableAutoSelect();
             } catch(_) {}
         }
         window._initGuestGoogle = initGuestGoogle;
@@ -742,6 +771,7 @@
                 sessionStorage.setItem('rnb_guest_token', res.guestToken);
                 sessionStorage.setItem('rnb_guest_event', state.eventId);
             } catch(_) {}
+            syncGuestTopbarLink();
         }
 
         async function finishRsvp(res) {

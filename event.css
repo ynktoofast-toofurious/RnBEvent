@@ -3226,6 +3226,7 @@ button.ev-fi-btn .ev-fi-svg svg { width: 18px; height: 18px; }
     padding-right:30px;
 }
 .gp-email__domain:focus { outline:none; border-color:#d4b876; }
+.gp-email__domain option { background:#17231b; color:#f3ede0; }
 .gp-email__custom.hidden { display:none; }
 .gp-email__custom { width:160px; }
 
@@ -3341,6 +3342,7 @@ button.ev-fi-btn .ev-fi-svg svg { width: 18px; height: 18px; }
     padding-right:30px;
 }
 .gp-email__domain:focus { outline:none; border-color:#d4b876; }
+.gp-email__domain option { background:#17231b; color:#f3ede0; }
 .gp-email__custom.hidden { display:none; }
 .gp-email__custom { width:160px; }
 
