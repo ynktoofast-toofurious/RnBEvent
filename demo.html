@@ -1631,6 +1631,8 @@
             let pendingAuth = false;
             let authAttempts = 0;
             let signedInEmail = '';
+            let googleGateReady = false;
+            let googleInitTries = 0;
 
             const gate = document.getElementById('demo-gate');
             const content = document.getElementById('demo-content');
@@ -1769,10 +1771,16 @@
             };
 
             function initGoogleGate() {
+                if (googleGateReady) return;
                 const target = document.getElementById('demo-google-btn');
                 if (!target) return;
                 if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-                    showErr('demo-error-1', 'Google sign-in unavailable. Please refresh the page.');
+                    googleInitTries++;
+                    if (googleInitTries <= 40) {
+                        setTimeout(initGoogleGate, 250);
+                        return;
+                    }
+                    showErr('demo-error-1', 'Google sign-in unavailable right now. Check ad-block/privacy settings and try again.');
                     return;
                 }
 
@@ -1791,6 +1799,9 @@
                     shape: 'pill',
                     width: 260
                 });
+
+                googleGateReady = true;
+                clearErr('demo-error-1');
             }
 
             // Step 2: Validate TOTP
@@ -1868,6 +1879,21 @@
                 }
             }
 
+            function ensureGoogleScript() {
+                const existing = document.querySelector('script[data-rnb-google-gsi="1"]');
+                if (existing) return;
+                const s = document.createElement('script');
+                s.src = 'https://accounts.google.com/gsi/client';
+                s.async = true;
+                s.defer = true;
+                s.dataset.rnbGoogleGsi = '1';
+                s.onload = function() { initGoogleGate(); };
+                s.onerror = function() {
+                    showErr('demo-error-1', 'Google sign-in failed to load. Check network/privacy settings and retry.');
+                };
+                document.head.appendChild(s);
+            }
+
             const totpInput = document.getElementById('demo-totp-input');
             if (totpInput) {
                 totpInput.addEventListener('keydown', function(e) {
@@ -1876,7 +1902,9 @@
             }
 
             // Initialize
+            ensureGoogleScript();
             checkAuth();
+            window.addEventListener('load', initGoogleGate);
         })();
     </script>
 
