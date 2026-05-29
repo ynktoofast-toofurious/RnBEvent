@@ -571,7 +571,10 @@ async function updateEvent(eventId, body, event) {
     const description = sanitizeText(body.description, 1500);
     const eventDate   = String(body.eventDate || '').slice(0, 10);
     const eventTime   = sanitizeText(body.eventTime, 10);
-    const coverImageUrl = sanitizeUrl(body.coverImageUrl);
+    const hasCoverImageUrl = Object.prototype.hasOwnProperty.call(body, 'coverImageUrl');
+    const coverImageUrl = hasCoverImageUrl
+        ? sanitizeUrl(body.coverImageUrl)
+        : sanitizeUrl(existing.Item.coverImageUrl);
     const customization = sanitizeCustomization(body);
     const newStatus   = body.status === 'draft' ? 'draft' : 'published';
     const partyChatEnabled = typeof body.partyChatEnabled === 'boolean'
