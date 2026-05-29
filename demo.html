@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-DK2C6GZWJZ"></script>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
@@ -1141,6 +1142,20 @@
             border-color: #77a361;
         }
 
+        .demo-google-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .demo-google-user {
+            color: #6b7280;
+            font-size: 13px;
+            min-height: 18px;
+        }
+
         .demo-totp-input {
             width: 100%;
             padding: 18px 16px;
@@ -1294,14 +1309,14 @@
     <!-- ACCESS GATE -->
     <div id="demo-gate" class="demo-gate-overlay">
 
-        <!-- STEP 1 — Admin Code -->
+        <!-- STEP 1 — Google Sign-In -->
         <div id="demo-step1" class="demo-gate-card">
             <div class="demo-gate-logo">
                 <img src="RNB Logo Olive.png" alt="RNB Events" class="demo-gate-logo-img">
             </div>
             <p class="demo-gate-label">STAGING ACCESS</p>
             <h1 class="demo-gate-title">Demo Area</h1>
-            <p class="demo-gate-subtitle">Test new features before they go live. Admin access only.</p>
+            <p class="demo-gate-subtitle">Sign in with an approved Google account to continue.</p>
 
             <div class="demo-step-indicator">
                 <div class="demo-step-dot active"><span>1</span></div>
@@ -1310,8 +1325,10 @@
             </div>
 
             <form class="demo-gate-form" onsubmit="return false;">
-                <input type="password" id="demo-access-input" class="demo-gate-input" placeholder="Admin Code" autocomplete="off" maxlength="64">
-                <button type="submit" class="demo-gate-btn" onclick="demoStep1()">NEXT →</button>
+                <div class="demo-google-wrap">
+                    <div id="demo-google-btn"></div>
+                    <p id="demo-google-user" class="demo-google-user"></p>
+                </div>
                 <p id="demo-error-1" class="demo-gate-error" aria-live="polite"></p>
             </form>
         </div>
@@ -1323,7 +1340,7 @@
             </div>
             <p class="demo-gate-label">TWO-FACTOR AUTH</p>
             <h1 class="demo-gate-title">Verify Identity</h1>
-            <p class="demo-gate-subtitle">Enter the 6-digit code from your authenticator app.</p>
+            <p class="demo-gate-subtitle">Enter the same 6-digit authenticator code used for the admin portal.</p>
 
             <div class="demo-step-indicator">
                 <div class="demo-step-dot done"><span>1</span></div>
@@ -1609,20 +1626,27 @@
             'use strict';
 
             const SESSION_KEY = 'rnb_demo_access';
+            const ALLOWED_EMAILS = ['yannicknkongolo7@gmail.com', 'rnbevents716@gmail.com'];
+            const GOOGLE_CLIENT_ID = '1055774009737-vmc62bn3rpcbcpf8h0f6s28kbpvmh359.apps.googleusercontent.com';
             let pendingAuth = false;
             let authAttempts = 0;
+            let signedInEmail = '';
 
             const gate = document.getElementById('demo-gate');
             const content = document.getElementById('demo-content');
-            const input = document.getElementById('demo-access-input');
+            const userLabel = document.getElementById('demo-google-user');
 
-            // SHA-256 hash function
-            async function sha256Hex(str) {
-                const encoder = new TextEncoder();
-                const data = encoder.encode(str);
-                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            function parseJwtPayload(jwt) {
+                if (!jwt || jwt.indexOf('.') === -1) return null;
+                const parts = jwt.split('.');
+                if (parts.length < 2) return null;
+                const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+                const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+                try {
+                    return JSON.parse(atob(padded));
+                } catch (_) {
+                    return null;
+                }
             }
 
             // Decode TOTP key from admin config
@@ -1709,47 +1733,65 @@
                 }
             }
 
-            // Step 1: Validate admin code
-            window.demoStep1 = async function() {
-                const entered = (input ? input.value : '').trim();
-                const cfg = window.ADMIN_CONFIG || {};
+            function completeGoogleStep(email) {
+                signedInEmail = email;
+                if (userLabel) userLabel.textContent = 'Signed in as ' + email;
+                authAttempts = 0;
+                clearErr('demo-error-1');
+                pendingAuth = true;
+                document.getElementById('demo-step1').classList.add('hidden');
+                const step2 = document.getElementById('demo-step2');
+                step2.classList.remove('hidden');
+                const totpInput = document.getElementById('demo-totp-input');
+                if (totpInput) totpInput.focus();
+            }
 
-                if (!entered) {
-                    showErr('demo-error-1', 'Please enter admin code.');
-                    if (input) { input.value = ''; input.focus(); }
+            // Step 1: Google sign-in allowlist check
+            window.onDemoGoogleSignIn = function(response) {
+                const payload = parseJwtPayload(response && response.credential);
+                const email = String(payload && payload.email || '').toLowerCase().trim();
+                const verified = !!(payload && payload.email_verified);
+
+                if (!email || !verified) {
+                    authAttempts++;
+                    showErr('demo-error-1', 'Google sign-in failed. Use a verified Google account.');
                     return;
                 }
 
-                try {
-                    const hash = await sha256Hex(entered);
-                    const validHash = cfg.codeHash;
-
-                    if (hash !== validHash) {
-                        authAttempts++;
-                        showErr('demo-error-1', 'Invalid admin code.');
-                        if (input) { input.value = ''; input.focus(); }
-                        
-                        if (authAttempts >= 5) {
-                            showErr('demo-error-1', 'Too many failed attempts. Please try again later.');
-                            setTimeout(() => { authAttempts = 0; }, 300000); // 5 min lockout
-                        }
-                        return;
-                    }
-
-                    authAttempts = 0;
-                    clearErr('demo-error-1');
-                    pendingAuth = true;
-
-                    document.getElementById('demo-step1').classList.add('hidden');
-                    const step2 = document.getElementById('demo-step2');
-                    step2.classList.remove('hidden');
-                    const totpInput = document.getElementById('demo-totp-input');
-                    if (totpInput) totpInput.focus();
-                } catch (err) {
-                    showErr('demo-error-1', 'Authentication error. Ensure you are using HTTPS.');
-                    console.error('Demo auth error:', err);
+                if (ALLOWED_EMAILS.indexOf(email) === -1) {
+                    authAttempts++;
+                    if (userLabel) userLabel.textContent = 'Signed in as ' + email;
+                    showErr('demo-error-1', 'This Google account is not approved for demo access.');
+                    return;
                 }
+
+                completeGoogleStep(email);
             };
+
+            function initGoogleGate() {
+                const target = document.getElementById('demo-google-btn');
+                if (!target) return;
+                if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+                    showErr('demo-error-1', 'Google sign-in unavailable. Please refresh the page.');
+                    return;
+                }
+
+                window.google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: window.onDemoGoogleSignIn,
+                    auto_select: false
+                });
+
+                target.innerHTML = '';
+                window.google.accounts.id.renderButton(target, {
+                    type: 'standard',
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'signin_with',
+                    shape: 'pill',
+                    width: 260
+                });
+            }
 
             // Step 2: Validate TOTP
             window.demoStep2 = function() {
@@ -1786,6 +1828,7 @@
 
                     if (valid) {
                         authAttempts = 0;
+                        sessionStorage.setItem('rnb_demo_email', signedInEmail || '');
                         sessionStorage.setItem(SESSION_KEY, 'ok');
                         pendingAuth = false;
                         clearErr('demo-error-2');
@@ -1821,15 +1864,8 @@
                 if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
                     showDemoContent();
                 } else {
-                    if (input) input.focus();
+                    initGoogleGate();
                 }
-            }
-
-            // Enter key handlers
-            if (input) {
-                input.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') demoStep1();
-                });
             }
 
             const totpInput = document.getElementById('demo-totp-input');
