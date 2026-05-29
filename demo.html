@@ -1230,6 +1230,42 @@
             margin: 0 auto;
         }
 
+        .demo-menu {
+            max-width: 1200px;
+            margin: 0 auto 24px;
+            padding: 0 20px;
+        }
+
+        .demo-menu-card {
+            background: #fff;
+            border: 1px solid #e7ebea;
+            border-radius: 14px;
+            padding: 16px 18px;
+            box-shadow: 0 8px 30px rgba(44,62,44,0.08);
+        }
+
+        .demo-menu-title {
+            font-size: 12px;
+            letter-spacing: 1.2px;
+            color: #527141;
+            font-weight: 600;
+            margin: 0 0 10px;
+        }
+
+        .demo-menu-list {
+            margin: 0;
+            padding-left: 18px;
+            color: #2c3e2c;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .demo-menu-list a {
+            color: #2c3e2c;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
         .demo-badge {
             display: inline-block;
             background: rgba(255,255,255,0.2);
@@ -1366,6 +1402,17 @@
             <span class="demo-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:5px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>STAGING ENVIRONMENT</span>
             <h1>Feature Testing Area</h1>
             <p>Test new features in a safe environment before deploying to the live site. Changes here won't affect your customers.</p>
+        </div>
+
+        <div class="demo-menu">
+            <div class="demo-menu-card">
+                <p class="demo-menu-title">DEMO MENU</p>
+                <ul class="demo-menu-list">
+                    <li>Chat Concierge</li>
+                    <li>3D Venue Builder</li>
+                    <li>RSVP: <a href="http://localhost:5500/events.html" target="_blank" rel="noopener noreferrer">http://localhost:5500/events.html</a></li>
+                </ul>
+            </div>
         </div>
 
         <!-- Tab Navigation -->
@@ -1780,7 +1827,7 @@
                         setTimeout(initGoogleGate, 250);
                         return;
                     }
-                    showErr('demo-error-1', 'Google sign-in unavailable right now. Check ad-block/privacy settings and try again.');
+                    showErr('demo-error-1', 'Sign-in unavailable right now. Check ad-block/privacy settings and try again.');
                     return;
                 }
 
@@ -1889,7 +1936,7 @@
                 s.dataset.rnbGoogleGsi = '1';
                 s.onload = function() { initGoogleGate(); };
                 s.onerror = function() {
-                    showErr('demo-error-1', 'Google sign-in failed to load. Check network/privacy settings and retry.');
+                    showErr('demo-error-1', 'Sign-in failed to load. Check network/privacy settings and retry.');
                 };
                 document.head.appendChild(s);
             }
