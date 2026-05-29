@@ -896,26 +896,26 @@ textarea.ev-input {
 
 .ev-wizard__header {
     text-align: center;
-    margin-bottom: 40px;
-    padding-top: 40px;
+    margin-bottom: 20px;
+    padding-top: 18px;
 }
 
 .ev-wizard__label {
     font-size: 10px;
     letter-spacing: 4px;
     color: var(--text-soft);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     text-transform: uppercase;
 }
 
 .ev-wizard__title {
-    font-size: 36px;
+    font-size: 34px;
     color: var(--primary);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .ev-wizard__sub {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-mid);
 }
 
@@ -925,7 +925,7 @@ textarea.ev-input {
     align-items: center;
     justify-content: center;
     gap: 0;
-    margin-bottom: 48px;
+    margin-bottom: 26px;
 }
 
 .ev-step-dot {

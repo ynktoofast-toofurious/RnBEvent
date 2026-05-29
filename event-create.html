@@ -48,9 +48,9 @@
         <div class="ev-container">
 
             <div class="ev-wizard__header">
-                <p class="ev-wizard__label">Event Creator</p>
-                <h1 class="ev-wizard__title">Create Your Event</h1>
-                <p class="ev-wizard__sub">Invite guests, collect RSVPs, and curate the night's playlist.</p>
+                <p class="ev-wizard__label">RSVP</p>
+                <h1 class="ev-wizard__title">RSVP by RNB Event</h1>
+                <p class="ev-wizard__sub">Sign in with Google or Phone number</p>
             </div>
 
             <!-- Step progress -->
@@ -58,22 +58,16 @@
                 <div class="ev-step-dot ev-step-dot--active" id="step-dot-1">1</div>
                 <div class="ev-step-line" id="step-line-1"></div>
                 <div class="ev-step-dot" id="step-dot-2">2</div>
-                <div class="ev-step-line" id="step-line-2"></div>
-                <div class="ev-step-dot" id="step-dot-3">3</div>
-                <div class="ev-step-line" id="step-line-3"></div>
-                <div class="ev-step-dot" id="step-dot-4">4</div>
-                <div class="ev-step-line" id="step-line-4"></div>
-                <div class="ev-step-dot" id="step-dot-5">5</div>
             </div>
 
             <!-- -- STEP 1: Account -- -->
             <div id="panel-1" class="ev-step-panel">
-                <p class="ev-step-panel__label">Step 1 of 5</p>
-                <h2 class="ev-step-panel__title" id="auth-panel-title">Create Account</h2>
-                <p class="ev-step-panel__sub" id="auth-panel-sub">Enter your details to get started. We'll verify your phone number next.</p>
+                <p class="ev-step-panel__label">Step 1 of 2</p>
+                <h2 class="ev-step-panel__title" id="auth-panel-title">Sign In</h2>
+                <p class="ev-step-panel__sub" id="auth-panel-sub">Sign in with Google or Phone number</p>
 
                 <!-- Sign-up form -->
-                <div id="form-signup">
+                <div id="form-signup" class="hidden">
                     <div class="ev-form-row">
                         <label class="ev-form-label">Your Name</label>
                         <input type="text" id="s1-name" class="ev-input" placeholder="First &amp; last name" maxlength="100" autocomplete="name">
@@ -103,7 +97,7 @@
                 </div>
 
                 <!-- Login form -->
-                <div id="form-login" class="hidden">
+                <div id="form-login">
                     <div class="ev-form-row">
                         <label class="ev-form-label">Mobile Phone</label>
                         <input type="tel" id="l1-phone" class="ev-input" placeholder="(716) 555-0000" maxlength="20" autocomplete="tel">
@@ -127,7 +121,7 @@
 
             <!-- -- STEP 2: OTP Verify -- -->
             <div id="panel-2" class="ev-step-panel hidden">
-                <p class="ev-step-panel__label">Step 2 of 5</p>
+                <p class="ev-step-panel__label">Step 2 of 2</p>
                 <h2 class="ev-step-panel__title">Verify Your Phone</h2>
                 <p class="ev-step-panel__sub" id="otp-verify-sub">Enter the 6-digit code sent to your phone.</p>
 
@@ -2069,7 +2063,7 @@
             document.getElementById('form-signup').classList.add('hidden');
             document.getElementById('form-login').classList.remove('hidden');
             document.getElementById('auth-panel-title').textContent = 'Sign In';
-            document.getElementById('auth-panel-sub').textContent = 'Welcome back. Sign in to manage your events.';
+            document.getElementById('auth-panel-sub').textContent = 'Sign in with Google or Phone number';
         }
 
         function showSignup() {
