@@ -56,6 +56,7 @@ const BUCKET      = 'rnbevents716';
 const FROM_EMAIL  = 'RNB Events <info@rnbevents716.com>';
 const SITE_URL    = 'https://rnbevents716.com';
 const URTHEDJ_API = process.env.URTHEDJ_API_URL || '';
+const COVER_CDN   = String(process.env.COVER_CDN_URL || '').replace(/\/+$/, '');
 
 const T = {
     EVENTS:       'rnb-events',
@@ -1426,7 +1427,9 @@ async function getCoverUploadUrl(eventId, body, event) {
     const key         = `rsvp-covers/${eventId}.${ext === 'jpg' ? 'jpeg' : ext}`;
     const cmd         = new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType });
     const uploadUrl   = await getSignedUrl(s3, cmd, { expiresIn: 300 });
-    const publicUrl   = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`;
+    const publicUrl   = COVER_CDN
+        ? `${COVER_CDN}/${key}`
+        : `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`;
 
     return respond(200, { uploadUrl, publicUrl });
 }
