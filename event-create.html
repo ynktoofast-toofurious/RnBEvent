@@ -1325,7 +1325,8 @@
                 _gpQueue.push({ name: name, phone: phone, email: email || null });
             }
             if (!_gpQueue.length) { showErr('ed-err-guests-single', 'Add at least one guest.'); return; }
-            await _gpSendGuests(_gpQueue, 'single');
+            var queued = _gpQueue.slice();
+            await gpPromptInviteSendMode(queued, 'single');
             _gpQueue = [];
             renderPills([], 'gp-single-pills');
         }
@@ -1501,16 +1502,52 @@
             document.getElementById('ed-success-guests').textContent = '';
             var list = gpReadGrid();
             if (!list.length) { showErr('ed-err-guests', 'Add at least one row with a phone or email.'); return; }
-            // Validate: each must have phone OR email
-            var invalid = list.filter(function(g){ return !g.phone; });
-            if (invalid.length === list.length) {
-                showErr('ed-err-guests', 'Phone is required for at least one guest.');
-                return;
-            }
-            await _gpSendGuests(list.map(function(g){ return { name:g.name, phone:g.phone, email:g.email }; }), 'bulk');
+            await gpPromptInviteSendMode(list.map(function(g){ return { name:g.name, phone:g.phone, email:g.email }; }), 'bulk');
         }
 
-        async function _gpSendGuests(guests, mode) {
+        async function gpPromptInviteSendMode(guests, mode) {
+            var errId = mode === 'single' ? 'ed-err-guests-single' : 'ed-err-guests';
+            clearErr(errId);
+            var emails = guests.filter(function(g) { return !!(g.email && String(g.email).trim()); });
+            if (!emails.length) {
+                showErr(errId, 'Add at least one email address to send invites.');
+                return;
+            }
+            var defaultMode = (mode === 'bulk') ? 'mass' : 'individual';
+            var body = 'How would you like to send <strong>' + emails.length + '</strong> email invite' + (emails.length === 1 ? '' : 's') + '?';
+            showModal(
+                'Send Email Invites',
+                body,
+                [
+                    { label: 'Cancel' },
+                    {
+                        label: 'Individual send',
+                        onClick: async function() {
+                            closeModal();
+                            await _gpSendGuests(guests, mode, 'individual');
+                        }
+                    },
+                    {
+                        label: 'Mass send',
+                        primary: true,
+                        onClick: async function() {
+                            closeModal();
+                            await _gpSendGuests(guests, mode, 'mass');
+                        }
+                    }
+                ]
+            );
+            if (defaultMode === 'individual') {
+                // Keep the default CTA visual intent aligned for single-guest mode.
+                var actions = document.getElementById('ev-modal-actions');
+                if (actions && actions.children && actions.children[2] && actions.children[1]) {
+                    actions.children[2].classList.remove('ev-btn--primary');
+                    actions.children[1].classList.add('ev-btn--primary');
+                }
+            }
+        }
+
+        async function _gpSendGuests(guests, mode, inviteMode) {
             var btnId = mode === 'single' ? 'btn-add-guests-single' : 'btn-add-guests';
             var errId = mode === 'single' ? 'ed-err-guests-single'   : 'ed-err-guests';
             var okId  = mode === 'single' ? 'ed-success-guests-single' : 'ed-success-guests';
@@ -1519,11 +1556,22 @@
                 if (!ok) return;
             }
             setBtnLoading('#' + btnId, true, 'Sending\u2026');
-            var res = await apiPost('/events/' + state.eventId + '/guests', { guests: guests, method: 'bulk' }, state.creatorToken);
+            var res = await apiPost('/events/' + state.eventId + '/guests', {
+                guests: guests,
+                method: mode === 'bulk' ? 'bulk' : 'manual',
+                inviteMode: inviteMode === 'mass' ? 'mass' : 'individual'
+            }, state.creatorToken);
             setBtnLoading('#' + btnId, false, 'Send invites');
             if (res.error) { showErr(errId, res.error); return; }
             var added = res.added || guests.length;
-            document.getElementById(okId).textContent = added + ' guest(s) added' + (res.skipped ? ', ' + res.skipped + ' skipped.' : '.');
+            var sent = Number(res.emailsSent || 0);
+            var failed = Number(res.emailsFailed || 0);
+            var delivery = (res.inviteMode || inviteMode || 'individual') === 'mass' ? 'mass' : 'individual';
+            var msg = added + ' guest(s) added';
+            msg += ', ' + sent + ' email invite(s) sent via ' + delivery + ' mode';
+            if (failed > 0) msg += ', ' + failed + ' failed';
+            if (res.skipped) msg += ', ' + res.skipped + ' skipped';
+            document.getElementById(okId).textContent = msg + '.';
             renderPills(guests, 'ed-guest-pills');
             if (mode === 'bulk') gpClearGrid();
         }

@@ -859,28 +859,59 @@ async function addGuests(eventId, body, event) {
 
     const now    = new Date().toISOString();
     const method = body.method === 'bulk' ? 'bulk' : 'manual';
+    const inviteMode = body.inviteMode === 'mass' ? 'mass' : 'individual';
     let added = 0, skipped = 0;
+    const emailRecipients = [];
 
     const ops = guests.map(async g => {
-        const phone     = sanitizePhone(g.phone);
+        const phone      = sanitizePhone(g.phone);
         const guestName = sanitizeText(g.name, 100) || 'Guest';
         const guestEmail = g.email ? sanitizeEmail(g.email) : null;
 
-        if (!phone) { skipped++; return; }
+        if (!phone && !guestEmail) { skipped++; return; }
+
+        const guestPhoneKey = phone || `email#${crypto.createHash('sha1').update(guestEmail).digest('hex').slice(0, 16)}`;
 
         await ddb.send(new PutCommand({
             TableName: T.REGISTRY,
-            Item: { eventId, guestPhone: phone, guestName, guestEmail, invitedAt: now, inviteMethod: method }
+            Item: { eventId, guestPhone: guestPhoneKey, guestName, guestEmail, contactPhone: phone || '', invitedAt: now, inviteMethod: method, inviteMode }
         }));
         added++;
 
         if (guestEmail) {
-            await sendInviteEmail(guestEmail, guestName, evRes.Item).catch(() => {});
+            emailRecipients.push({ email: guestEmail, name: guestName });
         }
     });
 
     await Promise.allSettled(ops);
-    return respond(200, { added, skipped });
+
+    let emailsSent = 0;
+    let emailsFailed = 0;
+
+    const uniqueRecipients = [];
+    const seen = new Set();
+    for (const r of emailRecipients) {
+        const key = `${r.email}|${r.name}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        uniqueRecipients.push(r);
+    }
+
+    if (uniqueRecipients.length) {
+        if (inviteMode === 'mass' && uniqueRecipients.length > 1) {
+            const massRes = await sendInviteEmailMass(uniqueRecipients.map(r => r.email), evRes.Item).catch(() => ({ sent: 0, failed: uniqueRecipients.length }));
+            emailsSent += massRes.sent || 0;
+            emailsFailed += massRes.failed || 0;
+        } else {
+            const sendRes = await Promise.allSettled(uniqueRecipients.map(r => sendInviteEmail(r.email, r.name, evRes.Item)));
+            sendRes.forEach((it) => {
+                if (it.status === 'fulfilled') emailsSent++;
+                else emailsFailed++;
+            });
+        }
+    }
+
+    return respond(200, { added, skipped, inviteMode, emailsQueued: uniqueRecipients.length, emailsSent, emailsFailed });
 }
 
 /* POST /otp/send ── send guest RSVP OTP */
@@ -1646,6 +1677,49 @@ async function sendInviteEmail(toEmail, guestName, ev) {
             Body:    { Html: { Data: html } }
         }
     }));
+}
+
+async function sendInviteEmailMass(toEmails, ev) {
+    const list = Array.isArray(toEmails) ? toEmails.filter(Boolean) : [];
+    if (!list.length) return { sent: 0, failed: 0 };
+
+    const unique = Array.from(new Set(list));
+    const dateStr  = ev.eventTime ? `${ev.eventDate} at ${ev.eventTime}` : ev.eventDate;
+    const eventUrl = `${SITE_URL}/event/${ev.eventId}`;
+    const html     = emailBase(`
+      <h2>You're invited</h2>
+      <p>Hi there,</p>
+      <p style="margin-top:12px"><strong>${ev.creatorName}</strong> invited you to <strong>${ev.eventName}</strong>.</p>
+      <div class="detail">
+        <p><strong>DATE</strong> &nbsp;—&nbsp; ${dateStr}</p>
+        <p><strong>VENUE</strong> &nbsp;—&nbsp; ${ev.venue}</p>
+      </div>
+      <a href="${eventUrl}" class="cta">VIEW INVITATION &amp; RSVP</a>
+      <p class="note">Or paste this link: ${eventUrl}</p>
+    `);
+
+    const chunks = [];
+    for (let i = 0; i < unique.length; i += 45) chunks.push(unique.slice(i, i + 45));
+
+    let sent = 0;
+    let failed = 0;
+    for (const group of chunks) {
+        try {
+            await ses.send(new SendEmailCommand({
+                Source: FROM_EMAIL,
+                Destination: { BccAddresses: group },
+                Message: {
+                    Subject: { Data: `You're invited — ${ev.eventName}` },
+                    Body:    { Html: { Data: html } }
+                }
+            }));
+            sent += group.length;
+        } catch (_) {
+            failed += group.length;
+        }
+    }
+
+    return { sent, failed };
 }
 
 async function notifyCreatorOfRsvp(ev, guestName, status) {
