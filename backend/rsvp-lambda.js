@@ -488,7 +488,7 @@ async function createEvent(body, event) {
     const hasCoverImageUrl = Object.prototype.hasOwnProperty.call(body, 'coverImageUrl');
     const coverImageUrl = hasCoverImageUrl
         ? sanitizeUrl(body.coverImageUrl)
-        : sanitizeUrl(existing.Item.coverImageUrl);
+        : '';
     const customization = sanitizeCustomization(body);
 
     if (!eventName || eventName.length < 2) return respond(400, { error: 'Event name required' });
@@ -547,6 +547,7 @@ async function createEvent(body, event) {
             coverImageUrl,
             status,
             urthedj_sessionId,
+            partyChatEnabled: true,
             ...customization,
             createdAt:         new Date().toISOString()
         }
@@ -573,15 +574,37 @@ async function updateEvent(eventId, body, event) {
     const coverImageUrl = sanitizeUrl(body.coverImageUrl);
     const customization = sanitizeCustomization(body);
     const newStatus   = body.status === 'draft' ? 'draft' : 'published';
+    const partyChatEnabled = typeof body.partyChatEnabled === 'boolean'
+        ? body.partyChatEnabled
+        : (existing.Item.partyChatEnabled !== false);
 
     if (!eventName || eventName.length < 2) return respond(400, { error: 'Event name required' });
     if (!eventDate || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return respond(400, { error: 'Valid date required' });
     if (!venue) return respond(400, { error: 'Venue required' });
 
+    // Ensure published events always have a chat session as soon as they go live.
+    let urthedjSessionId = existing.Item.urthedj_sessionId || null;
+    if (newStatus === 'published' && !urthedjSessionId && URTHEDJ_API) {
+        try {
+            const pr = await fetch(`${URTHEDJ_API}/party/create`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({
+                    partyName: eventName || existing.Item.eventName || 'RNB Party',
+                    createdBy: creator.name || existing.Item.creatorName || 'Host'
+                })
+            });
+            if (pr.ok) {
+                const pd = await pr.json();
+                urthedjSessionId = pd.sessionId || pd.session?.sessionId || null;
+            }
+        } catch { /* non-fatal */ }
+    }
+
     await ddb.send(new UpdateCommand({
         TableName: T.EVENTS,
         Key: { eventId },
-        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u, eventEmoji=:ee, iconStyle=:is, theme=:th, #fnt=:ft, effect=:ef, fieldIcons=:fi, customLayout=:cl, addons=:ad, requireVerify=:rv, showGuests=:sg, playlistEnabled=:pl',
+        UpdateExpression: 'SET eventName=:n, eventType=:t, eventDate=:d, eventTime=:tm, venue=:v, description=:desc, coverImageUrl=:img, #st=:s, updatedAt=:u, eventEmoji=:ee, iconStyle=:is, theme=:th, #fnt=:ft, effect=:ef, fieldIcons=:fi, customLayout=:cl, addons=:ad, requireVerify=:rv, showGuests=:sg, playlistEnabled=:pl, urthedj_sessionId=:sid, partyChatEnabled=:pce',
         ExpressionAttributeNames:  { '#st': 'status', '#fnt': 'font' },
         ExpressionAttributeValues: {
             ':n': eventName, ':t': eventType, ':d': eventDate, ':tm': eventTime,
@@ -597,7 +620,9 @@ async function updateEvent(eventId, body, event) {
             ':ad': Array.isArray(customization.addons) ? customization.addons : [],
             ':rv': customization.requireVerify === false ? false : true,
             ':sg': customization.showGuests    === false ? false : true,
-            ':pl': customization.playlistEnabled === false ? false : true
+            ':pl': customization.playlistEnabled === false ? false : true,
+            ':sid': urthedjSessionId,
+            ':pce': partyChatEnabled
         }
     }));
 
@@ -661,13 +686,63 @@ async function getEventFull(eventId, event) {
 
     // Strip internal fields and expose only a safe party chat URL when available.
     const { creatorEmail, urthedj_sessionId, ...safe } = res.Item;
-    if (urthedj_sessionId && URTHEDJ_API) {
+    safe.partyChatEnabled = res.Item.partyChatEnabled !== false;
+    if (safe.partyChatEnabled && res.Item.status === 'published' && urthedj_sessionId && URTHEDJ_API) {
         const siteBase = String(URTHEDJ_API).replace(/\/api\/?$/i, '');
         safe.partyChatUrl = `${siteBase}/party/${urthedj_sessionId}`;
     } else {
         safe.partyChatUrl = null;
     }
     return respond(200, safe);
+}
+
+/* PUT /events/:id/chat ── host can enable/disable party chat */
+async function setPartyChatEnabled(eventId, body, event) {
+    const creator = await getCreatorFromToken(event);
+    if (!creator) return respond(401, { error: 'Authentication required' });
+
+    const evRes = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
+    if (!evRes?.Item) return respond(404, { error: 'Event not found' });
+    if (evRes.Item.creatorId !== creator.creatorId) return respond(403, { error: 'Access denied' });
+
+    const enabled = body.enabled !== false;
+    let sessionId = evRes.Item.urthedj_sessionId || null;
+
+    if (enabled && evRes.Item.status === 'published' && !sessionId && URTHEDJ_API) {
+        try {
+            const pr = await fetch(`${URTHEDJ_API}/party/create`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({
+                    partyName: evRes.Item.eventName || 'RNB Party',
+                    createdBy: evRes.Item.creatorName || creator.name || 'Host'
+                })
+            });
+            if (pr.ok) {
+                const pd = await pr.json();
+                sessionId = pd.sessionId || pd.session?.sessionId || null;
+            }
+        } catch { /* non-fatal */ }
+    }
+
+    await ddb.send(new UpdateCommand({
+        TableName: T.EVENTS,
+        Key: { eventId },
+        UpdateExpression: 'SET partyChatEnabled = :enabled, urthedj_sessionId = :sid, updatedAt = :u',
+        ExpressionAttributeValues: {
+            ':enabled': enabled,
+            ':sid': sessionId,
+            ':u': new Date().toISOString()
+        }
+    }));
+
+    let partyChatUrl = null;
+    if (enabled && sessionId && URTHEDJ_API) {
+        const siteBase = String(URTHEDJ_API).replace(/\/api\/?$/i, '');
+        partyChatUrl = `${siteBase}/party/${sessionId}`;
+    }
+
+    return respond(200, { ok: true, enabled, partyChatUrl });
 }
 
 /* GET /events/:id/my-songs ── guest's saved songs */
@@ -1281,9 +1356,18 @@ async function getEventAdmin(eventId, event) {
     );
 
     const songs = songResults.flatMap(r => r.status === 'fulfilled' ? (r.value.Items || []) : []);
+    const rawEvent = evRes.Item;
+    const siteBase = URTHEDJ_API ? String(URTHEDJ_API).replace(/\/api\/?$/i, '') : '';
+    const safeEvent = {
+        ...rawEvent,
+        partyChatEnabled: rawEvent.partyChatEnabled !== false,
+        partyChatUrl: (rawEvent.partyChatEnabled !== false && rawEvent.status === 'published' && rawEvent.urthedj_sessionId && siteBase)
+            ? `${siteBase}/party/${rawEvent.urthedj_sessionId}`
+            : null
+    };
 
     return respond(200, {
-        event:   evRes.Item,
+        event:   safeEvent,
         guests,
         songs:   songs.sort((a, b) => a.guestName.localeCompare(b.guestName)),
         summary: {
@@ -1536,8 +1620,6 @@ async function sendInviteEmail(toEmail, guestName, ev) {
 async function notifyCreatorOfRsvp(ev, guestName, status) {
     if (!ev.creatorEmail) return;
     const html = emailBase(`
-        if (method === 'POST' && parts[0] === 'events' && parts[2] === 'update')     return await updateEvent(parts[1], body, event);
-        if (method === 'DELETE' && parts[0] === 'events' && parts.length === 2)      return await deleteEvent(parts[1], event);
       <h2>New RSVP</h2>
       <p><strong>${guestName}</strong> just ${status === 'confirmed' ? 'confirmed their attendance' : 'declined'} for <strong>${ev.eventName}</strong>.</p>
       <div class="detail">
@@ -1597,6 +1679,7 @@ exports.handler = async (event) => {
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'songs')      return await addSong(parts[1], body, event);
         if (method === 'DELETE' && parts[0] === 'events' && parts[2] === 'songs' && parts[3]) return await removeSong(parts[1], parts[3], event);
         if (method === 'GET'  && parts[0] === 'events' && parts[2] === 'admin')      return await getEventAdmin(parts[1], event);
+        if (method === 'PUT'  && parts[0] === 'events' && parts[2] === 'chat')       return await setPartyChatEnabled(parts[1], body, event);
         if (method === 'PUT'  && parts[0] === 'events' && parts[2] === 'seating')    return await updateSeating(parts[1], body, event);
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'upload-url') return await getCoverUploadUrl(parts[1], body, event);
 

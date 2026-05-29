@@ -63,22 +63,31 @@
 
                     <div class="ev-card" id="optional-steps-card" style="margin-bottom:16px;padding:16px 18px">
                         <p class="ev-card__label" style="margin-bottom:8px">Optional Steps</p>
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-                            <div style="font-size:12px;color:#527141;line-height:1.5">
-                                <strong style="color:#2c3e2c">3 steps:</strong>
-                                1. Add Songs to the Playlist&nbsp;&nbsp;2. Leave a comment for the host&nbsp;&nbsp;3. View the party chat
+                        <div class="opt-flow">
+                            <div class="opt-flow__rail">
+                                <button type="button" id="optional-marker-1" class="opt-flow__marker" onclick="goToOptionalStep(1)">
+                                    <span id="opt-dot-1" class="ev-songs__dot"></span>
+                                    <span>Add Songs</span>
+                                </button>
+                                <button type="button" id="optional-marker-2" class="opt-flow__marker" onclick="goToOptionalStep(2)">
+                                    <span id="opt-dot-2" class="ev-songs__dot"></span>
+                                    <span>Leave Comment</span>
+                                </button>
+                                <button type="button" id="optional-marker-3" class="opt-flow__marker" onclick="goToOptionalStep(3)">
+                                    <span id="opt-dot-3" class="ev-songs__dot"></span>
+                                    <span>Party Chat</span>
+                                </button>
                             </div>
-                            <div id="optional-step-dots" style="display:flex;gap:6px">
-                                <span id="opt-dot-1" class="ev-songs__dot"></span>
-                                <span id="opt-dot-2" class="ev-songs__dot"></span>
-                                <span id="opt-dot-3" class="ev-songs__dot"></span>
+                            <div class="opt-flow__body">
+                                <p id="optional-step-title" style="margin:0;font-size:13px;color:#2c3e2c;font-weight:600">Step 1 of 3: Add Songs to the Playlist</p>
+                                <p style="margin:4px 0 0;font-size:12px;color:#527141">Move through each step vertically using Next and Back.</p>
                             </div>
                         </div>
                         <p id="optional-complete-msg" class="hidden" style="margin:10px 0 0;font-size:13px;color:#2c3e2c;font-weight:600">Can't wait to see you there!</p>
                     </div>
 
                     <!-- Song requests card -->
-                    <div class="ev-card ev-card--green" id="song-card">
+                    <div class="ev-card ev-card--green optional-step-panel" id="song-card" data-step="1">
                         <p class="ev-card__label">Optional</p>
                         <h3 class="ev-card__title" style="font-size:22px">Add Songs to the Playlist</h3>
                         <p style="font-size:13px;color:#527141;margin-bottom:20px;line-height:1.6">
@@ -119,9 +128,13 @@
                         </div>
 
                         <p id="song-error" class="ev-error"></p>
+
+                        <div class="ev-step-actions" style="margin-top:10px">
+                            <button type="button" class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToOptionalStep(2)">Next: Comment</button>
+                        </div>
                     </div>
 
-                    <div class="ev-card" id="host-comment-card" style="margin-top:14px">
+                    <div class="ev-card optional-step-panel hidden" id="host-comment-card" data-step="2" style="margin-top:14px">
                         <p class="ev-card__label">Step 2</p>
                         <h3 class="ev-card__title" style="font-size:22px">Leave a comment for the host</h3>
                         <p style="font-size:13px;color:#527141;margin-bottom:12px;line-height:1.6">
@@ -132,9 +145,13 @@
                             <p id="host-comment-status" style="margin:0;font-size:12px;color:#77a361"></p>
                             <button type="button" class="ev-btn ev-btn--primary ev-btn--sm" id="btn-save-host-comment" onclick="saveHostComment()">Save Comment</button>
                         </div>
+                        <div class="ev-step-actions" style="margin-top:10px">
+                            <button type="button" class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToOptionalStep(1)">Back</button>
+                            <button type="button" class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToOptionalStep(3)">Next: Party Chat</button>
+                        </div>
                     </div>
 
-                    <div class="ev-card" id="party-chat-card" style="margin-top:14px">
+                    <div class="ev-card optional-step-panel hidden" id="party-chat-card" data-step="3" style="margin-top:14px">
                         <p class="ev-card__label">Step 3</p>
                         <h3 class="ev-card__title" style="font-size:22px">View the party chat</h3>
                         <p style="font-size:13px;color:#527141;margin-bottom:12px;line-height:1.6">
@@ -143,6 +160,9 @@
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
                             <p id="party-chat-status" style="margin:0;font-size:12px;color:#77a361">Chat link will appear when available.</p>
                             <button type="button" class="ev-btn ev-btn--outline ev-btn--sm" id="btn-open-party-chat" onclick="openPartyChat()" disabled>Open Party Chat</button>
+                        </div>
+                        <div class="ev-step-actions" style="margin-top:10px">
+                            <button type="button" class="ev-btn ev-btn--outline ev-btn--sm" onclick="goToOptionalStep(2)">Back</button>
                         </div>
                     </div>
 
@@ -341,7 +361,8 @@
             mySongs:      [],
             searchTimer:  null,
             hostCommentSaved: false,
-            partyChatViewed: false
+            partyChatViewed: false,
+            currentOptionalStep: 1
         };
 
         /* ── Init ───────────────────────────────────── */
@@ -855,6 +876,7 @@
             var songCard = document.getElementById('song-card');
             if (songCard) songCard.style.display = (ev.playlistEnabled === false) ? 'none' : '';
             syncOptionalStepState();
+            renderOptionalStepCarousel();
         }
 
         function showDeclinedView() {
@@ -989,6 +1011,7 @@
             document.getElementById('song-error').textContent = '';
             showToast('Song added to your playlist!');
             syncOptionalStepState();
+            if (state.currentOptionalStep === 1) goToOptionalStep(2);
         }
 
         async function removeSong(idx) {
@@ -1017,7 +1040,7 @@
         }
 
         function syncOptionalStepState() {
-            var step1 = state.mySongs.length > 0;
+            var step1 = (state.event && state.event.playlistEnabled === false) ? true : state.mySongs.length > 0;
             var step2 = !!state.hostCommentSaved;
             var step3 = !!state.partyChatViewed;
 
@@ -1027,6 +1050,13 @@
             if (d1) d1.classList.toggle('ev-songs__dot--filled', step1);
             if (d2) d2.classList.toggle('ev-songs__dot--filled', step2);
             if (d3) d3.classList.toggle('ev-songs__dot--filled', step3);
+
+            var m1 = document.getElementById('optional-marker-1');
+            var m2 = document.getElementById('optional-marker-2');
+            var m3 = document.getElementById('optional-marker-3');
+            if (m1) m1.classList.toggle('opt-flow__marker--done', step1);
+            if (m2) m2.classList.toggle('opt-flow__marker--done', step2);
+            if (m3) m3.classList.toggle('opt-flow__marker--done', step3);
 
             var done = document.getElementById('optional-complete-msg');
             if (done) done.classList.toggle('hidden', !(step1 && step2 && step3));
@@ -1038,6 +1068,41 @@
             if (chatStatus) {
                 if (chatUrl) chatStatus.textContent = 'Party chat is ready.';
                 else chatStatus.textContent = 'Chat link will appear when available.';
+            }
+
+            renderOptionalStepCarousel();
+        }
+
+        function goToOptionalStep(step) {
+            var next = Math.max(1, Math.min(3, Number(step) || 1));
+            state.currentOptionalStep = next;
+            renderOptionalStepCarousel();
+        }
+
+        function renderOptionalStepCarousel() {
+            var step = state.currentOptionalStep || 1;
+
+            if (state.event && state.event.playlistEnabled === false && step === 1) {
+                step = 2;
+                state.currentOptionalStep = 2;
+            }
+
+            var panels = document.querySelectorAll('.optional-step-panel');
+            panels.forEach(function(panel) {
+                var panelStep = Number(panel.getAttribute('data-step') || 0);
+                panel.classList.toggle('hidden', panelStep !== step);
+            });
+
+            var markers = document.querySelectorAll('.opt-flow__marker');
+            markers.forEach(function(marker, idx) {
+                marker.classList.toggle('opt-flow__marker--active', (idx + 1) === step);
+            });
+
+            var title = document.getElementById('optional-step-title');
+            if (title) {
+                if (step === 1) title.textContent = 'Step 1 of 3: Add Songs to the Playlist';
+                else if (step === 2) title.textContent = 'Step 2 of 3: Leave a comment for the host';
+                else title.textContent = 'Step 3 of 3: Open the party chat';
             }
         }
 
@@ -1068,6 +1133,7 @@
             state.hostCommentSaved = true;
             status.textContent = 'Comment saved for the host.';
             syncOptionalStepState();
+            goToOptionalStep(3);
         }
 
         function openPartyChat() {

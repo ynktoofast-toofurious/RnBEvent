@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Party Console | RNB Events</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f1711;
+            --bg-card: #17221a;
+            --text: #f1e9d8;
+            --muted: #aebda5;
+            --gold: #d4b876;
+            --sage: #77a361;
+            --line: rgba(212, 184, 118, 0.2);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(800px 500px at 80% -10%, rgba(119,163,97,0.18), transparent 60%),
+                radial-gradient(900px 600px at -10% 100%, rgba(212,184,118,0.14), transparent 60%),
+                var(--bg);
+        }
+
+        .top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(11, 18, 13, 0.75);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand {
+            color: var(--gold);
+            letter-spacing: 2px;
+            font-size: 12px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top a.btn {
+            text-decoration: none;
+        }
+
+        .btn {
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+            padding: 9px 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 12px;
+            letter-spacing: 0.6px;
+        }
+
+        .btn:hover { border-color: var(--gold); }
+
+        .page {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1.35fr 1fr;
+            gap: 16px;
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(23,34,26,0.95), rgba(16,24,18,0.95));
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .eyebrow {
+            margin: 0 0 6px;
+            font-size: 10px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+        }
+
+        h1 {
+            margin: 0;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            font-weight: 500;
+            letter-spacing: 0.4px;
+        }
+
+        .sub {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .summary {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0,1fr));
+            gap: 8px;
+        }
+
+        .pill {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.02);
+            padding: 9px;
+        }
+
+        .pill__n {
+            font-size: 18px;
+            color: var(--gold);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .pill__l {
+            margin: 2px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .table-wrap {
+            margin-top: 12px;
+            overflow: auto;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+            font-size: 12px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(212,184,118,0.12);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            font-size: 10px;
+            letter-spacing: 1.4px;
+            color: var(--muted);
+            text-transform: uppercase;
+            background: rgba(255,255,255,0.02);
+            position: sticky;
+            top: 0;
+        }
+
+        .chat-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .toggle input { accent-color: var(--sage); }
+
+        .chat-status {
+            font-size: 12px;
+            color: var(--muted);
+            margin: 0 0 10px;
+        }
+
+        .chat-frame {
+            width: 100%;
+            height: 560px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #0c140d;
+        }
+
+        .hidden { display: none !important; }
+
+        .error {
+            color: #ffb2b2;
+            font-size: 13px;
+        }
+
+        @media (max-width: 980px) {
+            .page { grid-template-columns: 1fr; }
+            .summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .chat-frame { height: 420px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="top">
+        <a class="brand" href="events.html">RNB EVENTS LIVE CONSOLE</a>
+        <div style="display:flex;gap:8px;align-items:center">
+            <a class="btn" id="guestPreviewBtn" href="#" target="_blank" rel="noopener">Guest View</a>
+            <a class="btn" href="events.html">Back to Dashboard</a>
+        </div>
+    </header>
+
+    <main class="page">
+        <section class="card">
+            <p class="eyebrow">Published Party</p>
+            <h1 id="eventTitle">Loading...</h1>
+            <p class="sub" id="eventMeta">Preparing live data...</p>
+
+            <div class="summary" id="summaryPills">
+                <div class="pill"><p class="pill__n" id="sumGuests">0</p><p class="pill__l">Guests</p></div>
+                <div class="pill"><p class="pill__n" id="sumConfirmed">0</p><p class="pill__l">Confirmed</p></div>
+                <div class="pill"><p class="pill__n" id="sumSongs">0</p><p class="pill__l">Song Requests</p></div>
+                <div class="pill"><p class="pill__n" id="sumComments">0</p><p class="pill__l">Guest Comments</p></div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Guest</th>
+                            <th>Status</th>
+                            <th>Song Title</th>
+                            <th>Artist</th>
+                            <th>Comment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="songsTableBody">
+                        <tr><td colspan="5">Loading song requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p id="leftError" class="error hidden"></p>
+        </section>
+
+        <section class="card">
+            <div class="chat-head">
+                <div>
+                    <p class="eyebrow" style="margin-bottom:2px">Live Chat</p>
+                    <h2 style="margin:0;font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:500">Party Chat</h2>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" id="chatEnabledToggle">
+                    <span>Chat Enabled</span>
+                </label>
+            </div>
+
+            <p class="chat-status" id="chatStatus">Checking chat session...</p>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+                <a id="openChatLink" class="btn hidden" href="#" target="_blank" rel="noopener">Open Full Chat</a>
+                <button id="refreshBtn" class="btn" type="button">Refresh</button>
+            </div>
+
+            <iframe id="chatFrame" class="chat-frame hidden" title="Party Chat"></iframe>
+            <p id="rightError" class="error hidden"></p>
+        </section>
+    </main>
+
+    <script src="event.js"></script>
+    <script>
+        var RSVP_API = window.RNB_RSVP_API || 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/rsvp';
+        var token = localStorage.getItem('rnb_creator_token');
+        var eventId = new URLSearchParams(window.location.search).get('id') || '';
+        var adminData = null;
+
+        if (!token) window.location.href = 'event-create.html';
+        if (!eventId) window.location.href = 'events.html';
+
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            loadAdmin();
+        });
+
+        document.getElementById('chatEnabledToggle').addEventListener('change', async function(e) {
+            await setChatEnabled(e.target.checked);
+        });
+
+        function esc(v) {
+            return String(v || '').replace(/[&<>"']/g, function(c) {
+                return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+            });
+        }
+
+        async function api(path, method, body) {
+            var res = await fetch(RSVP_API + path, {
+                method: method || 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: body ? JSON.stringify(body) : undefined
+            });
+            var data = {};
+            try { data = await res.json(); } catch(_) {}
+            if (!res.ok || data.error) throw new Error(data.error || ('Request failed (' + res.status + ')'));
+            return data;
+        }
+
+        function setText(id, txt) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = txt;
+        }
+
+        function setVisible(id, visible) {
+            var el = document.getElementById(id);
+            if (el) el.classList.toggle('hidden', !visible);
+        }
+
+        function renderSummary(data) {
+            var ev = data.event || {};
+            var summary = data.summary || {};
+            var guests = Array.isArray(data.guests) ? data.guests : [];
+            var commentCount = guests.filter(function(g) { return !!(g.guestComment && String(g.guestComment).trim()); }).length;
+
+            setText('eventTitle', ev.eventName || 'Untitled Event');
+            setText('eventMeta', (ev.eventDate || 'Date TBD') + (ev.eventTime ? ' at ' + ev.eventTime : '') + ' • ' + (ev.venue || 'Venue TBD'));
+            setText('sumGuests', String(summary.total || 0));
+            setText('sumConfirmed', String(summary.confirmed || 0));
+            setText('sumSongs', String(summary.songs || 0));
+            setText('sumComments', String(commentCount));
+
+            document.getElementById('guestPreviewBtn').href = 'event.html?id=' + encodeURIComponent(eventId);
+        }
+
+        function renderSongsTable(data) {
+            var guests = Array.isArray(data.guests) ? data.guests : [];
+            var songs = Array.isArray(data.songs) ? data.songs : [];
+            var byPhone = {};
+            songs.forEach(function(s) {
+                var k = s.guestPhone || '';
+                if (!byPhone[k]) byPhone[k] = [];
+                byPhone[k].push(s);
+            });
+
+            var confirmed = guests.filter(function(g) { return g.status === 'confirmed'; });
+            var rows = [];
+            confirmed.forEach(function(g) {
+                var list = byPhone[g.guestPhone] || [];
+                if (!list.length) {
+                    rows.push('<tr>'
+                        + '<td>' + esc(g.guestName || g.guestPhone || 'Guest') + '</td>'
+                        + '<td>' + esc(g.status || '') + '</td>'
+                        + '<td>-</td><td>-</td>'
+                        + '<td>' + esc(g.guestComment || '') + '</td>'
+                        + '</tr>');
+                    return;
+                }
+                list.forEach(function(song, i) {
+                    rows.push('<tr>'
+                        + '<td>' + (i === 0 ? esc(g.guestName || g.guestPhone || 'Guest') : '') + '</td>'
+                        + '<td>' + (i === 0 ? esc(g.status || '') : '') + '</td>'
+                        + '<td>' + esc(song.songTitle || '') + '</td>'
+                        + '<td>' + esc(song.artistName || '') + '</td>'
+                        + '<td>' + (i === 0 ? esc(g.guestComment || '') : '') + '</td>'
+                        + '</tr>');
+                });
+            });
+
+            if (!rows.length) rows.push('<tr><td colspan="5">No confirmed guests yet.</td></tr>');
+            document.getElementById('songsTableBody').innerHTML = rows.join('');
+        }
+
+        function renderChat(data) {
+            var ev = data.event || {};
+            var enabled = ev.partyChatEnabled !== false;
+            var chatUrl = ev.partyChatUrl || '';
+            var chatToggle = document.getElementById('chatEnabledToggle');
+            var frame = document.getElementById('chatFrame');
+            var openLink = document.getElementById('openChatLink');
+
+            chatToggle.checked = enabled;
+
+            if (enabled && chatUrl) {
+                frame.src = chatUrl;
+                setVisible('chatFrame', true);
+                openLink.href = chatUrl;
+                setVisible('openChatLink', true);
+                setText('chatStatus', 'Chat is live for guests and host.');
+                setVisible('rightError', false);
+                return;
+            }
+
+            setVisible('chatFrame', false);
+            setVisible('openChatLink', false);
+            if (!enabled) {
+                setText('chatStatus', 'Chat is currently off. Enable it to make it available to guests.');
+            } else {
+                setText('chatStatus', 'Chat session is being prepared.');
+            }
+        }
+
+        async function setChatEnabled(enabled) {
+            try {
+                setText('chatStatus', enabled ? 'Turning chat on...' : 'Turning chat off...');
+                setVisible('rightError', false);
+                await api('/events/' + encodeURIComponent(eventId) + '/chat', 'PUT', { enabled: enabled });
+                await loadAdmin();
+            } catch (err) {
+                setVisible('rightError', true);
+                setText('rightError', err.message || 'Could not update chat setting.');
+                if (adminData && adminData.event) {
+                    document.getElementById('chatEnabledToggle').checked = adminData.event.partyChatEnabled !== false;
+                }
+            }
+        }
+
+        async function loadAdmin() {
+            try {
+                setVisible('leftError', false);
+                setVisible('rightError', false);
+                adminData = await api('/events/' + encodeURIComponent(eventId) + '/admin', 'GET');
+                renderSummary(adminData);
+                renderSongsTable(adminData);
+                renderChat(adminData);
+            } catch (err) {
+                setVisible('leftError', true);
+                setVisible('rightError', true);
+                setText('leftError', err.message || 'Could not load event console.');
+                setText('rightError', err.message || 'Could not load chat data.');
+            }
+        }
+
+        loadAdmin();
+    </script>
+</body>
+</html>

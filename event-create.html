@@ -1544,6 +1544,11 @@
                 setEditorStatus('Published!');
                 showShareHint();
                 showToast('?? Event published! Your link is ready.');
+                setTimeout(function() {
+                    if (state.eventId) {
+                        window.location.href = 'host-party-live.html?id=' + encodeURIComponent(state.eventId);
+                    }
+                }, 650);
             }
         }
 

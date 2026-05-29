@@ -587,6 +587,66 @@ textarea.ev-input {
     border-color: var(--gold);
 }
 
+.opt-flow {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.opt-flow__rail {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 150px;
+}
+
+.opt-flow__marker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    background: var(--cream);
+    color: var(--text-mid);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    text-align: left;
+    transition: var(--transition);
+}
+
+.opt-flow__marker:hover {
+    border-color: var(--accent);
+    background: var(--white);
+}
+
+.opt-flow__marker--active {
+    border-color: var(--gold);
+    background: #f7efe1;
+    color: var(--primary);
+}
+
+.opt-flow__marker--done {
+    color: var(--primary);
+}
+
+.opt-flow__body {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 700px) {
+    .opt-flow {
+        flex-direction: column;
+    }
+
+    .opt-flow__rail {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
 .ev-search-bar {
     position: relative;
     margin-bottom: 16px;
