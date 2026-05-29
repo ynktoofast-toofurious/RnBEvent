@@ -61,6 +61,22 @@
                 <!-- ── CONFIRMED EXTRAS (status banner + playlist) ── -->
                 <div id="view-confirmed-extras" class="hidden" style="margin-top:24px">
 
+                    <div class="ev-card" id="optional-steps-card" style="margin-bottom:16px;padding:16px 18px">
+                        <p class="ev-card__label" style="margin-bottom:8px">Optional Steps</p>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                            <div style="font-size:12px;color:#527141;line-height:1.5">
+                                <strong style="color:#2c3e2c">3 steps:</strong>
+                                1. Add Songs to the Playlist&nbsp;&nbsp;2. Leave a comment for the host&nbsp;&nbsp;3. View the party chat
+                            </div>
+                            <div id="optional-step-dots" style="display:flex;gap:6px">
+                                <span id="opt-dot-1" class="ev-songs__dot"></span>
+                                <span id="opt-dot-2" class="ev-songs__dot"></span>
+                                <span id="opt-dot-3" class="ev-songs__dot"></span>
+                            </div>
+                        </div>
+                        <p id="optional-complete-msg" class="hidden" style="margin:10px 0 0;font-size:13px;color:#2c3e2c;font-weight:600">Can't wait to see you there!</p>
+                    </div>
+
                     <!-- Song requests card -->
                     <div class="ev-card ev-card--green" id="song-card">
                         <p class="ev-card__label">Optional</p>
@@ -103,6 +119,31 @@
                         </div>
 
                         <p id="song-error" class="ev-error"></p>
+                    </div>
+
+                    <div class="ev-card" id="host-comment-card" style="margin-top:14px">
+                        <p class="ev-card__label">Step 2</p>
+                        <h3 class="ev-card__title" style="font-size:22px">Leave a comment for the host</h3>
+                        <p style="font-size:13px;color:#527141;margin-bottom:12px;line-height:1.6">
+                            Share a note, request, or message for your host.
+                        </p>
+                        <textarea id="host-comment-input" class="ev-input" rows="3" maxlength="600" placeholder="Type your message here..." style="resize:vertical;min-height:82px"></textarea>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px">
+                            <p id="host-comment-status" style="margin:0;font-size:12px;color:#77a361"></p>
+                            <button type="button" class="ev-btn ev-btn--primary ev-btn--sm" id="btn-save-host-comment" onclick="saveHostComment()">Save Comment</button>
+                        </div>
+                    </div>
+
+                    <div class="ev-card" id="party-chat-card" style="margin-top:14px">
+                        <p class="ev-card__label">Step 3</p>
+                        <h3 class="ev-card__title" style="font-size:22px">View the party chat</h3>
+                        <p style="font-size:13px;color:#527141;margin-bottom:12px;line-height:1.6">
+                            Jump into live party chat and connect with everyone attending.
+                        </p>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                            <p id="party-chat-status" style="margin:0;font-size:12px;color:#77a361">Chat link will appear when available.</p>
+                            <button type="button" class="ev-btn ev-btn--outline ev-btn--sm" id="btn-open-party-chat" onclick="openPartyChat()" disabled>Open Party Chat</button>
+                        </div>
                     </div>
 
                 </div>
@@ -298,7 +339,9 @@
             guestEventId: sessionStorage.getItem('rnb_guest_event') || null,
             pendingStatus: null,   // 'confirmed' | 'declined'
             mySongs:      [],
-            searchTimer:  null
+            searchTimer:  null,
+            hostCommentSaved: false,
+            partyChatViewed: false
         };
 
         /* ── Init ───────────────────────────────────── */
@@ -811,6 +854,7 @@
             // Hide the song-request card if the host disabled the playlist feature.
             var songCard = document.getElementById('song-card');
             if (songCard) songCard.style.display = (ev.playlistEnabled === false) ? 'none' : '';
+            syncOptionalStepState();
         }
 
         function showDeclinedView() {
@@ -944,6 +988,7 @@
             onSongSearch(document.getElementById('song-search-input').value);
             document.getElementById('song-error').textContent = '';
             showToast('Song added to your playlist!');
+            syncOptionalStepState();
         }
 
         async function removeSong(idx) {
@@ -958,6 +1003,7 @@
             renderPlaylist();
             // Refresh search results to unmark added state
             onSongSearch(document.getElementById('song-search-input').value);
+            syncOptionalStepState();
         }
 
         async function loadMySongs() {
@@ -966,7 +1012,75 @@
                 state.mySongs = res.songs;
                 updateSongCounter();
                 renderPlaylist();
+                syncOptionalStepState();
             }
+        }
+
+        function syncOptionalStepState() {
+            var step1 = state.mySongs.length > 0;
+            var step2 = !!state.hostCommentSaved;
+            var step3 = !!state.partyChatViewed;
+
+            var d1 = document.getElementById('opt-dot-1');
+            var d2 = document.getElementById('opt-dot-2');
+            var d3 = document.getElementById('opt-dot-3');
+            if (d1) d1.classList.toggle('ev-songs__dot--filled', step1);
+            if (d2) d2.classList.toggle('ev-songs__dot--filled', step2);
+            if (d3) d3.classList.toggle('ev-songs__dot--filled', step3);
+
+            var done = document.getElementById('optional-complete-msg');
+            if (done) done.classList.toggle('hidden', !(step1 && step2 && step3));
+
+            var chatBtn = document.getElementById('btn-open-party-chat');
+            var chatStatus = document.getElementById('party-chat-status');
+            var chatUrl = state.event && state.event.partyChatUrl;
+            if (chatBtn) chatBtn.disabled = !chatUrl;
+            if (chatStatus) {
+                if (chatUrl) chatStatus.textContent = 'Party chat is ready.';
+                else chatStatus.textContent = 'Chat link will appear when available.';
+            }
+        }
+
+        async function saveHostComment() {
+            var input = document.getElementById('host-comment-input');
+            var btn = document.getElementById('btn-save-host-comment');
+            var status = document.getElementById('host-comment-status');
+            if (!input || !btn || !status) return;
+
+            var comment = (input.value || '').trim();
+            if (comment.length < 2) {
+                status.textContent = 'Please add a short comment first.';
+                return;
+            }
+
+            btn.disabled = true;
+            var prev = btn.textContent;
+            btn.textContent = 'Saving...';
+            var res = await apiPost('/events/' + state.eventId + '/comment', { comment: comment }, null, state.guestToken);
+            btn.disabled = false;
+            btn.textContent = prev;
+
+            if (res.error) {
+                status.textContent = res.error;
+                return;
+            }
+
+            state.hostCommentSaved = true;
+            status.textContent = 'Comment saved for the host.';
+            syncOptionalStepState();
+        }
+
+        function openPartyChat() {
+            var url = state.event && state.event.partyChatUrl;
+            var status = document.getElementById('party-chat-status');
+            if (!url) {
+                if (status) status.textContent = 'Party chat is not available for this event yet.';
+                return;
+            }
+
+            state.partyChatViewed = true;
+            syncOptionalStepState();
+            window.open(url, '_blank', 'noopener');
         }
 
         function updateSongCounter() {

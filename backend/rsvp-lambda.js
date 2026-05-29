@@ -659,8 +659,14 @@ async function getEventFull(eventId, event) {
     const res = await ddb.send(new GetCommand({ TableName: T.EVENTS, Key: { eventId } })).catch(() => null);
     if (!res?.Item) return respond(404, { error: 'Event not found' });
 
-    // Strip internal fields
+    // Strip internal fields and expose only a safe party chat URL when available.
     const { creatorEmail, urthedj_sessionId, ...safe } = res.Item;
+    if (urthedj_sessionId && URTHEDJ_API) {
+        const siteBase = String(URTHEDJ_API).replace(/\/api\/?$/i, '');
+        safe.partyChatUrl = `${siteBase}/party/${urthedj_sessionId}`;
+    } else {
+        safe.partyChatUrl = null;
+    }
     return respond(200, safe);
 }
 
@@ -676,6 +682,27 @@ async function getMySOungs(eventId, event) {
     })).catch(() => ({ Items: [] }));
 
     return respond(200, { songs: (res.Items || []).sort((a, b) => a.songIndex - b.songIndex) });
+}
+
+/* POST /events/:id/comment ── save guest comment for host */
+async function saveGuestComment(eventId, body, event) {
+    const guest = await getGuestFromToken(event, eventId);
+    if (!guest) return respond(401, { error: 'Guest session required' });
+
+    const comment = sanitizeText(body.comment, 600);
+    if (!comment || comment.length < 2) return respond(400, { error: 'Please enter a comment first' });
+
+    await ddb.send(new UpdateCommand({
+        TableName: T.RSVPS,
+        Key: { eventId, guestPhone: guest.phone },
+        UpdateExpression: 'SET guestComment = :c, guestCommentAt = :t',
+        ExpressionAttributeValues: {
+            ':c': comment,
+            ':t': new Date().toISOString()
+        }
+    }));
+
+    return respond(200, { ok: true, comment });
 }
 
 /* GET /search-song?query=... ── urTheDJ-compatible song search with iTunes + catalog fallback */
@@ -1565,6 +1592,7 @@ exports.handler = async (event) => {
         if (method === 'DELETE' && parts[0] === 'events' && parts.length === 2)      return await deleteEvent(parts[1], event);
         if (method === 'GET'  && parts[0] === 'events' && parts[2] === 'full')       return await getEventFull(parts[1], event);
         if (method === 'GET'  && parts[0] === 'events' && parts[2] === 'my-songs')   return await getMySOungs(parts[1], event);
+        if (method === 'POST' && parts[0] === 'events' && parts[2] === 'comment')    return await saveGuestComment(parts[1], body, event);
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'guests')     return await addGuests(parts[1], body, event);
         if (method === 'POST' && parts[0] === 'events' && parts[2] === 'songs')      return await addSong(parts[1], body, event);
         if (method === 'DELETE' && parts[0] === 'events' && parts[2] === 'songs' && parts[3]) return await removeSong(parts[1], parts[3], event);
