@@ -1616,6 +1616,14 @@
             if (failed > 0) msg += ', ' + failed + ' failed';
             if (res.skipped) msg += ', ' + res.skipped + ' skipped';
             document.getElementById(okId).textContent = msg + '.';
+
+            if (failed > 0 && Array.isArray(res.channelErrors) && res.channelErrors.length) {
+                var primary = res.channelErrors[0] || {};
+                var reason = primary.message || 'Delivery failed.';
+                if (primary.hint) reason += ' ' + primary.hint;
+                showErr(errId, reason);
+            }
+
             renderPills(guests, 'ed-guest-pills');
             if (mode === 'bulk') gpClearGrid();
             return { ok: true, sent: sent, failed: failed };

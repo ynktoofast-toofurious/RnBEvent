@@ -109,6 +109,27 @@ function sanitizeText(val, max = 200) {
     return String(val || '').trim().replace(/[<>]/g, '').slice(0, max);
 }
 
+function formatDeliveryError(err) {
+    const rawMessage = String(err?.message || err || 'Unknown delivery error').trim();
+    const code = err?.name || err?.Code || err?.code || 'DeliveryError';
+    let hint = '';
+
+    const lc = rawMessage.toLowerCase();
+    if (lc.includes('email address is not verified') || lc.includes('identity is not verified')) {
+        hint = 'Verify sender/recipient in SES (or move SES out of sandbox).';
+    } else if (lc.includes('accessdenied') || lc.includes('not authorized')) {
+        hint = 'Check Lambda IAM permissions for ses:SendEmail or sns:Publish.';
+    } else if (lc.includes('throttl')) {
+        hint = 'AWS rate limit reached. Retry shortly.';
+    }
+
+    return {
+        code,
+        message: rawMessage,
+        hint
+    };
+}
+
 function sanitizeEmail(raw) {
     const e = String(raw || '').toLowerCase().trim().slice(0, 254);
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) ? e : null;
@@ -894,6 +915,14 @@ async function addGuests(eventId, body, event) {
     let emailsFailed = 0;
     let phonesSent = 0;
     let phonesFailed = 0;
+    const channelErrors = [];
+
+    function pushChannelError(err) {
+        if (!err) return;
+        const key = `${err.code}|${err.message}`;
+        if (channelErrors.some(e => `${e.code}|${e.message}` === key)) return;
+        channelErrors.push(err);
+    }
 
     const uniqueEmailRecipients = [];
     const seen = new Set();
@@ -916,18 +945,23 @@ async function addGuests(eventId, body, event) {
     if (inviteChannel === 'email' && uniqueEmailRecipients.length) {
         if (inviteMode === 'mass' && uniqueEmailRecipients.length > 1) {
             const massRes = await sendInviteEmailMass(uniqueEmailRecipients.map(r => r.email), evRes.Item).catch((err) => {
-                console.warn('[invite/email-mass] failed', err && err.message ? err.message : err);
-                return ({ sent: 0, failed: uniqueEmailRecipients.length });
+                const info = formatDeliveryError(err);
+                console.warn('[invite/email-mass] failed', info.message);
+                pushChannelError(info);
+                return ({ sent: 0, failed: uniqueEmailRecipients.length, errors: [info] });
             });
             emailsSent += massRes.sent || 0;
             emailsFailed += massRes.failed || 0;
+            if (Array.isArray(massRes.errors)) massRes.errors.forEach(pushChannelError);
         } else {
             const sendRes = await Promise.allSettled(uniqueEmailRecipients.map(r => sendInviteEmail(r.email, r.name, evRes.Item)));
             sendRes.forEach((it) => {
                 if (it.status === 'fulfilled') emailsSent++;
                 else {
                     emailsFailed++;
-                    console.warn('[invite/email] failed', it.reason && it.reason.message ? it.reason.message : it.reason);
+                    const info = formatDeliveryError(it.reason);
+                    console.warn('[invite/email] failed', info.message);
+                    pushChannelError(info);
                 }
             });
         }
@@ -939,7 +973,9 @@ async function addGuests(eventId, body, event) {
             if (it.status === 'fulfilled') phonesSent++;
             else {
                 phonesFailed++;
-                console.warn('[invite/phone] failed', it.reason && it.reason.message ? it.reason.message : it.reason);
+                const info = formatDeliveryError(it.reason);
+                console.warn('[invite/phone] failed', info.message);
+                pushChannelError(info);
             }
         });
     }
@@ -968,7 +1004,8 @@ async function addGuests(eventId, body, event) {
         phonesFailed,
         channelQueued,
         channelSent,
-        channelFailed
+        channelFailed,
+        channelErrors: channelErrors.slice(0, 5)
     });
 }
 
@@ -1739,7 +1776,7 @@ async function sendInviteEmail(toEmail, guestName, ev) {
 
 async function sendInviteEmailMass(toEmails, ev) {
     const list = Array.isArray(toEmails) ? toEmails.filter(Boolean) : [];
-    if (!list.length) return { sent: 0, failed: 0 };
+    if (!list.length) return { sent: 0, failed: 0, errors: [] };
 
     const unique = Array.from(new Set(list));
     const dateStr  = ev.eventTime ? `${ev.eventDate} at ${ev.eventTime}` : ev.eventDate;
@@ -1761,6 +1798,7 @@ async function sendInviteEmailMass(toEmails, ev) {
 
     let sent = 0;
     let failed = 0;
+    const errors = [];
     for (const group of chunks) {
         try {
             await ses.send(new SendEmailCommand({
@@ -1772,12 +1810,13 @@ async function sendInviteEmailMass(toEmails, ev) {
                 }
             }));
             sent += group.length;
-        } catch (_) {
+        } catch (err) {
             failed += group.length;
+            errors.push(formatDeliveryError(err));
         }
     }
 
-    return { sent, failed };
+    return { sent, failed, errors };
 }
 
 async function sendInviteSms(phone, guestName, ev) {
