@@ -1832,6 +1832,73 @@ async function sendInviteSms(phone, guestName, ev) {
     }));
 }
 
+/* POST /ai/chat ── creator assistant chat (Ruthie AI) */
+async function aiChat(body, event) {
+    const creator = await getCreatorFromToken(event);
+    if (!creator) return respond(401, { error: 'Authentication required' });
+
+    const messages = Array.isArray(body?.messages) ? body.messages : [];
+    if (!messages.length) return respond(400, { error: 'messages required' });
+
+    const GEMINI_API_KEY = String(process.env.GEMINI_API_KEY || '').trim();
+    const GEMINI_MODEL = String(process.env.GEMINI_MODEL || 'gemini-2.0-flash').trim();
+    if (!GEMINI_API_KEY) {
+        return respond(200, {
+            reply: 'Ruthie AI is currently unavailable. Please try again in a moment.'
+        });
+    }
+
+    const systemText = [
+        'You are Ruthie, assistant for RNB Events hosts.',
+        'Keep replies concise, practical, and event-planning focused.',
+        'If asked to create/update events, suggest concrete next steps inside the dashboard.'
+    ].join(' ');
+
+    const convo = messages.slice(-20).map((m) => {
+        const role = String(m?.role || 'user').toLowerCase() === 'model' ? 'model' : 'user';
+        const text = String(m?.text || '').trim();
+        return { role, parts: [{ text }] };
+    }).filter((m) => m.parts[0].text);
+
+    const payload = {
+        system_instruction: {
+            parts: [{ text: systemText }]
+        },
+        contents: convo,
+        generationConfig: {
+            temperature: 0.6,
+            maxOutputTokens: 512
+        }
+    };
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+    try {
+        const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+            const msg = data?.error?.message || 'AI provider error';
+            return respond(502, { error: msg });
+        }
+
+        const parts = data?.candidates?.[0]?.content?.parts || [];
+        const reply = parts.map((p) => String(p?.text || '')).join('').trim();
+        if (!reply) {
+            return respond(200, {
+                reply: 'I can help with your event setup. Tell me what you want to update next.'
+            });
+        }
+
+        return respond(200, { reply });
+    } catch (err) {
+        console.warn('[ai/chat] failed', err && err.message ? err.message : err);
+        return respond(502, { error: 'AI service unavailable' });
+    }
+}
+
 async function notifyCreatorOfRsvp(ev, guestName, status) {
     if (!ev.creatorEmail) return;
     const html = emailBase(`
@@ -1880,6 +1947,7 @@ exports.handler = async (event) => {
         if (method === 'POST' && path === '/creator/login')     return await creatorLogin(body);
         if (method === 'POST' && path === '/creator/google-auth') return await creatorGoogleAuth(body);
         if (method === 'GET'  && path === '/creator/events')    return await getCreatorEvents(event);
+        if (method === 'POST' && path === '/ai/chat')           return await aiChat(body, event);
 
         // Events
         if (method === 'POST' && path === '/events')            return await createEvent(body, event);
