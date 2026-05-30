@@ -1,5 +1,5 @@
 ﻿    // Set this to your API Gateway endpoint for Lambda upload
-    window.RNB_UPLOAD_API = window.RNB_UPLOAD_API || 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/upload-clients';
+    window.RNB_UPLOAD_API = window.RNB_UPLOAD_API || 'https://api.rnbevents716.com/upload-clients';
 (function () {
     'use strict';
 
@@ -299,14 +299,9 @@
     var cloudCodeHash = '';
 
     function preloadCloudHash() {
-        var url = ((window.ADMIN_CONFIG || {}).cloudApiUrl || '');
-        if (!url) return;
-        fetch(url + '?action=getAll', { redirect: 'follow' })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (data && data.adminCodeHash) cloudCodeHash = data.adminCodeHash;
-            })
-            .catch(function () {});
+        // Legacy cloud hash endpoint is not available on the active API deployment.
+        // Keep local ADMIN_CONFIG hash and Google auth as the active auth sources.
+        return;
     }
 
     /* ── Boot ────────────────────────────────────────── */
@@ -668,8 +663,27 @@
     ══════════════════════════════════════════════════ */
 
     var S3_CLIENTS_URL = 'https://rnbevents716.s3.us-east-2.amazonaws.com/clients.json';
-    var LAMBDA_BASE    = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com';
+    var LAMBDA_BASE    = 'https://api.rnbevents716.com';
+    var LAMBDA_FALLBACK_BASE = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com';
     var ADMIN_CONTENT_UPLOAD_URL = LAMBDA_BASE + '/admin-upload-content-image';
+
+    function postWithFallback(path, payload) {
+        var endpoints = [LAMBDA_BASE + path, LAMBDA_FALLBACK_BASE + path];
+        function run(idx) {
+            if (idx >= endpoints.length) return Promise.reject(new Error('All endpoints failed for ' + path));
+            return fetch(endpoints[idx], {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload || {})
+            }).then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            }).catch(function () {
+                return run(idx + 1);
+            });
+        }
+        return run(0);
+    }
 
     function showAdminLoading(message) {
         var overlay = document.getElementById('admin-loading');
@@ -718,12 +732,7 @@
 
     /* ── Post-event automation ────────────────────────── */
     function runPostEventTasks() {
-        fetch(LAMBDA_BASE + '/run-post-event-tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: '{}'
-        })
-        .then(function (r) { return r.json(); })
+        postWithFallback('/run-post-event-tasks', {})
         .then(function (res) {
             if (res && res.ok && Array.isArray(res.processed) && res.processed.length) {
                 res.processed.forEach(function (p) {
@@ -753,11 +762,7 @@
         _activityTimer = setTimeout(function () {
             var batch = _activityBatch.slice();
             _activityBatch = [];
-            fetch(LAMBDA_BASE + '/log-admin-activity', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ entries: batch })
-            }).catch(function () { /* non-critical */ });
+            postWithFallback('/log-admin-activity', { entries: batch }).catch(function () { /* non-critical */ });
         }, 2000);
     }
 
@@ -916,7 +921,7 @@
         var localPros = Array.isArray(safeJSON(localStorage.getItem(STORAGE_PROS))) ? safeJSON(localStorage.getItem(STORAGE_PROS)) : [];
         var localTasks = Array.isArray(safeJSON(localStorage.getItem(STORAGE_TASKS))) ? safeJSON(localStorage.getItem(STORAGE_TASKS)) : [];
         var localClients = Array.isArray(safeJSON(localStorage.getItem(STORAGE_CLIENTS))) ? safeJSON(localStorage.getItem(STORAGE_CLIENTS)) : [];
-        var hasS3Service = !!(window.S3Service && typeof window.S3Service.getProspects === 'function');
+        var hasS3Service = false;
 
         updateSyncStatus('syncing');
 
@@ -945,10 +950,8 @@
             renderAll();
 
             var writes = [];
-            if (hasS3Service) {
-                writes.push(window.S3Service.saveProspects(state.prospects));
-                writes.push(window.S3Service.saveTasks(state.tasks));
-            }
+            // /s3-data endpoint for admin-data is not available in current deployment.
+            // Keep prospects/tasks local until that API route is deployed.
             if (window.RNB_UPLOAD_API && state.clients.length) {
                 writes.push(fetch(window.RNB_UPLOAD_API, {
                     method: 'POST',
@@ -1100,37 +1103,13 @@
     }
 
     function saveProspectsToStorage() {
-        updateSyncStatus('syncing');
-        if (window.S3Service && typeof window.S3Service.saveProspects === 'function') {
-            window.S3Service.saveProspects(state.prospects).then(function () {
-                localStorage.removeItem(STORAGE_PROS);
-                updateSyncStatus('synced');
-            }).catch(function (e) {
-                console.warn('saveProspectsToS3 failed:', e);
-                persistLocalFallback(STORAGE_PROS, state.prospects);
-                updateSyncStatus('error');
-            });
-            return;
-        }
         persistLocalFallback(STORAGE_PROS, state.prospects);
-        cloudPush({ prospects: state.prospects });
+        updateSyncStatus('local');
     }
 
     function saveTasksToStorage() {
-        updateSyncStatus('syncing');
-        if (window.S3Service && typeof window.S3Service.saveTasks === 'function') {
-            window.S3Service.saveTasks(state.tasks).then(function () {
-                localStorage.removeItem(STORAGE_TASKS);
-                updateSyncStatus('synced');
-            }).catch(function (e) {
-                console.warn('saveTasksToS3 failed:', e);
-                persistLocalFallback(STORAGE_TASKS, state.tasks);
-                updateSyncStatus('error');
-            });
-            return;
-        }
         persistLocalFallback(STORAGE_TASKS, state.tasks);
-        cloudPush({ tasks: state.tasks });
+        updateSyncStatus('local');
     }
 
     function saveClientsToStorage() {
@@ -1171,7 +1150,7 @@
     var CLOUD_URL = (window.ADMIN_CONFIG || {}).cloudApiUrl || '';
 
     function cloudGet() {
-        var hasS3Service = !!(window.S3Service && typeof window.S3Service.getProspects === 'function');
+        var hasS3Service = false;
         if (!hasS3Service) {
             updateSyncStatus('local');
             return Promise.resolve(null);
@@ -1188,7 +1167,7 @@
     }
 
     function cloudPush(payload) {
-        var hasS3Service = !!(window.S3Service && typeof window.S3Service.saveProspects === 'function');
+        var hasS3Service = false;
         if (!hasS3Service || !payload || typeof payload !== 'object') {
             updateSyncStatus('local');
             return;

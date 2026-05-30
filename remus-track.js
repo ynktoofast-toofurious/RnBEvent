@@ -10,8 +10,28 @@
  * No cookies are set. No PII is transmitted.
  */
 (function () {
-    var ENDPOINT = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/track-visit';
+    var ENDPOINTS = [
+        'https://api.rnbevents716.com/track-visit',
+        'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/track-visit'
+    ];
     var BOT_PATTERN = /bot|crawl|spider|slurp|mediapartners|adsbot|facebookexternalhit/i;
+
+    function sendWithFallback(payload) {
+        var body = JSON.stringify(payload);
+        var idx = 0;
+        function run() {
+            if (idx >= ENDPOINTS.length) return;
+            var endpoint = ENDPOINTS[idx++];
+            if (navigator.sendBeacon && navigator.sendBeacon(endpoint, body)) return;
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: body,
+                keepalive: true
+            }).catch(function () { run(); });
+        }
+        run();
+    }
 
     /* Assign a random session ID per browser session (cleared when tab closes) */
     function getSessionId() {
@@ -63,16 +83,7 @@
             };
 
             /* Use sendBeacon when available (survives page unload, non-blocking) */
-            if (navigator.sendBeacon) {
-                navigator.sendBeacon(ENDPOINT, JSON.stringify(payload));
-            } else {
-                fetch(ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                    keepalive: true
-                }).catch(function () {});
-            }
+            sendWithFallback(payload);
         }
 
         if (document.readyState === 'complete') {
@@ -101,15 +112,6 @@
             utmCampaign: utm.utmCampaign,
             utmTerm:     utm.utmTerm
         };
-        if (navigator.sendBeacon) {
-            navigator.sendBeacon(ENDPOINT, JSON.stringify(payload));
-        } else {
-            fetch(ENDPOINT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-                keepalive: true
-            }).catch(function () {});
-        }
+        sendWithFallback(payload);
     };
 })();

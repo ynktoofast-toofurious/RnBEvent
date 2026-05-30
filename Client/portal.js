@@ -231,7 +231,7 @@
 
         /* Track login event */
         try {
-            var LAMBDA_URL = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com';
+            var LAMBDA_URL = 'https://api.rnbevents716.com';
             fetch(LAMBDA_URL + '/track-visit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
