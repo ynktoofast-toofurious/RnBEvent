@@ -14,15 +14,19 @@
         'https://api.rnbevents716.com/track-visit',
         'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/track-visit'
     ];
+    // Tracking endpoint is not yet deployed. Disable to keep the console clean.
+    // Set window._remusDisabled = false in DevTools to re-enable when backend is live.
+    if (typeof window._remusDisabled === 'undefined') window._remusDisabled = true;
     var BOT_PATTERN = /bot|crawl|spider|slurp|mediapartners|adsbot|facebookexternalhit/i;
 
     function sendWithFallback(payload) {
-        // Tracking endpoints are best-effort. Use fetch (not sendBeacon) so failures
-        // resolve silently inside our promise chain instead of surfacing as console 404s.
+        // Tracking endpoints are best-effort. If they fail once, disable for the
+        // remainder of the session to avoid spamming the console with 404s.
+        if (window._remusDisabled) return;
         var body = JSON.stringify(payload);
         var idx = 0;
         function run() {
-            if (idx >= ENDPOINTS.length) return;
+            if (idx >= ENDPOINTS.length) { window._remusDisabled = true; return; }
             var endpoint = ENDPOINTS[idx++];
             fetch(endpoint, {
                 method: 'POST',

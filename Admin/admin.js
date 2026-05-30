@@ -667,10 +667,21 @@
     var LAMBDA_FALLBACK_BASE = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com';
     var ADMIN_CONTENT_UPLOAD_URL = LAMBDA_BASE + '/admin-upload-content-image';
 
+    // Routes not yet deployed on the Lambda. Pre-disable to avoid 404 noise.
+    // Remove an entry here once the backend route is live.
+    var DISABLED_PATHS = {
+        '/upload-clients': true,
+        '/run-post-event-tasks': true,
+        '/log-admin-activity': true
+    };
     function postWithFallback(path, payload) {
+        if (DISABLED_PATHS[path]) return Promise.resolve({ ok: false, skipped: true });
         var endpoints = [LAMBDA_BASE + path, LAMBDA_FALLBACK_BASE + path];
         function run(idx) {
-            if (idx >= endpoints.length) return Promise.reject(new Error('All endpoints failed for ' + path));
+            if (idx >= endpoints.length) {
+                DISABLED_PATHS[path] = true;
+                return Promise.resolve({ ok: false, skipped: true });
+            }
             return fetch(endpoints[idx], {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
