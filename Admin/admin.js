@@ -3119,34 +3119,26 @@
         // PERMANENTLY REMOVE from array
         state.clients = state.clients.filter(function (x) { return x.id !== id; });
         persistLocalFallback(STORAGE_CLIENTS, state.clients);
-        
-        // Upload to S3 WITHOUT the deleted client
-        var api = window.RNB_UPLOAD_API;
-        if (api) {
-            fetch(api, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ clients: state.clients })
-            }).then(function (r) { return r.json(); })
-              .then(function (data) {
-                  if (data && data.ok) {
-                      updateSyncStatus('synced');
-                      showToast('✅ Client permanently deleted from S3. (' + data.count + ' clients remaining)');
-                  } else { 
-                      console.warn('Delete failed:', data && data.error); 
-                      updateSyncStatus('error');
-                      showToast('❌ Delete failed: ' + (data.error || 'Unknown error'));
-                  }
-              })
-              .catch(function (e) { 
-                  console.warn('Delete error:', e); 
-                  updateSyncStatus('error');
-                  showToast('❌ Network error during delete');
-              });
-        } else {
-            showToast('⚠️ Client deleted locally but S3 endpoint not configured!');
-        }
-        
+
+        // Attempt cloud sync; localStorage is source of truth if endpoint is disabled.
+        postWithFallback('/upload-clients', { clients: state.clients })
+            .then(function (data) {
+                if (data && data.skipped) {
+                    updateSyncStatus('local');
+                    showToast('✅ Client deleted locally. (Cloud sync offline)');
+                } else if (data && data.ok) {
+                    updateSyncStatus('synced');
+                    showToast('✅ Client permanently deleted. (' + (data.count != null ? data.count + ' clients remaining' : 'synced to S3') + ')');
+                } else {
+                    updateSyncStatus('local');
+                    showToast('✅ Client deleted locally.');
+                }
+            })
+            .catch(function () {
+                updateSyncStatus('local');
+                showToast('✅ Client deleted locally.');
+            });
+
         renderClientManager();
         logAdminActivity('Client deleted', 'PERMANENTLY deleted client: ' + (c.fullName || c.id));
     }
@@ -3189,25 +3181,18 @@
             showToast('No clients to publish.');
             return;
         }
-        var api = window.RNB_UPLOAD_API;
-        if (!api) {
-            showToast('Upload API not configured.');
-            return;
-        }
-        fetch(api, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ clients: state.clients })
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            if (data && data.ok) {
-                showToast('Clients published to S3 via Lambda!');
-                updateSyncStatus('synced');
-            } else {
-                showToast('Publish failed: ' + (data && data.error ? data.error : 'Unknown error'));
-                updateSyncStatus('error');
-            }
+        postWithFallback('/upload-clients', { clients: state.clients })
+            .then(function (data) {
+                if (data && data.skipped) {
+                    showToast('Cloud publish offline. Clients saved locally.');
+                    updateSyncStatus('local');
+                } else if (data && data.ok) {
+                    showToast('Clients published to S3 via Lambda!');
+                    updateSyncStatus('synced');
+                } else {
+                    showToast('Publish failed: ' + (data && data.error ? data.error : 'Unknown error'));
+                    updateSyncStatus('local');
+                }
         })
         .catch(function (e) {
             showToast('Publish failed: ' + e);
