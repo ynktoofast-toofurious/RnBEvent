@@ -200,6 +200,7 @@
         showDashboard();
     }
 
+    var _gisWaitAttempts = 0;
     function initGoogleAdminSignIn() {
         var cfg = window.ADMIN_CONFIG || {};
         var target = document.getElementById('admin-google-signin');
@@ -208,10 +209,20 @@
             target.innerHTML = '';
             return;
         }
+        // GIS script is loaded async/defer; on slow mobile networks it may not be
+        // ready yet. Poll for up to ~15s before showing the error.
         if (!window.google || !google.accounts || !google.accounts.id) {
-            setGoogleErr('Google sign-in script did not load. Refresh and try again.');
+            _gisWaitAttempts++;
+            if (_gisWaitAttempts <= 60) {
+                setGoogleErr('Loading Google sign-in…');
+                setTimeout(initGoogleAdminSignIn, 250);
+                return;
+            }
+            setGoogleErr('Google sign-in script did not load. Check your connection and refresh.');
             return;
         }
+        _gisWaitAttempts = 0;
+        setGoogleErr('');
 
         target.innerHTML = '';
         google.accounts.id.initialize({
