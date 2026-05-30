@@ -19,6 +19,7 @@
     var STORAGE_CONTENT         = 'rnb_content_drafts';
     var STORAGE_CONTENT_HISTORY = 'rnb_content_drafts_history';
     var STORAGE_CLIENTS         = 'rnb_admin_clients';
+    var STORAGE_DELETED_IDS     = 'rnb_deleted_client_ids';
     var CONTENT_DB_NAME         = 'rnb_admin_content_db';
     var CONTENT_DB_STORE        = 'drafts';
     var CONTENT_DB_CURRENT_KEY  = 'current';
@@ -795,20 +796,18 @@
             .then(function (arr) {
                 if (!Array.isArray(arr)) arr = [];
 
-                /* If local has clients that S3 doesn't, push them up first.
-                   Lambda will merge so nothing in S3 gets lost. */
-                if (state.clients.length) {
-                    var s3Ids = {};
-                    arr.forEach(function (c) { if (c && c.id) s3Ids[c.id] = true; });
-                    var localHasExtra = state.clients.some(function (c) { return c.id && !s3Ids[c.id]; });
-                    if (localHasExtra || !arr.length) {
-                        autoPublishClients();
-                    }
-                }
+                var deletedIds = getDeletedIds();
 
-                /* S3 → local: adopt any clients from S3 that we don't have locally */
+                /* Strip any blank/deleted entries from S3 result before we do anything */
+                arr = arr.filter(function (c) { return c && c.id && !deletedIds[c.id]; });
+
+                /* Build a local ID map */
                 var localIds = {};
-                state.clients.forEach(function (c) { if (c.id) localIds[c.id] = true; });
+                state.clients.forEach(function (c) { if (c && c.id) localIds[c.id] = true; });
+
+                /* Only ADD clients from S3 that we don't have locally and aren't deleted.
+                   NEVER overwrite a local client with S3 data — local is authoritative.
+                   (Local edits like payment dates are already written to S3 via autoPublishClients.) */
                 var added = false;
                 arr.forEach(function (sc) {
                     if (sc && sc.id && !localIds[sc.id]) {
@@ -817,13 +816,15 @@
                     }
                 });
 
-                /* Also update fields of existing local clients from S3 (S3 has fresher data from other machines) */
-                arr.forEach(function (sc) {
-                    if (sc && sc.id && localIds[sc.id]) {
-                        var idx = state.clients.findIndex(function (c) { return c.id === sc.id; });
-                        if (idx > -1) { state.clients[idx] = sc; added = true; }
+                /* If local has clients S3 is missing (or S3 had stale deletes), push up */
+                if (state.clients.length) {
+                    var s3Ids = {};
+                    arr.forEach(function (c) { if (c && c.id) s3Ids[c.id] = true; });
+                    var localHasExtra = state.clients.some(function (c) { return c.id && !s3Ids[c.id]; });
+                    if (localHasExtra || !arr.length) {
+                        autoPublishClients();
                     }
-                });
+                }
 
                 if (added) {
                     persistLocalFallback(STORAGE_CLIENTS, state.clients);
@@ -908,14 +909,18 @@
     function mergeByKey(cloudArr, localArr, type) {
         var out = [];
         var map = {};
+        var deletedIds = (type === 'clients') ? getDeletedIds() : {};
         (Array.isArray(cloudArr) ? cloudArr : []).forEach(function (item, idx) {
+            // Skip deleted clients when merging from cloud
+            if (item && item.id && deletedIds[item.id]) return;
             var key = keyForMerge(item, idx, type);
             map[key] = out.length;
             out.push(item);
         });
         (Array.isArray(localArr) ? localArr : []).forEach(function (item, idx) {
+            if (item && item.id && deletedIds[item.id]) return;
             var key = keyForMerge(item, idx, type);
-            if (map.hasOwnProperty(key)) out[map[key]] = item;
+            if (map.hasOwnProperty(key)) out[map[key]] = item; // local wins
             else {
                 map[key] = out.length;
                 out.push(item);
@@ -931,6 +936,17 @@
             localStorage.removeItem(STORAGE_CLIENTS);
         } catch (e) {}
     }
+
+    /* ── Deleted-client ID tracking ──────────────────── */
+    function getDeletedIds() {
+        try { return safeJSON(localStorage.getItem(STORAGE_DELETED_IDS)) || {}; } catch (e) { return {}; }
+    }
+    function addDeletedId(id) {
+        var ids = getDeletedIds();
+        ids[id] = Date.now();
+        try { localStorage.setItem(STORAGE_DELETED_IDS, JSON.stringify(ids)); } catch (e) {}
+    }
+    function isDeleted(id) { return !!getDeletedIds()[id]; }
 
     function persistLocalFallback(key, data) {
         try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) {}
@@ -1206,14 +1222,17 @@
             if (!data) return;
             maybeRunMigration(data);
             var changed = false;
+            /* MERGE cloud into local — never replace local wholesale.
+               Local edits (status changes, payment dates, signed contracts) must survive.
+               mergeByKey: cloud provides base; local fields win for same ID. */
             if (Array.isArray(data.prospects) && data.prospects.length) {
-                state.prospects = data.prospects;
-                try { localStorage.removeItem(STORAGE_PROS); } catch (e) {}
+                state.prospects = mergeByKey(data.prospects, state.prospects, 'prospects');
+                persistLocalFallback(STORAGE_PROS, state.prospects);
                 changed = true;
             }
             if (Array.isArray(data.tasks) && data.tasks.length) {
-                state.tasks = data.tasks;
-                try { localStorage.removeItem(STORAGE_TASKS); } catch (e) {}
+                state.tasks = mergeByKey(data.tasks, state.tasks, 'tasks');
+                persistLocalFallback(STORAGE_TASKS, state.tasks);
                 changed = true;
             }
             if (data.content && Object.keys(data.content).length) {
@@ -1232,9 +1251,18 @@
                 changed = true;
             }
             if (Array.isArray(data.clients) && data.clients.length) {
-                state.clients = data.clients;
-                try { localStorage.removeItem(STORAGE_CLIENTS); } catch (e) {}
-                changed = true;
+                /* Only add clients from cloud that aren't in local and aren't deleted.
+                   Never overwrite existing local client records. */
+                var deletedIds = getDeletedIds();
+                var localClientIds = {};
+                state.clients.forEach(function (c) { if (c && c.id) localClientIds[c.id] = true; });
+                data.clients.forEach(function (cc) {
+                    if (cc && cc.id && !localClientIds[cc.id] && !deletedIds[cc.id]) {
+                        state.clients.push(cc);
+                        changed = true;
+                    }
+                });
+                if (changed) persistLocalFallback(STORAGE_CLIENTS, state.clients);
             }
             if (changed) renderAll();
         }).catch(function (e) { console.warn('syncFromCloud error:', e); });
@@ -3097,8 +3125,9 @@
         // Double confirmation for permanent delete
         if (!confirm('⚠️ FINAL WARNING: Delete ' + (c.fullName || 'client') + ' forever? This action is PERMANENT!')) return;
         
-        // PERMANENTLY REMOVE from array
+        // PERMANENTLY REMOVE from array and record deletion so it never comes back from S3
         state.clients = state.clients.filter(function (x) { return x.id !== id; });
+        addDeletedId(id);
         persistLocalFallback(STORAGE_CLIENTS, state.clients);
 
         // Attempt cloud sync; localStorage is source of truth if endpoint is disabled.
