@@ -11,12 +11,9 @@
  */
 (function () {
     var ENDPOINTS = [
-        'https://api.rnbevents716.com/track-visit',
         'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/track-visit'
     ];
-    // Tracking endpoint is not yet deployed. Disable to keep the console clean.
-    // Set window._remusDisabled = false in DevTools to re-enable when backend is live.
-    if (typeof window._remusDisabled === 'undefined') window._remusDisabled = true;
+    if (typeof window._remusDisabled === 'undefined') window._remusDisabled = false;
     var BOT_PATTERN = /bot|crawl|spider|slurp|mediapartners|adsbot|facebookexternalhit/i;
 
     function sendWithFallback(payload) {

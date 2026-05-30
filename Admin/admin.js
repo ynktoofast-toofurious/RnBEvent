@@ -1,5 +1,5 @@
 ﻿    // Set this to your API Gateway endpoint for Lambda upload
-    window.RNB_UPLOAD_API = window.RNB_UPLOAD_API || 'https://api.rnbevents716.com/upload-clients';
+    window.RNB_UPLOAD_API = window.RNB_UPLOAD_API || 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/upload-clients';
 (function () {
     'use strict';
 
@@ -663,37 +663,28 @@
     ══════════════════════════════════════════════════ */
 
     var S3_CLIENTS_URL = 'https://rnbevents716.s3.us-east-2.amazonaws.com/clients.json';
-    var LAMBDA_BASE    = 'https://api.rnbevents716.com';
+    // rnb-admin-sync Lambda lives behind the rnb-admin-api gateway. The
+    // api.rnbevents716.com custom domain proxies to a different Lambda
+    // (rnb-events-api), so admin endpoints MUST use the execute-api host.
+    var LAMBDA_BASE    = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com';
     var LAMBDA_FALLBACK_BASE = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com';
     var ADMIN_CONTENT_UPLOAD_URL = LAMBDA_BASE + '/admin-upload-content-image';
 
-    // Routes not yet deployed on the Lambda. Pre-disable to avoid 404 noise.
-    // Remove an entry here once the backend route is live.
-    var DISABLED_PATHS = {
-        '/upload-clients': true,
-        '/run-post-event-tasks': true,
-        '/log-admin-activity': true
-    };
+    // Per-session disable list: a route is auto-added if it 404s, so we don't keep retrying.
+    var DISABLED_PATHS = {};
     function postWithFallback(path, payload) {
         if (DISABLED_PATHS[path]) return Promise.resolve({ ok: false, skipped: true });
-        var endpoints = [LAMBDA_BASE + path, LAMBDA_FALLBACK_BASE + path];
-        function run(idx) {
-            if (idx >= endpoints.length) {
-                DISABLED_PATHS[path] = true;
-                return Promise.resolve({ ok: false, skipped: true });
-            }
-            return fetch(endpoints[idx], {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload || {})
-            }).then(function (r) {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.json();
-            }).catch(function () {
-                return run(idx + 1);
-            });
-        }
-        return run(0);
+        return fetch(LAMBDA_BASE + path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload || {})
+        }).then(function (r) {
+            if (r.status === 404) { DISABLED_PATHS[path] = true; return { ok: false, skipped: true }; }
+            if (!r.ok) return r.json().then(function (j) { return { ok: false, error: (j && j.error) || ('HTTP ' + r.status) }; }, function () { return { ok: false, error: 'HTTP ' + r.status }; });
+            return r.json();
+        }).catch(function () {
+            return { ok: false, skipped: true };
+        });
     }
 
     function showAdminLoading(message) {
@@ -932,63 +923,55 @@
         dataHydratedFromS3 = true;
 
         var cfg = window.ADMIN_CONFIG || {};
-        var localPros = Array.isArray(safeJSON(localStorage.getItem(STORAGE_PROS))) ? safeJSON(localStorage.getItem(STORAGE_PROS)) : [];
-        var localTasks = Array.isArray(safeJSON(localStorage.getItem(STORAGE_TASKS))) ? safeJSON(localStorage.getItem(STORAGE_TASKS)) : [];
+        var localPros    = Array.isArray(safeJSON(localStorage.getItem(STORAGE_PROS)))    ? safeJSON(localStorage.getItem(STORAGE_PROS))    : [];
+        var localTasks   = Array.isArray(safeJSON(localStorage.getItem(STORAGE_TASKS)))   ? safeJSON(localStorage.getItem(STORAGE_TASKS))   : [];
         var localClients = Array.isArray(safeJSON(localStorage.getItem(STORAGE_CLIENTS))) ? safeJSON(localStorage.getItem(STORAGE_CLIENTS)) : [];
-        var hasS3Service = false;
 
         updateSyncStatus('syncing');
 
-        var prospectsPromise = hasS3Service
-            ? window.S3Service.getProspects().catch(function () { return []; })
-            : Promise.resolve([]);
-        var tasksPromise = hasS3Service
-            ? window.S3Service.getTasks().catch(function () { return []; })
-            : Promise.resolve([]);
+        var adminDataPromise = postWithFallback('/admin-data', { action: 'get' })
+            .then(function (d) { return (d && !d.skipped) ? d : { prospects: [], tasks: [] }; })
+            .catch(function () { return { prospects: [], tasks: [] }; });
         var clientsPromise = fetch(S3_CLIENTS_URL + '?t=' + Date.now())
             .then(function (r) { return r.ok ? r.json() : []; })
             .catch(function () { return []; });
 
-        return Promise.all([prospectsPromise, tasksPromise, clientsPromise]).then(function (all) {
-            var cloudProspects = Array.isArray(all[0]) ? all[0] : [];
-            var cloudTasks = Array.isArray(all[1]) ? all[1] : [];
-            var cloudClients = Array.isArray(all[2]) ? all[2] : [];
+        return Promise.all([adminDataPromise, clientsPromise]).then(function (all) {
+            var admin = all[0] || {};
+            var cloudProspects = Array.isArray(admin.prospects) ? admin.prospects : [];
+            var cloudTasks     = Array.isArray(admin.tasks)     ? admin.tasks     : [];
+            var cloudClients   = Array.isArray(all[1])          ? all[1]          : [];
 
             var mergedProspects = mergeByKey(cloudProspects, localPros, 'prospects');
-            var mergedTasks = mergeByKey(cloudTasks, localTasks, 'tasks');
-            var mergedClients = mergeByKey(cloudClients, localClients, 'clients');
+            var mergedTasks     = mergeByKey(cloudTasks,     localTasks, 'tasks');
+            var mergedClients   = mergeByKey(cloudClients,   localClients, 'clients');
 
             state.prospects = mergedProspects.length ? mergedProspects : (cfg.prospects || []).slice();
-            state.tasks = mergedTasks.length ? mergedTasks : (cfg.websiteTasks || []).slice();
-            state.clients = mergedClients;
+            state.tasks     = mergedTasks.length     ? mergedTasks     : (cfg.websiteTasks || []).slice();
+            state.clients   = mergedClients;
             renderAll();
 
-            var writes = [];
-            // /s3-data endpoint for admin-data is not available in current deployment.
-            // Keep prospects/tasks local until that API route is deployed.
-            if (state.clients.length) {
-                writes.push(postWithFallback('/upload-clients', { clients: state.clients }));
-            }
+            // Persist locally first (source of truth if cloud writes fail).
+            persistLocalFallback(STORAGE_PROS, state.prospects);
+            persistLocalFallback(STORAGE_TASKS, state.tasks);
+            persistLocalFallback(STORAGE_CLIENTS, state.clients);
 
-            return Promise.allSettled(writes).then(function (results) {
-                var ok = results.every(function (r) {
-                    return r.status === 'fulfilled' && (!r.value || r.value.ok === undefined || r.value.ok === true || r.value.skipped === true);
-                });
-                // CRITICAL: Always persist to localStorage. The /s3-data endpoint for
-                // prospects/tasks is not deployed, so localStorage IS the source of
-                // truth. Never call clearLegacyDataCache() here or user data is lost.
-                persistLocalFallback(STORAGE_PROS, state.prospects);
-                persistLocalFallback(STORAGE_TASKS, state.tasks);
-                persistLocalFallback(STORAGE_CLIENTS, state.clients);
+            // Push merged data back to cloud so other browsers see it.
+            var writes = [];
+            if (state.clients.length) writes.push(postWithFallback('/upload-clients', { clients: state.clients }));
+            writes.push(postWithFallback('/admin-data', { prospects: state.prospects, tasks: state.tasks }));
+
+            return Promise.all(writes).then(function (results) {
+                var ok = results.every(function (r) { return r && (r.ok === true || r.skipped === true); });
                 updateSyncStatus(ok ? 'synced' : 'local');
                 return true;
             });
         }).catch(function (error) {
-            console.warn('S3 hydration failed, continuing with local fallback:', error);
+            console.warn('Cloud hydration failed, using local fallback:', error);
             persistLocalFallback(STORAGE_PROS, state.prospects);
             persistLocalFallback(STORAGE_TASKS, state.tasks);
             persistLocalFallback(STORAGE_CLIENTS, state.clients);
-            updateSyncStatus('error');
+            updateSyncStatus('local');
             throw error;
         });
     }
@@ -1111,12 +1094,12 @@
 
     function saveProspectsToStorage() {
         persistLocalFallback(STORAGE_PROS, state.prospects);
-        updateSyncStatus('local');
+        cloudPush({ prospects: state.prospects });
     }
 
     function saveTasksToStorage() {
         persistLocalFallback(STORAGE_TASKS, state.tasks);
-        updateSyncStatus('local');
+        cloudPush({ tasks: state.tasks });
     }
 
     function saveClientsToStorage() {
@@ -1148,45 +1131,25 @@
     var CLOUD_URL = (window.ADMIN_CONFIG || {}).cloudApiUrl || '';
 
     function cloudGet() {
-        var hasS3Service = false;
-        if (!hasS3Service) {
-            updateSyncStatus('local');
-            return Promise.resolve(null);
-        }
-        return Promise.all([
-            window.S3Service.getProspects().catch(function () { return []; }),
-            window.S3Service.getTasks().catch(function () { return []; })
-        ]).then(function (all) {
+        return postWithFallback('/admin-data', { action: 'get' }).then(function (data) {
+            if (!data || data.skipped) { updateSyncStatus('local'); return null; }
             return {
-                prospects: Array.isArray(all[0]) ? all[0] : [],
-                tasks: Array.isArray(all[1]) ? all[1] : []
+                prospects: Array.isArray(data.prospects) ? data.prospects : [],
+                tasks: Array.isArray(data.tasks) ? data.tasks : []
             };
         });
     }
 
     function cloudPush(payload) {
-        var hasS3Service = false;
-        if (!hasS3Service || !payload || typeof payload !== 'object') {
-            updateSyncStatus('local');
-            return;
-        }
-        var writes = [];
-        if (Array.isArray(payload.prospects)) writes.push(window.S3Service.saveProspects(payload.prospects));
-        if (Array.isArray(payload.tasks)) writes.push(window.S3Service.saveTasks(payload.tasks));
-        if (!writes.length) {
-            updateSyncStatus('local');
-            return;
-        }
+        if (!payload || typeof payload !== 'object') { updateSyncStatus('local'); return; }
+        var body = {};
+        if (Array.isArray(payload.prospects)) body.prospects = payload.prospects;
+        if (Array.isArray(payload.tasks)) body.tasks = payload.tasks;
+        if (!body.prospects && !body.tasks) { updateSyncStatus('local'); return; }
         updateSyncStatus('syncing');
-        Promise.allSettled(writes).then(function (results) {
-            var ok = results.every(function (r) { return r.status === 'fulfilled'; });
-            updateSyncStatus(ok ? 'synced' : 'error');
-            if (ok) {
-                try {
-                    if (Array.isArray(payload.prospects)) localStorage.removeItem(STORAGE_PROS);
-                    if (Array.isArray(payload.tasks)) localStorage.removeItem(STORAGE_TASKS);
-                } catch (e) {}
-            }
+        postWithFallback('/admin-data', body).then(function (data) {
+            if (data && data.ok) updateSyncStatus('synced');
+            else updateSyncStatus('local');
         });
     }
 
