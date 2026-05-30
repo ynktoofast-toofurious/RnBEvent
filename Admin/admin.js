@@ -955,29 +955,22 @@
             var writes = [];
             // /s3-data endpoint for admin-data is not available in current deployment.
             // Keep prospects/tasks local until that API route is deployed.
-            if (window.RNB_UPLOAD_API && state.clients.length) {
-                writes.push(fetch(window.RNB_UPLOAD_API, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ clients: state.clients })
-                }).then(function (r) { return r.json(); }));
+            if (state.clients.length) {
+                writes.push(postWithFallback('/upload-clients', { clients: state.clients }));
             }
 
             return Promise.allSettled(writes).then(function (results) {
                 var ok = results.every(function (r) {
                     return r.status === 'fulfilled' && (!r.value || r.value.ok === undefined || r.value.ok === true || r.value.skipped === true);
                 });
-                if (ok) {
-                    clearLegacyDataCache();
-                    updateSyncStatus('synced');
-                    return true;
-                } else {
-                    persistLocalFallback(STORAGE_PROS, state.prospects);
-                    persistLocalFallback(STORAGE_TASKS, state.tasks);
-                    persistLocalFallback(STORAGE_CLIENTS, state.clients);
-                    updateSyncStatus('error');
-                    throw new Error('Cloud write verification failed.');
-                }
+                // CRITICAL: Always persist to localStorage. The /s3-data endpoint for
+                // prospects/tasks is not deployed, so localStorage IS the source of
+                // truth. Never call clearLegacyDataCache() here or user data is lost.
+                persistLocalFallback(STORAGE_PROS, state.prospects);
+                persistLocalFallback(STORAGE_TASKS, state.tasks);
+                persistLocalFallback(STORAGE_CLIENTS, state.clients);
+                updateSyncStatus(ok ? 'synced' : 'local');
+                return true;
             });
         }).catch(function (error) {
             console.warn('S3 hydration failed, continuing with local fallback:', error);
@@ -1123,27 +1116,18 @@
     }
 
     function autoPublishClients() {
-        var api = window.RNB_UPLOAD_API;
-        if (!api || !state.clients.length) return;
-        fetch(api, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ clients: state.clients })
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            if (data && data.ok) {
-                try { localStorage.removeItem(STORAGE_CLIENTS); } catch (e) {}
-                updateSyncStatus('synced');
-            } else {
-                console.warn('Auto-publish failed:', data && data.error);
-                updateSyncStatus('error');
-            }
-        })
-        .catch(function (e) {
-            console.warn('Auto-publish error:', e);
-            updateSyncStatus('error');
-        });
+        if (!state.clients.length) return;
+        postWithFallback('/upload-clients', { clients: state.clients })
+            .then(function (data) {
+                if (data && data.ok) {
+                    updateSyncStatus('synced');
+                } else {
+                    updateSyncStatus('local');
+                }
+            })
+            .catch(function () {
+                updateSyncStatus('local');
+            });
     }
 
     /* ══════════════════════════════════════════════════
