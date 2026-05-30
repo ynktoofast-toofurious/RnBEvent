@@ -218,14 +218,21 @@
             client_id: cfg.googleClientId,
             callback: onGoogleAdminCredential,
             auto_select: false,
-            cancel_on_tap_outside: true
+            cancel_on_tap_outside: true,
+            ux_mode: 'popup',
+            use_fedcm_for_prompt: true,
+            itp_support: true
         });
+        // Width must be a number and <= container width. On narrow phones
+        // a fixed 270 caused the button to fail to render / not respond.
+        var containerWidth = Math.max(200, Math.min(360, target.clientWidth || 270));
         google.accounts.id.renderButton(target, {
             theme: 'outline',
             size: 'large',
             text: 'signin_with',
             shape: 'rectangular',
-            width: 270
+            logo_alignment: 'left',
+            width: containerWidth
         });
     }
 
