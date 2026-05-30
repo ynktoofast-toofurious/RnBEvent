@@ -21,6 +21,31 @@
             font-family: Montserrat, sans-serif; font-size: 10px;
             letter-spacing: 3px; color: #527141; text-transform: uppercase;
         }
+        #portal-loading .pl-status {
+            font-family: Montserrat, sans-serif; font-size: 11px;
+            letter-spacing: 0.6px; color: #527141;
+            text-transform: none;
+            max-width: 340px;
+            text-align: center;
+            line-height: 1.5;
+            margin: 0;
+        }
+        #portal-loading .pl-actions { display: none; gap: 8px; }
+        #portal-loading .pl-action-btn {
+            border: 1px solid #527141;
+            background: #527141;
+            color: #fff;
+            padding: 9px 14px;
+            font-family: Montserrat, sans-serif;
+            letter-spacing: 1.4px;
+            font-size: 10px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        #portal-loading .pl-action-btn.secondary {
+            background: transparent;
+            color: #527141;
+        }
         #portal-loading .pl-spinner {
             width: 24px; height: 24px; border: 2px solid #d6cfbf;
             border-top-color: #527141; border-radius: 50%;
@@ -56,6 +81,11 @@
         <img src="../RNB Logo Olive.png" alt="RNB Events" class="pl-logo">
         <div class="pl-spinner"></div>
         <p class="pl-text">Loading&hellip;</p>
+        <p id="portal-loading-status" class="pl-status">Connecting to secure cloud data...</p>
+        <div id="portal-loading-actions" class="pl-actions">
+            <button class="pl-action-btn" onclick="retryPortalCloud()">Retry Connection</button>
+            <button class="pl-action-btn secondary" onclick="location.reload()">Reload</button>
+        </div>
     </div>
 
     <!-- ACCESS GATE -->

@@ -14,10 +14,56 @@
     var code     = sessionStorage.getItem(SESSION_KEY);
     var roleVal  = sessionStorage.getItem(ROLE_KEY)      || 'couple';
     var roleName = sessionStorage.getItem(ROLE_NAME_KEY) || 'Client';
+    var cloudGate = null;
 
     if (!code) {
         window.location.replace('/Client');
         throw new Error('Redirecting to gate.');
+    }
+
+    function ensureCloudGate() {
+        if (cloudGate) return cloudGate;
+        cloudGate = document.createElement('div');
+        cloudGate.id = 'portal-cloud-gate';
+        cloudGate.style.cssText = [
+            'position:fixed', 'inset:0', 'background:#f5f2ec',
+            'z-index:10002', 'display:flex', 'flex-direction:column',
+            'align-items:center', 'justify-content:center', 'gap:16px'
+        ].join(';');
+        cloudGate.innerHTML =
+            '<img src="/RNB Logo Olive.png" alt="RNB Events" style="height:52px;width:auto">' +
+            '<div id="portal-cloud-spinner" style="width:24px;height:24px;border:2px solid #d6cfbf;border-top-color:#527141;border-radius:50%;animation:pl-cloud-spin 0.8s linear infinite"></div>' +
+            '<p style="margin:0;font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:3px;color:#527141;text-transform:uppercase">Loading...</p>' +
+            '<p id="portal-cloud-status" style="margin:0;max-width:340px;text-align:center;font-family:Montserrat,sans-serif;font-size:11px;line-height:1.5;color:#527141">Checking secure cloud connectivity...</p>' +
+            '<div id="portal-cloud-actions" style="display:none;gap:8px">' +
+                '<button id="portal-cloud-retry" style="border:1px solid #527141;background:#527141;color:#fff;padding:9px 14px;font-family:Montserrat,sans-serif;letter-spacing:1.4px;font-size:10px;text-transform:uppercase;cursor:pointer">Retry Connection</button>' +
+                '<button id="portal-cloud-exit" style="border:1px solid #527141;background:transparent;color:#527141;padding:9px 14px;font-family:Montserrat,sans-serif;letter-spacing:1.4px;font-size:10px;text-transform:uppercase;cursor:pointer">Back To Portal</button>' +
+            '</div>';
+
+        if (!document.getElementById('pl-cloud-spin-kf')) {
+            var style = document.createElement('style');
+            style.id = 'pl-cloud-spin-kf';
+            style.textContent = '@keyframes pl-cloud-spin{to{transform:rotate(360deg)}}';
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(cloudGate);
+        return cloudGate;
+    }
+
+    function setCloudGateStatus(message, isError) {
+        var status = document.getElementById('portal-cloud-status');
+        var actions = document.getElementById('portal-cloud-actions');
+        var spinner = document.getElementById('portal-cloud-spinner');
+        if (status) status.textContent = message;
+        if (actions) actions.style.display = isError ? 'flex' : 'none';
+        if (spinner) spinner.style.display = isError ? 'none' : 'block';
+    }
+
+    function hideCloudGate() {
+        if (!cloudGate || !cloudGate.parentNode) return;
+        cloudGate.parentNode.removeChild(cloudGate);
+        cloudGate = null;
     }
 
     /* ── Build roles map: any hash → { primaryHash, role } ─── */
@@ -139,28 +185,45 @@
         }
     }
 
-    /* Fetch from S3 first, then boot */
-    var url = window.RNB_CLOUD_URL;
-    if (url) {
+    function bootFromCloud() {
+        ensureCloudGate();
+        setCloudGateStatus('Checking secure cloud connectivity...', false);
+
+        var retry = document.getElementById('portal-cloud-retry');
+        var exit = document.getElementById('portal-cloud-exit');
+        if (retry) retry.onclick = function () { bootFromCloud(); };
+        if (exit) exit.onclick = function () { window.location.replace('/Client'); };
+
+        var url = window.RNB_CLOUD_URL;
+        if (!url) {
+            setCloudGateStatus('Cloud URL not configured. Please contact support.', true);
+            return;
+        }
+
         fetch(url + '?_t=' + Date.now(), { redirect: 'follow' })
-            .then(function (r) { return r.json(); })
-            .then(function (arr) {
-                if (Array.isArray(arr)) {
-                    if (!window.RNB_CLIENTS_RAW) window.RNB_CLIENTS_RAW = {};
-                    arr.forEach(function (c) {
-                        if (c && c.codeHash) {
-                            window.RNB_CLIENTS_RAW[c.codeHash] = c;
-                        }
-                    });
-                    buildRolesMap();
-                }
+            .then(function (r) {
+                if (!r.ok) throw new Error('Cloud request failed: ' + r.status);
+                return r.json();
             })
-            .catch(function () { buildRolesMap(); /* fallback to static */ })
-            .then(bootPortal);
-    } else {
-        buildRolesMap();
-        bootPortal();
+            .then(function (arr) {
+                if (!Array.isArray(arr)) throw new Error('Cloud response was invalid.');
+                if (!window.RNB_CLIENTS_RAW) window.RNB_CLIENTS_RAW = {};
+                arr.forEach(function (c) {
+                    if (c && c.codeHash) {
+                        window.RNB_CLIENTS_RAW[c.codeHash] = c;
+                    }
+                });
+                buildRolesMap();
+                hideCloudGate();
+                bootPortal();
+            })
+            .catch(function (e) {
+                console.warn('Sub-page cloud connectivity failed:', e);
+                setCloudGateStatus('Unable to reach cloud data. Check your connection and retry.', true);
+            });
     }
+
+    bootFromCloud();
 
     window.capitalize = function (s) {
         return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;

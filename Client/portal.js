@@ -13,6 +13,7 @@
     var input   = document.getElementById('access-input');
     var errorEl = document.getElementById('gate-error');
     var cloudReady = false;
+    var cloudInitInFlight = false;
 
     function sha256(str) {
         return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
@@ -37,9 +38,14 @@
     /* ── Fetch clients from S3, merge into RNB_CLIENTS_RAW ─── */
     function fetchCloudClients() {
         var url = window.RNB_CLOUD_URL;
-        if (!url) return Promise.resolve();
+        if (!url) {
+            return Promise.reject(new Error('Cloud URL missing.'));
+        }
         return fetch(url + '?_t=' + Date.now(), { redirect: 'follow' })
-            .then(function (r) { return r.json(); })
+            .then(function (r) {
+                if (!r.ok) throw new Error('Cloud request failed: ' + r.status);
+                return r.json();
+            })
             .then(function (arr) {
                 if (Array.isArray(arr)) {
                     if (!window.RNB_CLIENTS_RAW) window.RNB_CLIENTS_RAW = {};
@@ -49,14 +55,22 @@
                         }
                     });
                     buildRolesMap();
+                } else {
+                    throw new Error('Cloud response was not a valid clients list.');
                 }
                 cloudReady = true;
-            })
-            .catch(function (e) {
-                console.warn('Cloud client fetch failed, using static config:', e);
-                buildRolesMap(); // build from static config
-                cloudReady = true;
             });
+    }
+
+    function setLoadingMessage(msg) {
+        var status = document.getElementById('portal-loading-status');
+        if (status) status.textContent = msg || '';
+    }
+
+    function setLoadingActions(visible) {
+        var actions = document.getElementById('portal-loading-actions');
+        if (!actions) return;
+        actions.style.display = visible ? 'flex' : 'none';
     }
 
     /* ── Find client + role by any hash ─────────────────────── */
@@ -100,7 +114,11 @@
 
     /* ── Init ────────────────────────────────────────────────── */
     function init() {
+        if (cloudInitInFlight) return;
+        cloudInitInFlight = true;
         showLoading(true);
+        setLoadingActions(false);
+        setLoadingMessage('Connecting to secure cloud data...');
         fetchCloudClients().then(function () {
             // 1. Check sessionStorage — use AUTH_HASH_KEY (the actual entered hash)
             //    to correctly restore planners / RNB Team whose primaryHash differs
@@ -149,6 +167,12 @@
 
             // No valid session — show gate
             showLoading(false);
+            cloudInitInFlight = false;
+        }).catch(function (e) {
+            console.warn('Client cloud connectivity failed:', e);
+            setLoadingMessage('Unable to reach cloud data. Check connection and retry.');
+            setLoadingActions(true);
+            cloudInitInFlight = false;
         });
     }
 
@@ -376,6 +400,7 @@
         var el = document.getElementById('portal-loading');
         if (!el) return;
         if (visible) {
+            el.style.display = 'flex';
             el.classList.remove('fade-out');
         } else {
             el.classList.add('fade-out');
@@ -389,6 +414,11 @@
             if (e.key === 'Enter') checkAccess();
         });
     }
+
+    function retryPortalCloud() {
+        init();
+    }
+    window.retryPortalCloud = retryPortalCloud;
 
     /* ══════════════════════════════════════════════════════════════
        2-FACTOR AUTHENTICATION SYSTEM

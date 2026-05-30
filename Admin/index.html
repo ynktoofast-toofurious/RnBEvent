@@ -14,12 +14,72 @@
     <title>Admin Dashboard | RNB Events</title>
     <meta name="robots" content="noindex, nofollow">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' https://rnbevents716.com https://www.google-analytics.com data:; frame-src https://rnbevents716.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.rnbevents716.com https://rnbevents716.s3.us-east-2.amazonaws.com https://www.google-analytics.com https://analytics.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <style>
+        #admin-loading {
+            position: fixed; inset: 0; background: #f5f2ec;
+            z-index: 10001; display: none; flex-direction: column;
+            align-items: center; justify-content: center; gap: 16px;
+            transition: opacity 0.25s ease;
+        }
+        #admin-loading.fade-out { opacity: 0; pointer-events: none; }
+        #admin-loading .al-logo { height: 52px; width: auto; }
+        #admin-loading .al-spinner {
+            width: 24px; height: 24px; border: 2px solid #d6cfbf;
+            border-top-color: #527141; border-radius: 50%;
+            animation: admin-spin 0.8s linear infinite;
+        }
+        #admin-loading .al-title {
+            margin: 0;
+            font-family: Montserrat, sans-serif;
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: #527141;
+            text-transform: uppercase;
+        }
+        #admin-loading .al-status {
+            margin: 0;
+            max-width: 360px;
+            text-align: center;
+            color: #527141;
+            font-family: Montserrat, sans-serif;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+        #admin-loading .al-actions { display: none; gap: 8px; }
+        #admin-loading .al-btn {
+            border: 1px solid #527141;
+            background: #527141;
+            color: #fff;
+            padding: 9px 14px;
+            font-family: Montserrat, sans-serif;
+            letter-spacing: 1.4px;
+            font-size: 10px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        #admin-loading .al-btn.secondary {
+            background: transparent;
+            color: #527141;
+        }
+        @keyframes admin-spin { to { transform: rotate(360deg); } }
+    </style>
     <link rel="stylesheet" href="admin.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
 </head>
 <body>
+
+    <div id="admin-loading">
+        <img src="../RNB Logo Olive.png" alt="RNB Events" class="al-logo">
+        <div class="al-spinner"></div>
+        <p class="al-title">Loading...</p>
+        <p id="admin-loading-status" class="al-status">Connecting to cloud data...</p>
+        <div id="admin-loading-actions" class="al-actions">
+            <button class="al-btn" onclick="retryAdminCloudLoad()">Retry Connection</button>
+            <button class="al-btn secondary" onclick="adminLogout()">Back to Login</button>
+        </div>
+    </div>
 
     <!-- ACCESS GATE -->
     <div id="access-gate" class="gate-overlay">
@@ -899,6 +959,7 @@
     <div id="admin-toast" class="admin-toast"></div>
 
     <script src="admin-data.js"></script>
+    <script src="aws-s3-service.js"></script>
     <script src="admin.js"></script>
     <script>
     function togglePw(id, btn) {

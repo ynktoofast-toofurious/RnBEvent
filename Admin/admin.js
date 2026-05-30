@@ -93,6 +93,8 @@
     var contentPreviewActive = false;
     var kanbanPendingMap     = {};
     var contentDbPromise     = null;
+    var dataHydratedFromS3   = false;
+    var adminLoadInProgress  = false;
 
     function decodeTotpKey() {
         var arr = (window.ADMIN_CONFIG || {}).totpKey;
@@ -579,6 +581,51 @@
     var LAMBDA_BASE    = 'https://api.rnbevents716.com';
     var ADMIN_CONTENT_UPLOAD_URL = LAMBDA_BASE + '/admin-upload-content-image';
 
+    function showAdminLoading(message) {
+        var overlay = document.getElementById('admin-loading');
+        var status = document.getElementById('admin-loading-status');
+        var actions = document.getElementById('admin-loading-actions');
+        if (status && message) status.textContent = message;
+        if (actions) actions.style.display = 'none';
+        if (overlay) {
+            overlay.style.display = 'flex';
+            overlay.classList.remove('fade-out');
+        }
+    }
+
+    function hideAdminLoading() {
+        var overlay = document.getElementById('admin-loading');
+        if (!overlay) return;
+        overlay.classList.add('fade-out');
+        setTimeout(function () {
+            overlay.style.display = 'none';
+        }, 280);
+    }
+
+    function showAdminLoadingError(message) {
+        var overlay = document.getElementById('admin-loading');
+        var status = document.getElementById('admin-loading-status');
+        var actions = document.getElementById('admin-loading-actions');
+        if (status) status.textContent = message || 'Cloud connection failed. Please retry.';
+        if (actions) actions.style.display = 'flex';
+        if (overlay) {
+            overlay.style.display = 'flex';
+            overlay.classList.remove('fade-out');
+        }
+    }
+
+    function verifyAdminCloudConnectivity() {
+        return fetch(S3_CLIENTS_URL + '?t=' + Date.now(), { redirect: 'follow' })
+            .then(function (r) {
+                if (!r.ok) throw new Error('S3 connectivity failed: ' + r.status);
+                return r.json();
+            })
+            .then(function (arr) {
+                if (!Array.isArray(arr)) throw new Error('Invalid S3 payload.');
+                return true;
+            });
+    }
+
     /* ── Post-event automation ────────────────────────── */
     function runPostEventTasks() {
         fetch(LAMBDA_BASE + '/run-post-event-tasks', {
@@ -596,7 +643,7 @@
                         state.clients[idx].archived = true;
                     }
                 });
-                safeSave(STORAGE_CLIENTS, state.clients);
+                saveClientsToStorage();
                 renderClientManager();
                 renderDashboardClients();
                 renderStats();
@@ -661,7 +708,7 @@
                 });
 
                 if (added) {
-                    safeSave(STORAGE_CLIENTS, state.clients);
+                    persistLocalFallback(STORAGE_CLIENTS, state.clients);
                     renderAll();
                 }
             })
@@ -679,16 +726,35 @@
     }
 
     function showDashboard() {
+        if (adminLoadInProgress) return;
+        adminLoadInProgress = true;
         gate.style.display = 'none';
-        content.classList.remove('hidden');
-        loadState();
-        renderAll();
-        hydrateContentDraftStorage();
-        syncFromCloud();
-        fetchS3Clients();
-        runPostEventTasks();
-        startAutoSync();
-        logAdminActivity('Admin login', 'Admin accessed the dashboard');
+        content.classList.add('hidden');
+        showAdminLoading('Connecting to secure cloud data...');
+
+        verifyAdminCloudConnectivity()
+            .then(function () {
+                showAdminLoading('Loading dashboard data from cloud...');
+                loadState();
+                renderAll();
+                hydrateContentDraftStorage();
+                return hydrateCoreDataFromS3();
+            })
+            .then(function () {
+                content.classList.remove('hidden');
+                syncFromCloud();
+                fetchS3Clients();
+                runPostEventTasks();
+                startAutoSync();
+                logAdminActivity('Admin login', 'Admin accessed the dashboard');
+                hideAdminLoading();
+                adminLoadInProgress = false;
+            })
+            .catch(function (e) {
+                console.warn('Admin dashboard cloud gate failed:', e);
+                showAdminLoadingError('Unable to connect to cloud data. Check your connection and retry.');
+                adminLoadInProgress = false;
+            });
     }
 
     /* ── State load/save ─────────────────────────────── */
@@ -711,6 +777,120 @@
         // Clients
         var storedC = safeJSON(localStorage.getItem(STORAGE_CLIENTS));
         state.clients = Array.isArray(storedC) ? storedC : [];
+    }
+
+    function keyForMerge(item, idx, type) {
+        if (!item || typeof item !== 'object') return type + ':x:' + idx;
+        if (item.id) return type + ':id:' + item.id;
+        if (item.codeHash) return type + ':hash:' + item.codeHash;
+        if (item.email && item.name) return type + ':emailname:' + item.email + '|' + item.name;
+        return type + ':json:' + JSON.stringify(item).slice(0, 200);
+    }
+
+    function mergeByKey(cloudArr, localArr, type) {
+        var out = [];
+        var map = {};
+        (Array.isArray(cloudArr) ? cloudArr : []).forEach(function (item, idx) {
+            var key = keyForMerge(item, idx, type);
+            map[key] = out.length;
+            out.push(item);
+        });
+        (Array.isArray(localArr) ? localArr : []).forEach(function (item, idx) {
+            var key = keyForMerge(item, idx, type);
+            if (map.hasOwnProperty(key)) out[map[key]] = item;
+            else {
+                map[key] = out.length;
+                out.push(item);
+            }
+        });
+        return out;
+    }
+
+    function clearLegacyDataCache() {
+        try {
+            localStorage.removeItem(STORAGE_PROS);
+            localStorage.removeItem(STORAGE_TASKS);
+            localStorage.removeItem(STORAGE_CLIENTS);
+        } catch (e) {}
+    }
+
+    function persistLocalFallback(key, data) {
+        try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) {}
+    }
+
+    function hydrateCoreDataFromS3() {
+        if (dataHydratedFromS3) return Promise.resolve(true);
+        dataHydratedFromS3 = true;
+
+        var cfg = window.ADMIN_CONFIG || {};
+        var localPros = Array.isArray(safeJSON(localStorage.getItem(STORAGE_PROS))) ? safeJSON(localStorage.getItem(STORAGE_PROS)) : [];
+        var localTasks = Array.isArray(safeJSON(localStorage.getItem(STORAGE_TASKS))) ? safeJSON(localStorage.getItem(STORAGE_TASKS)) : [];
+        var localClients = Array.isArray(safeJSON(localStorage.getItem(STORAGE_CLIENTS))) ? safeJSON(localStorage.getItem(STORAGE_CLIENTS)) : [];
+        var hasS3Service = !!(window.S3Service && typeof window.S3Service.getProspects === 'function');
+
+        updateSyncStatus('syncing');
+
+        var prospectsPromise = hasS3Service
+            ? window.S3Service.getProspects().catch(function () { return []; })
+            : Promise.resolve([]);
+        var tasksPromise = hasS3Service
+            ? window.S3Service.getTasks().catch(function () { return []; })
+            : Promise.resolve([]);
+        var clientsPromise = fetch(S3_CLIENTS_URL + '?t=' + Date.now())
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .catch(function () { return []; });
+
+        return Promise.all([prospectsPromise, tasksPromise, clientsPromise]).then(function (all) {
+            var cloudProspects = Array.isArray(all[0]) ? all[0] : [];
+            var cloudTasks = Array.isArray(all[1]) ? all[1] : [];
+            var cloudClients = Array.isArray(all[2]) ? all[2] : [];
+
+            var mergedProspects = mergeByKey(cloudProspects, localPros, 'prospects');
+            var mergedTasks = mergeByKey(cloudTasks, localTasks, 'tasks');
+            var mergedClients = mergeByKey(cloudClients, localClients, 'clients');
+
+            state.prospects = mergedProspects.length ? mergedProspects : (cfg.prospects || []).slice();
+            state.tasks = mergedTasks.length ? mergedTasks : (cfg.websiteTasks || []).slice();
+            state.clients = mergedClients;
+            renderAll();
+
+            var writes = [];
+            if (hasS3Service) {
+                writes.push(window.S3Service.saveProspects(state.prospects));
+                writes.push(window.S3Service.saveTasks(state.tasks));
+            }
+            if (window.RNB_UPLOAD_API && state.clients.length) {
+                writes.push(fetch(window.RNB_UPLOAD_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clients: state.clients })
+                }).then(function (r) { return r.json(); }));
+            }
+
+            return Promise.allSettled(writes).then(function (results) {
+                var ok = results.every(function (r) {
+                    return r.status === 'fulfilled' && (!r.value || r.value.ok === undefined || r.value.ok === true);
+                });
+                if (ok) {
+                    clearLegacyDataCache();
+                    updateSyncStatus('synced');
+                    return true;
+                } else {
+                    persistLocalFallback(STORAGE_PROS, state.prospects);
+                    persistLocalFallback(STORAGE_TASKS, state.tasks);
+                    persistLocalFallback(STORAGE_CLIENTS, state.clients);
+                    updateSyncStatus('error');
+                    throw new Error('Cloud write verification failed.');
+                }
+            });
+        }).catch(function (error) {
+            console.warn('S3 hydration failed, continuing with local fallback:', error);
+            persistLocalFallback(STORAGE_PROS, state.prospects);
+            persistLocalFallback(STORAGE_TASKS, state.tasks);
+            persistLocalFallback(STORAGE_CLIENTS, state.clients);
+            updateSyncStatus('error');
+            throw error;
+        });
     }
 
     function cloneContentDrafts(data) {
@@ -830,17 +1010,42 @@
     }
 
     function saveProspectsToStorage() {
-        safeSave(STORAGE_PROS, state.prospects);
+        updateSyncStatus('syncing');
+        if (window.S3Service && typeof window.S3Service.saveProspects === 'function') {
+            window.S3Service.saveProspects(state.prospects).then(function () {
+                localStorage.removeItem(STORAGE_PROS);
+                updateSyncStatus('synced');
+            }).catch(function (e) {
+                console.warn('saveProspectsToS3 failed:', e);
+                persistLocalFallback(STORAGE_PROS, state.prospects);
+                updateSyncStatus('error');
+            });
+            return;
+        }
+        persistLocalFallback(STORAGE_PROS, state.prospects);
         cloudPush({ prospects: state.prospects });
     }
 
     function saveTasksToStorage() {
-        safeSave(STORAGE_TASKS, state.tasks);
+        updateSyncStatus('syncing');
+        if (window.S3Service && typeof window.S3Service.saveTasks === 'function') {
+            window.S3Service.saveTasks(state.tasks).then(function () {
+                localStorage.removeItem(STORAGE_TASKS);
+                updateSyncStatus('synced');
+            }).catch(function (e) {
+                console.warn('saveTasksToS3 failed:', e);
+                persistLocalFallback(STORAGE_TASKS, state.tasks);
+                updateSyncStatus('error');
+            });
+            return;
+        }
+        persistLocalFallback(STORAGE_TASKS, state.tasks);
         cloudPush({ tasks: state.tasks });
     }
 
     function saveClientsToStorage() {
-        safeSave(STORAGE_CLIENTS, state.clients);
+        updateSyncStatus('syncing');
+        persistLocalFallback(STORAGE_CLIENTS, state.clients);
         cloudPush({ clients: state.clients });
         autoPublishClients();
     }
@@ -856,6 +1061,7 @@
         .then(function (r) { return r.json(); })
         .then(function (data) {
             if (data && data.ok) {
+                try { localStorage.removeItem(STORAGE_CLIENTS); } catch (e) {}
                 updateSyncStatus('synced');
             } else {
                 console.warn('Auto-publish failed:', data && data.error);
@@ -875,15 +1081,46 @@
     var CLOUD_URL = (window.ADMIN_CONFIG || {}).cloudApiUrl || '';
 
     function cloudGet() {
-        // Legacy cloud sync disabled - using direct S3 Lambda upload instead
-        updateSyncStatus('local');
-        return Promise.resolve(null);
+        var hasS3Service = !!(window.S3Service && typeof window.S3Service.getProspects === 'function');
+        if (!hasS3Service) {
+            updateSyncStatus('local');
+            return Promise.resolve(null);
+        }
+        return Promise.all([
+            window.S3Service.getProspects().catch(function () { return []; }),
+            window.S3Service.getTasks().catch(function () { return []; })
+        ]).then(function (all) {
+            return {
+                prospects: Array.isArray(all[0]) ? all[0] : [],
+                tasks: Array.isArray(all[1]) ? all[1] : []
+            };
+        });
     }
 
     function cloudPush(payload) {
-        // Legacy cloud sync disabled - using direct S3 Lambda upload instead
-        // Cloud sync happens via autoPublishClients() using RNB_UPLOAD_API
-        updateSyncStatus('local');
+        var hasS3Service = !!(window.S3Service && typeof window.S3Service.saveProspects === 'function');
+        if (!hasS3Service || !payload || typeof payload !== 'object') {
+            updateSyncStatus('local');
+            return;
+        }
+        var writes = [];
+        if (Array.isArray(payload.prospects)) writes.push(window.S3Service.saveProspects(payload.prospects));
+        if (Array.isArray(payload.tasks)) writes.push(window.S3Service.saveTasks(payload.tasks));
+        if (!writes.length) {
+            updateSyncStatus('local');
+            return;
+        }
+        updateSyncStatus('syncing');
+        Promise.allSettled(writes).then(function (results) {
+            var ok = results.every(function (r) { return r.status === 'fulfilled'; });
+            updateSyncStatus(ok ? 'synced' : 'error');
+            if (ok) {
+                try {
+                    if (Array.isArray(payload.prospects)) localStorage.removeItem(STORAGE_PROS);
+                    if (Array.isArray(payload.tasks)) localStorage.removeItem(STORAGE_TASKS);
+                } catch (e) {}
+            }
+        });
     }
 
     function filterCloudPayload(payload) {
@@ -923,12 +1160,12 @@
             var changed = false;
             if (Array.isArray(data.prospects) && data.prospects.length) {
                 state.prospects = data.prospects;
-                safeSave(STORAGE_PROS, state.prospects);
+                try { localStorage.removeItem(STORAGE_PROS); } catch (e) {}
                 changed = true;
             }
             if (Array.isArray(data.tasks) && data.tasks.length) {
                 state.tasks = data.tasks;
-                safeSave(STORAGE_TASKS, state.tasks);
+                try { localStorage.removeItem(STORAGE_TASKS); } catch (e) {}
                 changed = true;
             }
             if (data.content && Object.keys(data.content).length) {
@@ -948,7 +1185,7 @@
             }
             if (Array.isArray(data.clients) && data.clients.length) {
                 state.clients = data.clients;
-                safeSave(STORAGE_CLIENTS, state.clients);
+                try { localStorage.removeItem(STORAGE_CLIENTS); } catch (e) {}
                 changed = true;
             }
             if (changed) renderAll();
@@ -2814,10 +3051,7 @@
         
         // PERMANENTLY REMOVE from array
         state.clients = state.clients.filter(function (x) { return x.id !== id; });
-        
-        // Save to localStorage (without deleted client)
-        safeSave(STORAGE_CLIENTS, state.clients);
-        cloudPush({ clients: state.clients });
+        persistLocalFallback(STORAGE_CLIENTS, state.clients);
         
         // Upload to S3 WITHOUT the deleted client
         var api = window.RNB_UPLOAD_API;
@@ -3220,6 +3454,7 @@
     window.closeSecurityPage = closeSecurityPage;
     window.saveSecuritySetting = saveSecuritySetting;
     window.copyDeployCommand = copyDeployCommand;
+    window.retryAdminCloudLoad = showDashboard;
 
     /* ══════════════════════════════════════════════════
        EVENTS & RSVP ADMIN SECTION
