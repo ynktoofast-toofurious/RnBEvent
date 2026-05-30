@@ -17,17 +17,19 @@
     var BOT_PATTERN = /bot|crawl|spider|slurp|mediapartners|adsbot|facebookexternalhit/i;
 
     function sendWithFallback(payload) {
+        // Tracking endpoints are best-effort. Use fetch (not sendBeacon) so failures
+        // resolve silently inside our promise chain instead of surfacing as console 404s.
         var body = JSON.stringify(payload);
         var idx = 0;
         function run() {
             if (idx >= ENDPOINTS.length) return;
             var endpoint = ENDPOINTS[idx++];
-            if (navigator.sendBeacon && navigator.sendBeacon(endpoint, body)) return;
             fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: body,
-                keepalive: true
+                keepalive: true,
+                mode: 'no-cors'
             }).catch(function () { run(); });
         }
         run();

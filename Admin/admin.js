@@ -719,7 +719,10 @@
     }
 
     function verifyAdminCloudConnectivity() {
-        return fetch(S3_CLIENTS_URL + '?t=' + Date.now(), { redirect: 'follow' })
+        var url = (typeof S3_CLIENTS_URL === 'string' && S3_CLIENTS_URL)
+            ? S3_CLIENTS_URL
+            : 'https://rnbevents716.s3.us-east-2.amazonaws.com/clients.json';
+        return fetch(url + '?t=' + Date.now(), { redirect: 'follow' })
             .then(function (r) {
                 if (!r.ok) throw new Error('S3 connectivity failed: ' + r.status);
                 return r.json();
