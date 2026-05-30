@@ -668,7 +668,7 @@
     ══════════════════════════════════════════════════ */
 
     var S3_CLIENTS_URL = 'https://rnbevents716.s3.us-east-2.amazonaws.com/clients.json';
-    var LAMBDA_BASE    = 'https://api.rnbevents716.com';
+    var LAMBDA_BASE    = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com';
     var ADMIN_CONTENT_UPLOAD_URL = LAMBDA_BASE + '/admin-upload-content-image';
 
     function showAdminLoading(message) {
@@ -959,7 +959,7 @@
 
             return Promise.allSettled(writes).then(function (results) {
                 var ok = results.every(function (r) {
-                    return r.status === 'fulfilled' && (!r.value || r.value.ok === undefined || r.value.ok === true);
+                    return r.status === 'fulfilled' && (!r.value || r.value.ok === undefined || r.value.ok === true || r.value.skipped === true);
                 });
                 if (ok) {
                     clearLegacyDataCache();

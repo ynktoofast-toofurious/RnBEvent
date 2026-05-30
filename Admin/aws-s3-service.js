@@ -53,6 +53,23 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 404) {
+                        const s3Read = await fetch(`${S3_CONFIG.baseUrl}/${path}?_t=${Date.now()}`, {
+                            method: 'GET',
+                            credentials: 'omit'
+                        });
+                        if (!s3Read.ok) {
+                            throw new Error(`S3 fetch failed: ${s3Read.status}`);
+                        }
+                        const fallbackData = await s3Read.json();
+                        if (useCache) {
+                            this.cache.set(cacheKey, {
+                                data: fallbackData,
+                                timestamp: Date.now()
+                            });
+                        }
+                        return fallbackData;
+                    }
                     throw new Error(`S3 fetch failed: ${response.status}`);
                 }
 
@@ -90,6 +107,13 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 404) {
+                        return {
+                            ok: false,
+                            skipped: true,
+                            reason: 's3-data-route-unavailable'
+                        };
+                    }
                     throw new Error(`S3 save failed: ${response.status}`);
                 }
 

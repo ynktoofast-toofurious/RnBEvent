@@ -10,7 +10,7 @@
  * No cookies are set. No PII is transmitted.
  */
 (function () {
-    var ENDPOINT = 'https://api.rnbevents716.com/track-visit';
+    var ENDPOINT = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com/track-visit';
     var BOT_PATTERN = /bot|crawl|spider|slurp|mediapartners|adsbot|facebookexternalhit/i;
 
     /* Assign a random session ID per browser session (cleared when tab closes) */
