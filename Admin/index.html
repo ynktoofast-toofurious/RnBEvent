@@ -13,7 +13,7 @@
     </script>
     <title>Admin Dashboard | RNB Events</title>
     <meta name="robots" content="noindex, nofollow">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' https://rnbevents716.com https://www.google-analytics.com data:; frame-src https://rnbevents716.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.rnbevents716.com https://rnbevents716.s3.us-east-2.amazonaws.com https://www.google-analytics.com https://analytics.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://accounts.google.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' https://rnbevents716.com https://www.google-analytics.com data:; frame-src https://rnbevents716.com https://accounts.google.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.rnbevents716.com https://rnbevents716.s3.us-east-2.amazonaws.com https://www.google-analytics.com https://analytics.google.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <style>
         #admin-loading {
             position: fixed; inset: 0; background: #f5f2ec;
@@ -67,6 +67,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <script async defer src="https://accounts.google.com/gsi/client"></script>
 </head>
 <body>
 
@@ -107,6 +108,11 @@
                 </div>
                 <p id="gate-error-1" class="gate-error" aria-live="polite"></p>
             </form>
+            <div style="margin-top:16px;text-align:center;">
+                <p style="margin:0 0 10px;font-size:10px;letter-spacing:1.4px;color:#527141;text-transform:uppercase;">Or sign in with Google</p>
+                <div id="admin-google-signin" style="display:flex;justify-content:center;"></div>
+                <p id="admin-google-error" class="gate-error" aria-live="polite" style="margin-top:8px;"></p>
+            </div>
             <div class="gate-2fa-footer">
                 <button class="text-btn" onclick="showResetStep()">Forgot Password?</button>
             </div>

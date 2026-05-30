@@ -145,6 +145,90 @@
 
     var pendingAuth = false; // step 1 passed, waiting for TOTP
 
+    function normalizeEmail(email) {
+        return String(email || '').trim().toLowerCase();
+    }
+
+    function allowedGoogleEmails() {
+        var cfg = window.ADMIN_CONFIG || {};
+        var list = Array.isArray(cfg.googleAllowedEmails) ? cfg.googleAllowedEmails : [];
+        return list.map(normalizeEmail).filter(Boolean);
+    }
+
+    function parseJwtPayload(token) {
+        if (!token || token.split('.').length < 2) return null;
+        var payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        try {
+            var decoded = atob(payload);
+            return JSON.parse(decoded);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function setGoogleErr(msg) {
+        var err = document.getElementById('admin-google-error');
+        if (err) err.textContent = msg || '';
+    }
+
+    function onGoogleAdminCredential(response) {
+        var cfg = window.ADMIN_CONFIG || {};
+        var payload = parseJwtPayload(response && response.credential);
+        if (!payload) {
+            setGoogleErr('Google sign-in failed. Please try again.');
+            return;
+        }
+
+        var now = Math.floor(Date.now() / 1000);
+        var email = normalizeEmail(payload.email);
+        var allowed = allowedGoogleEmails();
+        var audienceOk = cfg.googleClientId && payload.aud === cfg.googleClientId;
+        var notExpired = !payload.exp || payload.exp > now;
+        var verifiedEmail = payload.email_verified === true;
+
+        if (!audienceOk || !notExpired || !verifiedEmail || allowed.indexOf(email) === -1) {
+            setGoogleErr('This Google account is not authorized for admin access.');
+            return;
+        }
+
+        setGoogleErr('');
+        authAttempts = 0;
+        sessionStorage.removeItem('rnb_auth_attempts');
+        sessionStorage.removeItem('rnb_auth_lockuntil');
+        sessionStorage.setItem(SESSION_KEY, 'ok');
+        sessionStorage.setItem('rnb_admin_google_email', email);
+        showDashboard();
+    }
+
+    function initGoogleAdminSignIn() {
+        var cfg = window.ADMIN_CONFIG || {};
+        var target = document.getElementById('admin-google-signin');
+        if (!target) return;
+        if (!cfg.googleClientId || !Array.isArray(cfg.googleAllowedEmails) || !cfg.googleAllowedEmails.length) {
+            target.innerHTML = '';
+            return;
+        }
+        if (!window.google || !google.accounts || !google.accounts.id) {
+            setGoogleErr('Google sign-in script did not load. Refresh and try again.');
+            return;
+        }
+
+        target.innerHTML = '';
+        google.accounts.id.initialize({
+            client_id: cfg.googleClientId,
+            callback: onGoogleAdminCredential,
+            auto_select: false,
+            cancel_on_tap_outside: true
+        });
+        google.accounts.id.renderButton(target, {
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            shape: 'rectangular',
+            width: 270
+        });
+    }
+
     /* ── Auth Lockout ────────────────────────────────── */
     var AUTH_MAX_ATTEMPTS = 5;
     var AUTH_LOCKOUT_MS   = 300000; // 5 minutes
@@ -228,6 +312,7 @@
     /* ── Boot ────────────────────────────────────────── */
     (function init() {
         try {
+            initGoogleAdminSignIn();
             if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
                 showDashboard();
             } else if (loadAdminRemembered()) {
@@ -340,12 +425,15 @@
         document.getElementById('gate-step1').classList.remove('hidden');
         document.getElementById('totp-input').value = '';
         clearErr('gate-error-2');
+        setGoogleErr('');
+        initGoogleAdminSignIn();
         if (input) input.focus();
     }
 
     /** Sign out */
     function adminLogout() {
         sessionStorage.removeItem(SESSION_KEY);
+        sessionStorage.removeItem('rnb_admin_google_email');
         clearAdminRemembered();
         if (_syncInterval) { clearInterval(_syncInterval); _syncInterval = null; }
         content.classList.add('hidden');
@@ -356,6 +444,8 @@
         document.getElementById('gate-step1').classList.remove('hidden');
         if (input) { input.value = ''; }
         pendingAuth = false;
+        setGoogleErr('');
+        initGoogleAdminSignIn();
     }
 
     /* ══════════════════════════════════════════════════

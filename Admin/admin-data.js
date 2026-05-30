@@ -2,6 +2,8 @@
 window.ADMIN_CONFIG = {
     codeHash: '47d538bc9bbdba86910d104f78b851d87356c7fcee36e214878a5a24f7bbedf4',
     totpKey: [82,78,66,69,86,55,83,69,67,82,51,84,65,68,77,50],
+    googleClientId: '1055774009737-vmc62bn3rpcbcpf8h0f6s28kbpvmh359.apps.googleusercontent.com',
+    googleAllowedEmails: ['yannicknkongolo7@gmail.com', 'rnbevents716@gmail.com'],
     cloudApiUrl: 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com',
     prospects: [
         {
