@@ -6,6 +6,7 @@
     var ROLE_NAME_KEY = 'rnb_portal_role_name';
     var AUTH_HASH_KEY = 'rnb_portal_auth_hash';  // the exact hash entered (may differ from primary)
     var REMEMBER_KEY  = 'rnb_portal_remember'; // localStorage key for cached login
+    var ADMIN_PORTAL_BRIDGE_KEY = 'rnb_admin_portal_bridge';
     var REMEMBER_DAYS = 30;
 
     var gate    = document.getElementById('access-gate');
@@ -120,54 +121,62 @@
         setLoadingActions(false);
         setLoadingMessage('Connecting to secure cloud data...');
         fetchCloudClients().then(function () {
-            // 1. Check sessionStorage — use AUTH_HASH_KEY (the actual entered hash)
-            //    to correctly restore planners / RNB Team whose primaryHash differs
-            var savedHash     = sessionStorage.getItem(SESSION_KEY);
-            var savedAuthHash = sessionStorage.getItem(AUTH_HASH_KEY) || savedHash;
-            var savedRole     = sessionStorage.getItem(ROLE_KEY);
-
-            if (savedHash) {
-                // Use the entered hash for role lookup so planner/team roles survive reload
-                var result = findClientAndRole(savedAuthHash);
-                if (!result && savedAuthHash !== savedHash) {
-                    // fallback: try primary hash
-                    result = findClientAndRole(savedHash);
+            return consumeAdminBridgeLogin().then(function (bridgeLoggedIn) {
+                if (bridgeLoggedIn) {
+                    showLoading(false);
+                    cloudInitInFlight = false;
+                    return;
                 }
-                // backward compat: savedHash might be the primary hash with no roles entry
-                if (!result) {
-                    var client = window.RNB_CLIENTS_RAW && window.RNB_CLIENTS_RAW[savedHash];
-                    if (client && client.active !== false) {
-                        result = { client: client, primaryHash: savedHash, role: savedRole || 'couple' };
+
+                // 1. Check sessionStorage — use AUTH_HASH_KEY (the actual entered hash)
+                //    to correctly restore planners / RNB Team whose primaryHash differs
+                var savedHash     = sessionStorage.getItem(SESSION_KEY);
+                var savedAuthHash = sessionStorage.getItem(AUTH_HASH_KEY) || savedHash;
+                var savedRole     = sessionStorage.getItem(ROLE_KEY);
+
+                if (savedHash) {
+                    // Use the entered hash for role lookup so planner/team roles survive reload
+                    var result = findClientAndRole(savedAuthHash);
+                    if (!result && savedAuthHash !== savedHash) {
+                        // fallback: try primary hash
+                        result = findClientAndRole(savedHash);
+                    }
+                    // backward compat: savedHash might be the primary hash with no roles entry
+                    if (!result) {
+                        var client = window.RNB_CLIENTS_RAW && window.RNB_CLIENTS_RAW[savedHash];
+                        if (client && client.active !== false) {
+                            result = { client: client, primaryHash: savedHash, role: savedRole || 'couple' };
+                        }
+                    }
+                    if (result) {
+                        showLoading(false);
+                        showPortal(result.primaryHash, result.role, getRoleName(result));
+                        return;
+                    }
+                    sessionStorage.removeItem(SESSION_KEY);
+                    sessionStorage.removeItem(ROLE_KEY);
+                    sessionStorage.removeItem(ROLE_NAME_KEY);
+                    sessionStorage.removeItem(AUTH_HASH_KEY);
+                }
+
+                // 2. Check localStorage remember-me
+                var remembered = loadRemembered();
+                if (remembered) {
+                    var client2 = window.RNB_CLIENTS_RAW && window.RNB_CLIENTS_RAW[remembered.hash];
+                    if (client2 && client2.active !== false) {
+                        storeSession(remembered.hash, remembered.role, remembered.roleName, remembered.authHash);
+                        showLoading(false);
+                        showPortal(remembered.hash, remembered.role, remembered.roleName);
+                        return;
+                    } else {
+                        clearRemembered();
                     }
                 }
-                if (result) {
-                    showLoading(false);
-                    showPortal(result.primaryHash, result.role, getRoleName(result));
-                    return;
-                }
-                sessionStorage.removeItem(SESSION_KEY);
-                sessionStorage.removeItem(ROLE_KEY);
-                sessionStorage.removeItem(ROLE_NAME_KEY);
-                sessionStorage.removeItem(AUTH_HASH_KEY);
-            }
 
-            // 2. Check localStorage remember-me
-            var remembered = loadRemembered();
-            if (remembered) {
-                var client2 = window.RNB_CLIENTS_RAW && window.RNB_CLIENTS_RAW[remembered.hash];
-                if (client2 && client2.active !== false) {
-                    storeSession(remembered.hash, remembered.role, remembered.roleName, remembered.authHash);
-                    showLoading(false);
-                    showPortal(remembered.hash, remembered.role, remembered.roleName);
-                    return;
-                } else {
-                    clearRemembered();
-                }
-            }
-
-            // No valid session — show gate
-            showLoading(false);
-            cloudInitInFlight = false;
+                // No valid session — show gate
+                showLoading(false);
+                cloudInitInFlight = false;
+            });
         }).catch(function (e) {
             console.warn('Client cloud connectivity failed:', e);
             setLoadingMessage('Unable to reach cloud data. Check connection and retry.');
@@ -187,6 +196,54 @@
         sessionStorage.setItem(ROLE_KEY,      role);
         sessionStorage.setItem(ROLE_NAME_KEY, roleName);
         sessionStorage.setItem(AUTH_HASH_KEY, authHash || primaryHash);
+    }
+
+    function clearAdminBridgeUrlParams() {
+        try {
+            var clean = window.location.pathname + window.location.hash;
+            window.history.replaceState({}, document.title, clean);
+        } catch (e) {}
+    }
+
+    function consumeAdminBridgeLogin() {
+        var params = new URLSearchParams(window.location.search || '');
+        var bridgeToken = params.get('adminBridge');
+        var teamCode = (params.get('teamCode') || '').trim();
+        if (!bridgeToken || !teamCode) return Promise.resolve(false);
+
+        var bridgeRaw = null;
+        try { bridgeRaw = localStorage.getItem(ADMIN_PORTAL_BRIDGE_KEY); } catch (e) {}
+        if (!bridgeRaw) {
+            clearAdminBridgeUrlParams();
+            return Promise.resolve(false);
+        }
+
+        var bridge = null;
+        try { bridge = JSON.parse(bridgeRaw); } catch (e) { bridge = null; }
+        if (!bridge || bridge.token !== bridgeToken || !bridge.expiry || Date.now() > bridge.expiry) {
+            try { localStorage.removeItem(ADMIN_PORTAL_BRIDGE_KEY); } catch (e) {}
+            clearAdminBridgeUrlParams();
+            return Promise.resolve(false);
+        }
+
+        return sha256(teamCode.toUpperCase()).then(function (teamHash) {
+            var result = findClientAndRole(teamHash);
+            if (!result || result.role !== 'rnbTeam') {
+                try { localStorage.removeItem(ADMIN_PORTAL_BRIDGE_KEY); } catch (e) {}
+                clearAdminBridgeUrlParams();
+                return false;
+            }
+
+            storeSession(result.primaryHash, 'rnbTeam', 'RNB Team', teamHash);
+            try { localStorage.removeItem(ADMIN_PORTAL_BRIDGE_KEY); } catch (e) {}
+            clearAdminBridgeUrlParams();
+            showPortal(result.primaryHash, 'rnbTeam', 'RNB Team');
+            return true;
+        }).catch(function () {
+            try { localStorage.removeItem(ADMIN_PORTAL_BRIDGE_KEY); } catch (e) {}
+            clearAdminBridgeUrlParams();
+            return false;
+        });
     }
 
     /* ── Access check ────────────────────────────────────────── */

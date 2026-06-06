@@ -20,6 +20,7 @@
     var STORAGE_CONTENT_HISTORY = 'rnb_content_drafts_history';
     var STORAGE_CLIENTS         = 'rnb_admin_clients';
     var STORAGE_DELETED_IDS     = 'rnb_deleted_client_ids';
+    var ADMIN_PORTAL_BRIDGE_KEY = 'rnb_admin_portal_bridge';
     var CONTENT_DB_NAME         = 'rnb_admin_content_db';
     var CONTENT_DB_STORE        = 'drafts';
     var CONTENT_DB_CURRENT_KEY  = 'current';
@@ -85,7 +86,8 @@
         tasks:        [],
         clients:      [],
         activeFilter: 'New Lead',
-        dashboardClientFilter: 'active'
+        dashboardClientFilter: 'active',
+        activeDashboardView: 'prospects'
     };
     var contentDrafts        = {};
     var contentDraftHistory  = {};
@@ -1380,6 +1382,57 @@
         try { renderCRM(state.activeFilter); } catch (e) { console.error('renderCRM', e); }
         try { renderDashboardClients(); } catch (e) { console.error('renderDashboardClients', e); }
         try { renderKanban(); } catch (e) { console.error('renderKanban', e); }
+        try { updateViewPickerCounts(); } catch (e) { console.error('updateViewPickerCounts', e); }
+        try { applyDashboardView(); } catch (e) { console.error('applyDashboardView', e); }
+    }
+
+    function updateViewPickerCounts() {
+        var prosCountEl = document.getElementById('view-count-prospects');
+        var clientCountEl = document.getElementById('view-count-clients');
+        if (prosCountEl) prosCountEl.textContent = state.prospects.length + ' Prospects';
+        if (clientCountEl) {
+            var activeCount = state.clients.filter(function (c) { return !c.archived && c.active !== false; }).length;
+            clientCountEl.textContent = activeCount + ' Active Clients';
+        }
+    }
+
+    function applyDashboardView() {
+        var view = state.activeDashboardView || 'prospects';
+        var panelProspects = document.getElementById('panel-prospects');
+        var panelClients = document.getElementById('panel-clients-dash');
+        var adminTools = document.getElementById('admin-tools-section');
+        var mainDash = document.getElementById('main-dashboard');
+
+        if (panelProspects) panelProspects.classList.toggle('hidden', view !== 'prospects');
+        if (panelClients) panelClients.classList.toggle('hidden', view !== 'clients');
+        if (adminTools) adminTools.classList.toggle('hidden', view !== 'tools');
+        if (mainDash) mainDash.classList.toggle('hidden', view === 'tools');
+
+        document.querySelectorAll('.view-tab').forEach(function (tab) {
+            tab.classList.toggle('active', tab.getAttribute('data-view') === view);
+        });
+        document.querySelectorAll('.view-thumb').forEach(function (thumb) {
+            thumb.classList.toggle('active', thumb.getAttribute('data-view') === view);
+        });
+    }
+
+    function switchAdminView(view, btn) {
+        state.activeDashboardView = view || 'prospects';
+        applyDashboardView();
+
+        if (btn) {
+            document.querySelectorAll('.view-tab').forEach(function (tab) { tab.classList.remove('active'); });
+            btn.classList.add('active');
+        }
+
+        if (state.activeDashboardView === 'prospects') renderCRM(state.activeFilter);
+        if (state.activeDashboardView === 'clients') renderDashboardClients();
+        if (state.activeDashboardView === 'tools') {
+            renderKanban();
+            var activeToolBtn = document.querySelector('.tool-tab.active');
+            var toolName = activeToolBtn ? activeToolBtn.getAttribute('data-tool') : 'kanban';
+            switchTool(toolName || 'kanban', activeToolBtn || null);
+        }
     }
 
     /* ── Stats Row ───────────────────────────────────── */
@@ -1442,7 +1495,7 @@
     }
 
     function filterProspects(filter, btn) {
-        document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
+        document.querySelectorAll('#panel-prospects .filter-btn').forEach(function (b) { b.classList.remove('active'); });
         if (btn) btn.classList.add('active');
         renderCRM(filter);
     }
@@ -1991,7 +2044,12 @@
     var KANBAN_COLS = ['New Lead', 'In Conversation', 'Proposal Sent', 'Booked', 'Lost'];
 
     function switchTool(name, btn) {
+        if (state.activeDashboardView !== 'tools') {
+            state.activeDashboardView = 'tools';
+            applyDashboardView();
+        }
         document.querySelectorAll('.tool-tab').forEach(function (b) { b.classList.remove('active'); });
+        if (!btn) btn = document.querySelector('.tool-tab[data-tool="' + name + '"]');
         if (btn) btn.classList.add('active');
         document.getElementById('tool-kanban').classList.toggle('hidden', name !== 'kanban');
         document.getElementById('tool-content').classList.toggle('hidden', name !== 'content');
@@ -2418,12 +2476,14 @@
                 '<span class="client-code-cell">' + codeDisplay + '</span>' +
                 '<span class="client-status-cell">' + statusBtn + '</span>' +
                 '<span class="crm-actions">' +
+                    '<button class="crm-act-btn" title="Open portal as RNB Team" onclick="adminQuickPortalFromClient(\'' + escJS(c.id) + '\')">PORTAL</button>' +
                     '<button class="crm-act-btn" onclick="editClient(\'' + escJS(c.id) + '\')">EDIT</button>' +
                     '<button class="crm-act-btn del-btn" onclick="deleteClient(\'' + escJS(c.id) + '\')">DEL</button>' +
                 '</span>' +
             '</div>';
         });
         el.innerHTML = html;
+        updateViewPickerCounts();
     }
 
     function filterDashboardClients(filter, btn) {
@@ -2623,6 +2683,7 @@
                 '<span class="client-code-cell" style="display:flex;flex-direction:column;gap:3px">' + codeHtml + '</span>' +
                 '<span class="client-status-cell">' + statusBtn + '</span>' +
                 '<span class="crm-actions">' +
+                    '<button class="crm-act-btn" title="Open portal as RNB Team" onclick="adminQuickPortalFromClient(\'' + escJS(c.id) + '\')">PORTAL</button>' +
                     '<button class="crm-act-btn" onclick="editClient(\'' + escJS(c.id) + '\')">EDIT</button>' +
                     '<button class="crm-act-btn del-btn" onclick="deleteClient(\'' + escJS(c.id) + '\')">DEL</button>' +
                     (c.agreement && c.agreement.status === 'fully-executed' ? '<button class="crm-act-btn" style="color:#527141;border-color:#527141" title="Resend fully-executed contract PDF" onclick="adminResendContract(\'' + escJS(c.id) + '\',\'' + escJS(c.codeHash || '') + '\')">&#9993; CONTRACT</button>' : '') +
@@ -2631,6 +2692,51 @@
             '</div>';
         });
         el.innerHTML = html;
+    }
+
+    function generateBridgeToken() {
+        if (!window.crypto || !crypto.getRandomValues) {
+            return 'bridge-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+        }
+        var bytes = new Uint8Array(16);
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    }
+
+    function adminQuickPortalFromClient(id) {
+        if (sessionStorage.getItem(SESSION_KEY) !== 'ok') {
+            showToast('Your admin session is no longer active. Please sign in again.');
+            return;
+        }
+
+        var client = state.clients.find(function (c) { return c.id === id; });
+        if (!client) {
+            showToast('Client not found.');
+            return;
+        }
+        if (client.active === false) {
+            showToast('Client portal access is disabled for this client.');
+            return;
+        }
+        if (!client.teamCode) {
+            showToast('No TEAM code is set for this client yet.');
+            return;
+        }
+
+        var token = generateBridgeToken();
+        try {
+            localStorage.setItem(ADMIN_PORTAL_BRIDGE_KEY, JSON.stringify({
+                token: token,
+                expiry: Date.now() + (2 * 60 * 1000),
+                clientId: client.id
+            }));
+        } catch (e) {
+            showToast('Unable to open quick portal access on this browser.');
+            return;
+        }
+
+        var url = '/Client/?adminBridge=' + encodeURIComponent(token) + '&teamCode=' + encodeURIComponent(client.teamCode);
+        window.open(url, '_blank', 'noopener');
     }
 
     function openAddClient() {
@@ -3320,6 +3426,7 @@
     window.closeModal       = closeModal;
     // Admin Tools
     window.switchTool             = switchTool;
+    window.switchAdminView        = switchAdminView;
     window.switchContentTab       = switchContentTab;
     window.saveContentDrafts      = saveContentDrafts;
     window.viewContentChanges     = viewContentChanges;
@@ -3350,6 +3457,7 @@
     window.viewAllClients          = viewAllClients;
     window.filterAllClients        = filterAllClients;
     window.renderDashboardClients = renderDashboardClients;
+    window.adminQuickPortalFromClient = adminQuickPortalFromClient;
 
     // ═══════════════════════════════════════════════════════════════════════
     // HAMBURGER MENU & SECURITY SETTINGS
@@ -3374,9 +3482,11 @@
         var mainDash = document.getElementById('main-dashboard');
         var statsRow = document.getElementById('stats-row');
         var toolsSection = document.getElementById('admin-tools-section');
+        var viewPicker = document.getElementById('dashboard-view-picker');
         if (mainDash) mainDash.style.display = 'none';
         if (statsRow) statsRow.style.display = 'none';
         if (toolsSection) toolsSection.style.display = 'none';
+        if (viewPicker) viewPicker.style.display = 'none';
 
         // Show security page
         var secPage = document.getElementById('security-page');
@@ -3391,13 +3501,16 @@
         var mainDash = document.getElementById('main-dashboard');
         var statsRow = document.getElementById('stats-row');
         var toolsSection = document.getElementById('admin-tools-section');
+        var viewPicker = document.getElementById('dashboard-view-picker');
         if (mainDash) mainDash.style.display = 'grid';
         if (statsRow) statsRow.style.display = 'flex';
         if (toolsSection) toolsSection.style.display = 'block';
+        if (viewPicker) viewPicker.style.display = 'block';
 
         // Hide security page
         var secPage = document.getElementById('security-page');
         if (secPage) secPage.classList.add('hidden');
+        applyDashboardView();
     }
 
     function loadSecuritySettings() {

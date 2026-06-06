@@ -584,12 +584,115 @@ a { text-decoration: none; color: inherit; transition: var(--transition); }
 }
 
 /* ===========================
+   VIEW PICKER
+   =========================== */
+
+.dashboard-view-picker {
+    margin-top: 24px;
+    margin-bottom: 18px;
+}
+
+.view-picker-tabs {
+    display: inline-flex;
+    border: 1px solid var(--panel-border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    background: #f9fbf7;
+}
+
+.view-tab {
+    border: none;
+    border-right: 1px solid var(--panel-border);
+    background: transparent;
+    color: var(--sage-medium);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.view-tab:last-child { border-right: none; }
+
+.view-tab.active,
+.view-tab:hover {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.view-thumbs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.view-thumb {
+    border: 1px solid var(--panel-border);
+    background: linear-gradient(145deg, #ffffff 0%, #f8fbf5 100%);
+    border-radius: 2px;
+    text-align: left;
+    padding: 16px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.view-thumb:hover,
+.view-thumb.active {
+    border-color: var(--sage-medium);
+    box-shadow: 0 4px 14px rgba(44, 62, 44, 0.08);
+    transform: translateY(-1px);
+}
+
+.view-thumb-kicker {
+    display: block;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sage-light);
+    margin-bottom: 6px;
+}
+
+.view-thumb-title {
+    font-size: 1.15rem;
+    letter-spacing: 1px;
+    color: var(--primary);
+    margin-bottom: 6px;
+}
+
+.view-thumb-desc {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--text-mid);
+    margin-bottom: 10px;
+}
+
+.view-thumb-count {
+    display: inline-block;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--sage-medium);
+    border-top: 1px solid var(--panel-border);
+    padding-top: 8px;
+}
+
+/* ===========================
    ADMIN GRID
    =========================== */
 
 .admin-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 28px;
     padding-top: 36px;
     padding-bottom: 36px;
@@ -1645,11 +1748,22 @@ input:focus + .toggle-slider {
 
 @media (max-width: 1024px) {
     .admin-grid { grid-template-columns: 1fr; }
+    .view-thumbs { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
     .kanban-board { grid-template-columns: repeat(2, 1fr); }
     .tools-header { flex-direction: column; align-items: flex-start; }
+    .view-picker-tabs {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .view-tab {
+        border-right: 1px solid var(--panel-border);
+        padding: 10px 8px;
+        font-size: 9px;
+    }
     .crm-row { grid-template-columns: 1fr 1fr; }
     .crm-row.crm-head { display: none; }
     .admin-header { padding: 14px 20px; }

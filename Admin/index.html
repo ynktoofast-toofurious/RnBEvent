@@ -332,6 +332,34 @@
             <!-- Populated by JS -->
         </section>
 
+        <section class="dashboard-view-picker container" id="dashboard-view-picker">
+            <div class="view-picker-tabs" role="tablist" aria-label="Dashboard Views">
+                <button class="view-tab active" data-view="prospects" onclick="switchAdminView('prospects', this)">Prospect CRM</button>
+                <button class="view-tab" data-view="clients" onclick="switchAdminView('clients', this)">Published Clients</button>
+                <button class="view-tab" data-view="tools" onclick="switchAdminView('tools', this)">Admin Tools</button>
+            </div>
+            <div class="view-thumbs">
+                <button class="view-thumb active" data-view="prospects" onclick="switchAdminView('prospects')">
+                    <span class="view-thumb-kicker">Pipeline</span>
+                    <h3 class="view-thumb-title">Prospect CRM</h3>
+                    <p class="view-thumb-desc">Track leads, update status, and convert bookings.</p>
+                    <span id="view-count-prospects" class="view-thumb-count">0 Prospects</span>
+                </button>
+                <button class="view-thumb" data-view="clients" onclick="switchAdminView('clients')">
+                    <span class="view-thumb-kicker">Access</span>
+                    <h3 class="view-thumb-title">Published Clients</h3>
+                    <p class="view-thumb-desc">Manage portal access and jump in with team quick login.</p>
+                    <span id="view-count-clients" class="view-thumb-count">0 Active Clients</span>
+                </button>
+                <button class="view-thumb" data-view="tools" onclick="switchAdminView('tools')">
+                    <span class="view-thumb-kicker">Workspace</span>
+                    <h3 class="view-thumb-title">Admin Tools</h3>
+                    <p class="view-thumb-desc">Kanban, content editor, client manager, and RSVP tools.</p>
+                    <span class="view-thumb-count">5 Tool Modules</span>
+                </button>
+            </div>
+        </section>
+
         <!-- Security Settings Page -->
         <section id="security-page" class="security-page container hidden">
             <div class="security-header">
@@ -450,7 +478,7 @@
             </section>
 
             <!-- ── Published Clients ── -->
-            <section class="admin-panel" id="panel-clients-dash">
+            <section class="admin-panel hidden" id="panel-clients-dash">
                 <div class="panel-header">
                     <h2 class="panel-title">Published Clients</h2>
                     <div style="display:flex;gap:8px;">
@@ -471,15 +499,15 @@
         </div>
 
         <!-- ── Admin Tools ── -->
-        <section class="admin-tools container" id="admin-tools-section">
+        <section class="admin-tools container hidden" id="admin-tools-section">
             <div class="tools-header">
                 <h2 class="panel-title">Admin Tools</h2>
                 <div class="tools-tabs">
-                    <button class="tool-tab active" onclick="switchTool('kanban', this)">PROSPECT KANBAN</button>
-                    <button class="tool-tab" onclick="switchTool('content', this)">CONTENT EDITOR</button>
-                    <button class="tool-tab" onclick="switchTool('clients', this)">CLIENT MANAGER</button>
-                    <button class="tool-tab" onclick="switchTool('rsvp', this)">RSVP SIGNUPS</button>
-                    <button class="tool-tab" onclick="switchTool('events', this)">EVENTS &amp; RSVP</button>
+                    <button class="tool-tab active" data-tool="kanban" onclick="switchTool('kanban', this)">PROSPECT KANBAN</button>
+                    <button class="tool-tab" data-tool="content" onclick="switchTool('content', this)">CONTENT EDITOR</button>
+                    <button class="tool-tab" data-tool="clients" onclick="switchTool('clients', this)">CLIENT MANAGER</button>
+                    <button class="tool-tab" data-tool="rsvp" onclick="switchTool('rsvp', this)">RSVP SIGNUPS</button>
+                    <button class="tool-tab" data-tool="events" onclick="switchTool('events', this)">EVENTS &amp; RSVP</button>
                 </div>
             </div>
 
