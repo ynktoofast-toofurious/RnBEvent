@@ -20,6 +20,7 @@
     var STORAGE_CONTENT_HISTORY = 'rnb_content_drafts_history';
     var STORAGE_CLIENTS         = 'rnb_admin_clients';
     var STORAGE_DELETED_IDS     = 'rnb_deleted_client_ids';
+    var STORAGE_INVENTORY       = 'rnb_admin_inventory';
     var ADMIN_PORTAL_BRIDGE_KEY = 'rnb_admin_portal_bridge';
     var CONTENT_DB_NAME         = 'rnb_admin_content_db';
     var CONTENT_DB_STORE        = 'drafts';
@@ -85,9 +86,11 @@
         prospects:    [],
         tasks:        [],
         clients:      [],
+        inventory:    [],
         activeFilter: 'New Lead',
         dashboardClientFilter: 'active',
-        activeDashboardView: 'prospects'
+        activeDashboardView: 'prospects',
+        inventoryFilter: 'all'
     };
     var contentDrafts        = {};
     var contentDraftHistory  = {};
@@ -98,6 +101,428 @@
     var contentDbPromise     = null;
     var dataHydratedFromS3   = false;
     var adminLoadInProgress  = false;
+    var inventoryLoadInProgress = false;
+
+    var INVENTORY_STATUS_LABELS = {
+        available: 'Available',
+        maintenance: 'Maintenance',
+        retired: 'Retired'
+    };
+
+    function defaultInventoryCategories() {
+        return [
+            'Furniture',
+            'Decor',
+            'Florals',
+            'Linens',
+            'Lighting',
+            'Signage',
+            'Tableware',
+            'Backdrops',
+            'Props',
+            'Misc'
+        ];
+    }
+
+    function normalizeInventoryItem(item) {
+        if (!item || typeof item !== 'object') return null;
+        var quantity = parseInt(item.quantity, 10);
+        var serialNumbers = Array.isArray(item.serialNumbers) ? item.serialNumbers.slice() : [];
+        if (!serialNumbers.length && quantity > 0) {
+            serialNumbers = buildSerialNumbers(item.serialPrefix || '', item.id || '', quantity, []);
+        }
+        if (!quantity && serialNumbers.length) quantity = serialNumbers.length;
+        return {
+            id: item.id || ('inv' + Date.now()),
+            name: (item.name || '').trim(),
+            category: (item.category || 'Misc').trim(),
+            description: (item.description || '').trim(),
+            image: item.image || '',
+            quantity: quantity > 0 ? quantity : serialNumbers.length,
+            serialPrefix: (item.serialPrefix || '').trim(),
+            serialNumbers: serialNumbers,
+            status: item.status || 'available',
+            notes: (item.notes || '').trim(),
+            rentalPrice: item.rentalPrice != null && item.rentalPrice !== '' ? Number(item.rentalPrice) : null,
+            updatedAt: item.updatedAt || new Date().toISOString(),
+            createdAt: item.createdAt || new Date().toISOString()
+        };
+    }
+
+    function compactLabel(text) {
+        return String(text || '')
+            .toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '')
+            .slice(0, 24) || 'ITEM';
+    }
+
+    function makeInventorySerialPrefix(item) {
+        var categorySlug = compactLabel(item.category || 'Misc');
+        var nameSlug = compactLabel(item.name || 'Item');
+        var shortId = String(item.id || Date.now()).replace(/[^A-Z0-9]/gi, '').slice(-4).toUpperCase();
+        return 'INV-' + categorySlug + '-' + nameSlug + '-' + shortId;
+    }
+
+    function buildSerialNumbers(prefix, itemId, quantity, existingSerials) {
+        var qty = Math.max(0, parseInt(quantity, 10) || 0);
+        var cleanPrefix = String(prefix || '').trim() || ('INV-' + compactLabel(itemId || 'ITEM'));
+        var serials = Array.isArray(existingSerials) ? existingSerials.slice(0, qty) : [];
+        for (var i = serials.length; i < qty; i++) {
+            serials.push(cleanPrefix + '-' + String(i + 1).padStart(3, '0'));
+        }
+        return serials;
+    }
+
+    function inventoryCategoryList() {
+        var categories = defaultInventoryCategories();
+        state.inventory.forEach(function (item) {
+            if (item && item.category && categories.indexOf(item.category) === -1) {
+                categories.push(item.category);
+            }
+        });
+        return categories;
+    }
+
+    function getInventoryFilteredList() {
+        var filter = state.inventoryFilter || 'all';
+        var search = (document.getElementById('inventory-search') || {}).value || '';
+        search = search.trim().toLowerCase();
+        return state.inventory.filter(function (item) {
+            if (!item) return false;
+            if (filter !== 'all' && item.category !== filter) return false;
+            if (!search) return true;
+            var serials = Array.isArray(item.serialNumbers) ? item.serialNumbers.join(' ') : '';
+            return [item.name, item.category, item.description, item.serialPrefix, serials].join(' ').toLowerCase().indexOf(search) > -1;
+        });
+    }
+
+    function renderInventorySummary() {
+        var el = document.getElementById('inventory-summary');
+        if (!el) return;
+        var totalItems = state.inventory.length;
+        var totalUnits = state.inventory.reduce(function (sum, item) { return sum + (parseInt(item.quantity, 10) || (Array.isArray(item.serialNumbers) ? item.serialNumbers.length : 0)); }, 0);
+        var categories = inventoryCategoryList().filter(function (c) { return !!c; });
+        var availableItems = state.inventory.filter(function (item) { return item.status === 'available'; }).length;
+        el.innerHTML =
+            inventoryStat(totalItems, 'Inventory Items') +
+            inventoryStat(totalUnits, 'Total Units') +
+            inventoryStat(categories.length, 'Categories') +
+            inventoryStat(availableItems, 'Available Items');
+    }
+
+    function inventoryStat(value, label) {
+        return '<div class="inventory-summary-card"><div class="inventory-summary-value">' + value + '</div><div class="inventory-summary-label">' + label + '</div></div>';
+    }
+
+    function renderInventoryCategoryTabs() {
+        var el = document.getElementById('inventory-category-tabs');
+        if (!el) return;
+        var categories = inventoryCategoryList();
+        var current = state.inventoryFilter || 'all';
+        var html = '<button class="inventory-category-tab' + (current === 'all' ? ' active' : '') + '" onclick="filterInventoryCategory(\'all\', this)">All</button>';
+        categories.forEach(function (cat) {
+            html += '<button class="inventory-category-tab' + (current === cat ? ' active' : '') + '" onclick="filterInventoryCategory(\'' + escJS(cat) + '\', this)">' + esc(cat) + '</button>';
+        });
+        el.innerHTML = html;
+    }
+
+    function renderInventoryPage() {
+        var el = document.getElementById('inventory-grid');
+        if (!el) return;
+        renderInventorySummary();
+        renderInventoryCategoryTabs();
+
+        var list = getInventoryFilteredList();
+        if (!list.length) {
+            el.innerHTML = '<div class="inventory-empty">No inventory items found. Add a category-driven item to get started.</div>';
+            return;
+        }
+
+        el.innerHTML = list.map(function (item) {
+            var serialPreview = (item.serialNumbers || []).slice(0, 4).map(function (serial) {
+                return '<span class="inventory-serial">' + esc(serial) + '</span>';
+            }).join('');
+            var more = (item.serialNumbers || []).length > 4 ? '<span class="inventory-serial">+' + ((item.serialNumbers || []).length - 4) + ' more</span>' : '';
+            var imageMarkup = item.image
+                ? '<img src="' + esc(item.image) + '" alt="' + esc(item.name) + '">'
+                : '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+            return '<article class="inventory-card">' +
+                '<div class="inventory-card-body">' +
+                    '<span class="inventory-card-kicker">' + esc(item.category) + '</span>' +
+                    '<h3 class="inventory-card-title">' + esc(item.name) + '</h3>' +
+                    '<div class="inventory-card-meta">' +
+                        '<span class="inventory-pill">' + esc(INVENTORY_STATUS_LABELS[item.status] || 'Available') + '</span>' +
+                        '<span class="inventory-pill">Qty ' + (item.quantity || 0) + '</span>' +
+                    '</div>' +
+                    '<p class="inventory-card-desc">' + esc(item.description || 'No description provided.') + '</p>' +
+                    '<div class="inventory-serials">' + serialPreview + more + '</div>' +
+                    '<div class="inventory-card-actions">' +
+                        '<button class="crm-act-btn" onclick="openInventoryItemModal(\'' + escJS(item.id) + '\')">EDIT</button>' +
+                        '<button class="crm-act-btn del-btn" onclick="deleteInventoryItem(\'' + escJS(item.id) + '\')">DELETE</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="inventory-card-image">' + imageMarkup + '</div>' +
+            '</article>';
+        }).join('');
+    }
+
+    function filterInventoryItems() {
+        renderInventoryPage();
+    }
+
+    function filterInventoryCategory(category, btn) {
+        state.inventoryFilter = category || 'all';
+        document.querySelectorAll('.inventory-category-tab').forEach(function (b) { b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+        renderInventoryPage();
+    }
+
+    function persistInventoryToStorage() {
+        persistLocalFallback(STORAGE_INVENTORY, state.inventory);
+        if (window.S3Service && typeof window.S3Service.saveInventory === 'function') {
+            window.S3Service.saveInventory(state.inventory).catch(function (e) {
+                console.warn('Inventory cloud save failed:', e);
+            });
+        }
+    }
+
+    function loadInventoryFromStorage() {
+        var stored = safeJSON(localStorage.getItem(STORAGE_INVENTORY));
+        state.inventory = Array.isArray(stored) ? stored.map(normalizeInventoryItem).filter(Boolean) : [];
+    }
+
+    function loadInventoryFromCloud() {
+        if (inventoryLoadInProgress || !window.S3Service || typeof window.S3Service.getInventory !== 'function') return;
+        inventoryLoadInProgress = true;
+        window.S3Service.getInventory().then(function (items) {
+            if (!Array.isArray(items)) return;
+            var merged = mergeByKey(items.map(normalizeInventoryItem).filter(Boolean), state.inventory, 'inventory');
+            state.inventory = merged.map(normalizeInventoryItem).filter(Boolean);
+            persistLocalFallback(STORAGE_INVENTORY, state.inventory);
+            renderInventoryPage();
+        }).catch(function (e) {
+            console.warn('Inventory cloud load failed:', e);
+        }).finally(function () {
+            inventoryLoadInProgress = false;
+        });
+    }
+
+    function refreshInventoryPage() {
+        loadInventoryFromCloud();
+        renderInventoryPage();
+    }
+
+    function openInventoryPage() {
+        var mainDash = document.getElementById('main-dashboard');
+        var statsRow = document.getElementById('stats-row');
+        var toolsSection = document.getElementById('admin-tools-section');
+        var secPage = document.getElementById('security-page');
+        var viewPicker = document.getElementById('dashboard-view-picker');
+        var inventoryPage = document.getElementById('inventory-page');
+        if (mainDash) mainDash.style.display = 'none';
+        if (statsRow) statsRow.style.display = 'none';
+        if (toolsSection) toolsSection.style.display = 'none';
+        if (secPage) secPage.classList.add('hidden');
+        if (viewPicker) viewPicker.style.display = 'none';
+        if (inventoryPage) inventoryPage.classList.remove('hidden');
+        state.activeDashboardView = 'inventory';
+        renderInventoryPage();
+        loadInventoryFromCloud();
+    }
+
+    function closeInventoryPage() {
+        var mainDash = document.getElementById('main-dashboard');
+        var statsRow = document.getElementById('stats-row');
+        var toolsSection = document.getElementById('admin-tools-section');
+        var viewPicker = document.getElementById('dashboard-view-picker');
+        var inventoryPage = document.getElementById('inventory-page');
+        if (mainDash) mainDash.style.display = 'grid';
+        if (statsRow) statsRow.style.display = 'flex';
+        if (toolsSection) toolsSection.style.display = 'block';
+        if (viewPicker) viewPicker.style.display = 'block';
+        if (inventoryPage) inventoryPage.classList.add('hidden');
+        state.activeDashboardView = 'prospects';
+        applyDashboardView();
+    }
+
+    function createBlankInventoryItem() {
+        var name = document.getElementById('inventory-item-name').value.trim();
+        var category = getInventoryModalCategory();
+        var quantity = Math.max(0, parseInt(document.getElementById('inventory-item-quantity').value, 10) || 0);
+        var serialPrefix = document.getElementById('inventory-item-serial-prefix').value.trim();
+        var id = editingInventoryId || ('inv' + Date.now());
+        var item = {
+            id: id,
+            name: name,
+            category: category,
+            description: document.getElementById('inventory-item-description').value.trim(),
+            quantity: quantity,
+            serialPrefix: serialPrefix || makeInventorySerialPrefix({ id: id, name: name, category: category }),
+            serialNumbers: buildSerialNumbers(serialPrefix || makeInventorySerialPrefix({ id: id, name: name, category: category }), id, quantity, editingInventoryItem && editingInventoryItem.serialNumbers),
+            status: document.getElementById('inventory-item-status').value,
+            notes: document.getElementById('inventory-item-notes').value.trim(),
+            rentalPrice: null,
+            image: editingInventoryItem && editingInventoryItem.image ? editingInventoryItem.image : '',
+            createdAt: (editingInventoryItem && editingInventoryItem.createdAt) || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        return item;
+    }
+
+    function getInventoryModalCategory() {
+        var newCategory = document.getElementById('inventory-item-new-category').value.trim();
+        var selectValue = document.getElementById('inventory-item-category').value.trim();
+        return newCategory || selectValue || 'Misc';
+    }
+
+    var editingInventoryId = null;
+    var editingInventoryItem = null;
+    var pendingInventoryImage = null;
+
+    function updateInventorySerialPreview() {
+        var preview = document.getElementById('inventory-serial-preview');
+        if (!preview) return;
+        var name = document.getElementById('inventory-item-name').value.trim();
+        var category = getInventoryModalCategory();
+        var quantity = Math.max(0, parseInt(document.getElementById('inventory-item-quantity').value, 10) || 0);
+        var prefix = document.getElementById('inventory-item-serial-prefix').value.trim() || makeInventorySerialPrefix({ id: editingInventoryId || 'draft', name: name, category: category });
+        var serials = buildSerialNumbers(prefix, editingInventoryId || 'draft', quantity, editingInventoryItem && editingInventoryItem.serialNumbers);
+        preview.innerHTML = serials.length ? serials.map(function (serial) {
+            return '<span class="inventory-serial">' + esc(serial) + '</span>';
+        }).join('') : '<span class="inventory-serial">Serial preview will appear here</span>';
+    }
+
+    function syncInventoryModalCategory() {
+        var select = document.getElementById('inventory-item-category');
+        var custom = document.getElementById('inventory-item-new-category');
+        if (select && select.value !== '__new__' && custom) {
+            custom.value = '';
+        }
+        if (custom && custom.value.trim()) {
+            select.value = '__new__';
+        }
+        updateInventorySerialPreview();
+    }
+
+    function handleInventoryImageChange(inputEl) {
+        var file = inputEl.files && inputEl.files[0];
+        var preview = document.getElementById('inventory-image-preview');
+        if (!file) {
+            pendingInventoryImage = null;
+            if (preview) preview.innerHTML = editingInventoryItem && editingInventoryItem.image ? '<img class="inventory-image-preview" src="' + esc(editingInventoryItem.image) + '" alt="Preview">' : '';
+            return;
+        }
+        if (!file.type || !file.type.startsWith('image/')) {
+            alert('Only image files are allowed.');
+            inputEl.value = '';
+            return;
+        }
+        pendingInventoryImage = file;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            if (preview) preview.innerHTML = '<img class="inventory-image-preview" src="' + e.target.result + '" alt="Preview">';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function openInventoryItemModal(id) {
+        editingInventoryId = id || null;
+        editingInventoryItem = id ? state.inventory.find(function (item) { return item.id === id; }) : null;
+        pendingInventoryImage = null;
+
+        var modal = document.getElementById('modal-inventory-item');
+        var categories = inventoryCategoryList();
+        var categorySelect = document.getElementById('inventory-item-category');
+        if (categorySelect) {
+            categorySelect.innerHTML = '<option value="">Select category</option>' + categories.map(function (cat) {
+                return '<option value="' + esc(cat) + '">' + esc(cat) + '</option>';
+            }).join('') + '<option value="__new__">+ New Category</option>';
+        }
+
+        if (editingInventoryItem) {
+            document.getElementById('inventory-item-name').value = editingInventoryItem.name || '';
+            document.getElementById('inventory-item-description').value = editingInventoryItem.description || '';
+            document.getElementById('inventory-item-quantity').value = String(editingInventoryItem.quantity || (editingInventoryItem.serialNumbers || []).length || 1);
+            document.getElementById('inventory-item-serial-prefix').value = editingInventoryItem.serialPrefix || makeInventorySerialPrefix(editingInventoryItem);
+            document.getElementById('inventory-item-status').value = editingInventoryItem.status || 'available';
+            document.getElementById('inventory-item-notes').value = editingInventoryItem.notes || '';
+            document.getElementById('inventory-item-new-category').value = '';
+            if (categorySelect) categorySelect.value = editingInventoryItem.category || '';
+            var preview = document.getElementById('inventory-image-preview');
+            if (preview) preview.innerHTML = editingInventoryItem.image ? '<img class="inventory-image-preview" src="' + esc(editingInventoryItem.image) + '" alt="Preview">' : '<div class="inventory-empty">No image selected.</div>';
+        } else {
+            document.getElementById('inventory-item-name').value = '';
+            document.getElementById('inventory-item-description').value = '';
+            document.getElementById('inventory-item-quantity').value = '1';
+            document.getElementById('inventory-item-serial-prefix').value = '';
+            document.getElementById('inventory-item-status').value = 'available';
+            document.getElementById('inventory-item-notes').value = '';
+            document.getElementById('inventory-item-new-category').value = '';
+            if (categorySelect) categorySelect.value = '';
+            var preview2 = document.getElementById('inventory-image-preview');
+            if (preview2) preview2.innerHTML = '<div class="inventory-empty">Upload or reuse an image for this item.</div>';
+        }
+
+        updateInventorySerialPreview();
+        modal.classList.remove('hidden');
+    }
+
+    function closeInventoryItemModal() {
+        document.getElementById('modal-inventory-item').classList.add('hidden');
+        editingInventoryId = null;
+        editingInventoryItem = null;
+        pendingInventoryImage = null;
+    }
+
+    function deleteInventoryItem(id) {
+        if (!confirm('Delete this inventory item? This will also remove its serial tracking data.')) return;
+        state.inventory = state.inventory.filter(function (item) { return item.id !== id; });
+        persistInventoryToStorage();
+        renderInventoryPage();
+    }
+
+    async function saveInventoryItem() {
+        var name = document.getElementById('inventory-item-name').value.trim();
+        var category = getInventoryModalCategory();
+        var quantity = Math.max(0, parseInt(document.getElementById('inventory-item-quantity').value, 10) || 0);
+        var serialPrefixInput = document.getElementById('inventory-item-serial-prefix').value.trim();
+
+        if (!name) { alert('Item name is required.'); return; }
+        if (!category) { alert('Category is required.'); return; }
+        if (!quantity) { alert('Quantity must be at least 1.'); return; }
+
+        var item = createBlankInventoryItem();
+        item.name = name;
+        item.category = category;
+        item.serialPrefix = serialPrefixInput || item.serialPrefix;
+        item.serialNumbers = buildSerialNumbers(item.serialPrefix, item.id, quantity, editingInventoryItem && editingInventoryItem.serialNumbers);
+        item.quantity = item.serialNumbers.length;
+
+        if (pendingInventoryImage) {
+            try {
+                item.image = await window.S3Service.uploadInventoryImage(pendingInventoryImage, item.id);
+            } catch (e) {
+                console.warn('Inventory image upload failed, keeping existing image if any:', e);
+            }
+        } else if (!item.image && editingInventoryItem && editingInventoryItem.image) {
+            item.image = editingInventoryItem.image;
+        }
+
+        var idx = state.inventory.findIndex(function (existing) { return existing.id === item.id; });
+        if (idx > -1) state.inventory[idx] = item;
+        else state.inventory.unshift(item);
+
+        persistInventoryToStorage();
+        closeInventoryItemModal();
+        renderInventoryPage();
+    }
+
+    function refreshInventoryFromCloud() {
+        loadInventoryFromCloud();
+        renderInventoryPage();
+    }
 
     function decodeTotpKey() {
         var arr = (window.ADMIN_CONFIG || {}).totpKey;
@@ -859,6 +1284,9 @@
                 loadState();
                 renderAll();
                 hydrateContentDraftStorage();
+                loadInventoryFromStorage();
+                renderInventoryPage();
+                loadInventoryFromCloud();
                 return hydrateCoreDataFromS3();
             })
             .then(function () {
@@ -898,6 +1326,10 @@
         // Clients
         var storedC = safeJSON(localStorage.getItem(STORAGE_CLIENTS));
         state.clients = Array.isArray(storedC) ? storedC : [];
+
+        // Inventory
+        var storedI = safeJSON(localStorage.getItem(STORAGE_INVENTORY));
+        state.inventory = Array.isArray(storedI) ? storedI.map(normalizeInventoryItem).filter(Boolean) : [];
     }
 
     function keyForMerge(item, idx, type) {
@@ -1382,6 +1814,7 @@
         try { renderCRM(state.activeFilter); } catch (e) { console.error('renderCRM', e); }
         try { renderDashboardClients(); } catch (e) { console.error('renderDashboardClients', e); }
         try { renderKanban(); } catch (e) { console.error('renderKanban', e); }
+        try { renderInventoryPage(); } catch (e) { console.error('renderInventoryPage', e); }
         try { updateViewPickerCounts(); } catch (e) { console.error('updateViewPickerCounts', e); }
         try { applyDashboardView(); } catch (e) { console.error('applyDashboardView', e); }
     }
@@ -3458,6 +3891,18 @@
     window.filterAllClients        = filterAllClients;
     window.renderDashboardClients = renderDashboardClients;
     window.adminQuickPortalFromClient = adminQuickPortalFromClient;
+    window.openInventoryPage      = openInventoryPage;
+    window.closeInventoryPage     = closeInventoryPage;
+    window.refreshInventoryPage   = refreshInventoryPage;
+    window.filterInventoryItems   = filterInventoryItems;
+    window.filterInventoryCategory = filterInventoryCategory;
+    window.openInventoryItemModal = openInventoryItemModal;
+    window.closeInventoryItemModal = closeInventoryItemModal;
+    window.saveInventoryItem      = saveInventoryItem;
+    window.deleteInventoryItem    = deleteInventoryItem;
+    window.updateInventorySerialPreview = updateInventorySerialPreview;
+    window.syncInventoryModalCategory   = syncInventoryModalCategory;
+    window.handleInventoryImageChange   = handleInventoryImageChange;
 
     // ═══════════════════════════════════════════════════════════════════════
     // HAMBURGER MENU & SECURITY SETTINGS
@@ -3483,10 +3928,12 @@
         var statsRow = document.getElementById('stats-row');
         var toolsSection = document.getElementById('admin-tools-section');
         var viewPicker = document.getElementById('dashboard-view-picker');
+        var inventoryPage = document.getElementById('inventory-page');
         if (mainDash) mainDash.style.display = 'none';
         if (statsRow) statsRow.style.display = 'none';
         if (toolsSection) toolsSection.style.display = 'none';
         if (viewPicker) viewPicker.style.display = 'none';
+        if (inventoryPage) inventoryPage.classList.add('hidden');
 
         // Show security page
         var secPage = document.getElementById('security-page');
@@ -3502,10 +3949,12 @@
         var statsRow = document.getElementById('stats-row');
         var toolsSection = document.getElementById('admin-tools-section');
         var viewPicker = document.getElementById('dashboard-view-picker');
+        var inventoryPage = document.getElementById('inventory-page');
         if (mainDash) mainDash.style.display = 'grid';
         if (statsRow) statsRow.style.display = 'flex';
         if (toolsSection) toolsSection.style.display = 'block';
         if (viewPicker) viewPicker.style.display = 'block';
+        if (inventoryPage) inventoryPage.classList.add('hidden');
 
         // Hide security page
         var secPage = document.getElementById('security-page');
