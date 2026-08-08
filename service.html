@@ -314,6 +314,37 @@
 
     <script>
     const LAMBDA = 'https://api.rnbevents716.com';
+    const LAMBDA_FALLBACK = 'https://k0e4amkowi.execute-api.us-east-2.amazonaws.com';
+
+    async function postQuoteRequest(data) {
+        async function tryEndpoint(baseUrl) {
+            const res = await fetch(baseUrl + '/send-quote-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            let json = null;
+            try { json = await res.json(); } catch (_) { json = null; }
+
+            if (!res.ok || !json || !json.ok) {
+                const message = (json && json.error) || ('HTTP ' + res.status);
+                const err = new Error(message);
+                err.status = res.status;
+                throw err;
+            }
+            return json;
+        }
+
+        try {
+            return await tryEndpoint(LAMBDA);
+        } catch (err) {
+            if (err && err.status === 404) {
+                return await tryEndpoint(LAMBDA_FALLBACK);
+            }
+            throw err;
+        }
+    }
 
     function openQuoteModal() {
         document.getElementById('quoteModalOverlay').classList.add('open');
@@ -401,13 +432,7 @@
         btn.textContent = 'SENDING…';
 
         try {
-            const res  = await fetch(LAMBDA + '/send-quote-request', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            });
-            const json = await res.json();
-            if (!res.ok || !json.ok) throw new Error(json.error || 'Submission failed');
+            await postQuoteRequest(data);
             form.reset();
             showMsg('✓ Your request has been sent! We\'ll be in touch within 24 hours.', 'success');
             btn.textContent = 'SENT ✓';

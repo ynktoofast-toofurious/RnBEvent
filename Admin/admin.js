@@ -2348,7 +2348,7 @@
         var btn = document.getElementById('qm-send-btn');
         if (btn) { btn.disabled = true; btn.textContent = 'SENDING\u2026'; }
 
-        fetch('https://api.rnbevents716.com/send-quote-email', {
+        fetch(LAMBDA_BASE + '/send-quote-email', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({
